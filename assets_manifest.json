@@ -1,0 +1,11 @@
+{
+  "project": "Shvil HaTapuzim",
+  "location": "Hod Hasharon",
+  "assets": [
+    "drone",
+    "maps",
+    "logos",
+    "music",
+    "voice"
+  ]
+}
