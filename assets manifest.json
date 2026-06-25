@@ -1,0 +1,39 @@
+{
+  "project": "Shvil HaTapuzim",
+  "location": "Hod Hasharon",
+  "version": "2.0",
+  "synced_with": ["Shvil_HaTapuzim_Master_Brief.md", "video_timeline.json"],
+  "assets": {
+    "video": [
+      { "file": "1_hero_aerial.mp4", "role": "hero aerial / opening + ending", "scenes": [1, 7] },
+      { "file": "higgsfield-9eade893-bc59-42dc-9369-1be188041e28.mp4", "role": "drone approach to site", "scenes": [2] },
+      { "file": "WhatsApp Video 2026-06-23 at 13.14.08 (1).mp4", "role": "supporting lifestyle / b-roll", "scenes": [6] }
+    ],
+    "stills": [
+      { "file": "IMG_7269.png", "role": "land - the asset", "scenes": [3] },
+      { "file": "IMG_7270.png", "role": "land - the asset", "scenes": [3] },
+      { "file": "IMG_7316.png", "role": "potential / surroundings", "scenes": [4] },
+      { "file": "IMG_7318.png", "role": "potential / surroundings", "scenes": [4] },
+      { "file": "hf_20260624_082404_b2277f8f-08ec-461e-9874-c239cf1f0332.png", "role": "AI future neighborhood render", "scenes": [5, 6] },
+      { "file": "hf_20260624_082741_18a92b28-a5bd-4dc1-953b-f5a7f516dd13.png", "role": "AI future neighborhood render", "scenes": [5, 6] },
+      { "file": "E3729B9D-D82B-4A75-B97A-54F43295853A.png", "role": "alt ending frame", "scenes": [7] }
+    ],
+    "brand": [
+      { "file": "logo_shvil_hatapuzim_white.png", "role": "persistent logo on footage", "status": "to_add" },
+      { "file": "logo_shvil_hatapuzim_color.png", "role": "endcard logo", "status": "to_add" }
+    ],
+    "audio": [
+      { "file": "music_cinematic_build.wav", "role": "score - builds to scene 6 peak", "status": "to_add" },
+      { "file": "voiceover_he.wav", "role": "Hebrew narration", "status": "to_add" }
+    ],
+    "graphics": [
+      { "file": "endcard_branded", "role": "CTA screen", "status": "to_create", "scenes": [8] }
+    ]
+  },
+  "categories": ["drone", "maps", "logos", "music", "voice"],
+  "notes": [
+    "asset_status 'proposed_verify' in timeline = mapping based on filenames; confirm against actual footage content.",
+    "Missing for a finished cut: logo files (white + color), score, Hebrew VO, animated map pin, CTA endcard graphic.",
+    "Repo cleanup: the 1-byte file named 'Videos' is likely a stray empty placeholder (git does not track empty folders) and can be removed."
+  ]
+}
