@@ -23,7 +23,7 @@ fc = (
  "[v][1:v]overlay=0:0:eof_action=pass:format=auto[out]"
 )
 cmd = ["ffmpeg","-y","-loglevel","error",
-       "-i","scratch/tapuz_road.mp4",
+       "-framerate","24","-i","scratch/clean/%03d.png",
        "-framerate","24","-i","scratch/ov/%03d.png",
        "-filter_complex", fc, "-map","[out]",
        "-r","24","-an","-t","10.0",
