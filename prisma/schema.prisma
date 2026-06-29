@@ -1,0 +1,66 @@
+// מערכת ניהול בעלי זכויות — סכמת מסד נתונים
+// ברירת מחדל SQLite (מקומי). לפרודקשן: שנו provider ל-"postgresql" ועדכנו DATABASE_URL.
+// הערה: שדות JSON ו-enum נשמרים כ-String (stringified) לשמירה על תאימות מלאה בין SQLite ל-Postgres.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// בעל זכויות — שורה בטבלה החכמה
+model RightsHolder {
+  id            String   @id @default(uuid())
+  name          String   @default("") // בעל הזכויות
+  relativeValue String   @default("") // שווי יחסי (נשמר כטקסט לשמירת דיוק עשרוני מלא 1:1)
+  state         String   @default("") // מצב
+  balancePay    String   @default("") // תשלומי איזון — משלם
+  balanceReceive String  @default("") // תשלומי איזון — מקבל
+  phone         String   @default("") // טלפון נייד
+  status        String   @default("pending") // pending | signed | objected
+  notes         String   @default("") // הערות
+  extra         String   @default("{}") // ערכי עמודות דינמיות (JSON)
+  rowOrder      Int      @default(0) // סדר תצוגה
+  lastMessageAt DateTime?
+  messages      Message[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status])
+  @@index([phone])
+}
+
+/// הגדרת עמודה — תומך בסכמה דינמית (הוספה/מחיקה/סידור עמודות בזמן ריצה)
+model ColumnDef {
+  id        String  @id @default(uuid())
+  key       String  @unique // מפתח טכני (לעמודות מובנות = שם השדה ב-RightsHolder; לדינמיות = מפתח ב-extra)
+  label     String  // כותרת תצוגה בעברית
+  type      String  @default("text") // text | number | date | select | status | phone
+  order     Int     @default(0)
+  visible   Boolean @default(true)
+  isCustom  Boolean @default(false) // true = עמודה דינמית שנשמרת ב-extra
+  options   String  @default("[]") // אפשרויות לעמודת select (JSON)
+  createdAt DateTime @default(now())
+}
+
+/// היסטוריית הודעות WhatsApp לכל בעל זכויות (נכנס + יוצא)
+model Message {
+  id          String   @id @default(uuid())
+  holder      RightsHolder @relation(fields: [holderId], references: [id], onDelete: Cascade)
+  holderId    String
+  direction   String   // "out" (נשלח מהמערכת) | "in" (התקבל מהלקוח)
+  body        String   @default("")
+  type        String   @default("text") // text | image | document | audio | video
+  mediaUrl    String?  // קישור למדיה (להודעות נכנסות עם קבצים)
+  status      String   @default("sent") // sent | delivered | read | failed | received
+  greenApiId  String?  // מזהה ההודעה ב-GreenAPI (idMessage)
+  errorText   String?  // טקסט שגיאה במקרה כשל
+  timestamp   DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([holderId])
+  @@index([greenApiId])
+}
