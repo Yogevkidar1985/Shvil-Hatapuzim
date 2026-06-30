@@ -1,0 +1,18 @@
+# תצורת פריסה ל-Netlify
+# דורש משתני סביבה ב-Netlify (Site settings → Environment variables):
+#   DATABASE_URL  — חיבור PostgreSQL ענני (Neon/Supabase)
+#   APP_PASSWORD  — סיסמת כניסה למערכת
+#   SESSION_SECRET — מחרוזת אקראית ארוכה
+#   GREENAPI_ID_INSTANCE, GREENAPI_API_TOKEN — לחיבור WhatsApp (אופציונלי בשלב ראשון)
+
+[build]
+  # prisma generate — יוצר את הקליינט; db push — יוצר את הטבלאות במסד הענני; ואז בניית Next
+  command = "npx prisma generate && npx prisma db push && npx next build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# הרצת Next.js על Netlify (פונקציות + SSR + middleware)
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

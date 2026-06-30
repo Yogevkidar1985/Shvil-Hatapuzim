@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/lib/db";
 import { isAuthenticated } from "@/app/lib/auth";
 import { serializeColumn } from "@/app/lib/serialize";
+import { ensureDefaultColumns } from "@/app/lib/bootstrap";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export async function GET() {
   if (!isAuthenticated()) {
     return NextResponse.json({ error: "לא מורשה" }, { status: 401 });
   }
+  await ensureDefaultColumns();
   const columns = await prisma.columnDef.findMany({ orderBy: { order: "asc" } });
   return NextResponse.json({ columns: columns.map(serializeColumn) });
 }

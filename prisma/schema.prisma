@@ -3,11 +3,15 @@
 // הערה: שדות JSON ו-enum נשמרים כ-String (stringified) לשמירה על תאימות מלאה בין SQLite ל-Postgres.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // native = פיתוח מקומי; rhel-openssl-* = סביבת ההרצה של Netlify (AWS Lambda)
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "rhel-openssl-1.0.x"]
 }
 
 datasource db {
-  provider = "sqlite"
+  // PostgreSQL ענני (Neon / Supabase) — נדרש לפריסה ב-Netlify/Vercel.
+  // לפיתוח מקומי אפשר להשתמש באותו DATABASE_URL של Neon.
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
