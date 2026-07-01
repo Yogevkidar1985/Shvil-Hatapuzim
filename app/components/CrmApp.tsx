@@ -10,6 +10,9 @@ import AddColumnDialog from "./dialogs/AddColumnDialog";
 import ImportDialog from "./dialogs/ImportDialog";
 import BulkSendDialog from "./dialogs/BulkSendDialog";
 import SignersMatchDialog from "./dialogs/SignersMatchDialog";
+import { ToastProvider, useToast } from "./ui/Toast";
+import { EmptyState } from "./ui/atoms";
+import Button from "./ui/Button";
 import { api } from "@/app/lib/api-client";
 import { exportToExcel } from "@/app/lib/export-client";
 import type { HolderDTO, ColumnDefDTO } from "@/app/lib/types";
@@ -24,7 +27,16 @@ interface EditEntry {
 }
 
 export default function CrmApp() {
+  return (
+    <ToastProvider>
+      <CrmContent />
+    </ToastProvider>
+  );
+}
+
+function CrmContent() {
   const router = useRouter();
+  const { toast, confirm } = useToast();
   const [holders, setHolders] = useState<HolderDTO[]>([]);
   const [columns, setColumns] = useState<ColumnDefDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,26 +57,24 @@ export default function CrmApp() {
   const redoStack = useRef<EditEntry[]>([]);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ===== טעינה ראשונית =====
   const reload = useCallback(async () => {
     setLoading(true);
     try {
       const [h, c] = await Promise.all([api.listHolders(), api.listColumns()]);
       setHolders(h.holders);
       setColumns(c.columns);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toast("טעינת הנתונים נכשלה", "error");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     reload();
     api.whatsappStatus().then(setWaState).catch(() => setWaState({ configured: false, state: null }));
   }, [reload]);
 
-  // ===== שמירה עם debounce =====
   const persistCell = useCallback((id: string, key: string, value: string, isCustom: boolean) => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     setSaveState("saving");
@@ -106,7 +116,6 @@ export default function CrmApp() {
     [holders, applyCellLocal, persistCell]
   );
 
-  // ===== Undo / Redo =====
   const doUndo = useCallback(() => {
     const entry = undoStack.current.pop();
     if (!entry) return;
@@ -139,7 +148,6 @@ export default function CrmApp() {
     return () => window.removeEventListener("keydown", onKey);
   }, [doUndo, doRedo]);
 
-  // ===== עמודות =====
   const handleColumnMoved = useCallback(
     async (orderedKeys: string[]) => {
       const updates = orderedKeys
@@ -160,54 +168,63 @@ export default function CrmApp() {
       try {
         await api.updateColumns(updates);
       } catch {
-        /* נשמר מחדש בטעינה הבאה */
+        /* נטען מחדש בפעם הבאה */
       }
     },
     [columns]
   );
 
-  // ===== שורות =====
   const handleAddRow = useCallback(async () => {
     try {
       const { holder } = await api.createHolder({ name: "" });
       setHolders((prev) => [...prev, holder]);
+      toast("שורה חדשה נוספה", "success");
     } catch (e) {
-      alert(e instanceof Error ? e.message : "הוספת שורה נכשלה");
+      toast(e instanceof Error ? e.message : "הוספת שורה נכשלה", "error");
     }
-  }, []);
+  }, [toast]);
 
   const handleDeleteSelected = useCallback(async () => {
     if (selectedIds.length === 0) return;
-    if (!confirm(`למחוק ${selectedIds.length} שורות?`)) return;
+    const ok = await confirm({
+      title: `מחיקת ${selectedIds.length} שורות`,
+      message: "הפעולה אינה הפיכה. למחוק את השורות שנבחרו?",
+      confirmLabel: "מחק",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await Promise.all(selectedIds.map((id) => api.deleteHolder(id)));
       setHolders((prev) => prev.filter((h) => !selectedIds.includes(h.id)));
       setSelectedIds([]);
+      toast("השורות נמחקו", "success");
     } catch {
-      alert("מחיקה נכשלה");
+      toast("מחיקה נכשלה", "error");
     }
-  }, [selectedIds]);
+  }, [selectedIds, confirm, toast]);
 
   const handleSync = useCallback(async () => {
+    toast("מסנכרן הודעות נכנסות…", "info");
     try {
       const r = await api.syncMessages();
-      alert(`סונכרנו ${r.saved} הודעות נכנסות חדשות (מתוך ${r.processed} התראות).`);
+      toast(`סונכרנו ${r.saved} הודעות חדשות (מתוך ${r.processed})`, "success");
       if (r.saved > 0) reload();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "סנכרון נכשל");
+      toast(e instanceof Error ? e.message : "סנכרון נכשל", "error");
     }
-  }, [reload]);
+  }, [reload, toast]);
 
-  // ===== נתונים מסוננים =====
+  const handleExport = useCallback(() => {
+    exportToExcel(statusFilter ? holders.filter((h) => h.status === statusFilter) : holders, columns);
+    toast("הקובץ יוצא בהצלחה", "success");
+  }, [holders, columns, statusFilter, toast]);
+
   const filteredHolders = useMemo(() => {
     if (!statusFilter) return holders;
     return holders.filter((h) => h.status === statusFilter);
   }, [holders, statusFilter]);
 
-  const selectedHolders = useMemo(
-    () => holders.filter((h) => selectedIds.includes(h.id)),
-    [holders, selectedIds]
-  );
+  const selectedHolders = useMemo(() => holders.filter((h) => selectedIds.includes(h.id)), [holders, selectedIds]);
 
   async function handleLogout() {
     await api.logout().catch(() => {});
@@ -216,8 +233,9 @@ export default function CrmApp() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="app-canvas h-screen flex flex-col">
       <Toolbar
+        holders={holders}
         search={search}
         onSearch={setSearch}
         selectedCount={selectedIds.length}
@@ -226,7 +244,7 @@ export default function CrmApp() {
         statusFilter={statusFilter}
         onStatusFilter={setStatusFilter}
         onImport={() => setShowImport(true)}
-        onExport={() => exportToExcel(filteredHolders, columns)}
+        onExport={handleExport}
         onAddRow={handleAddRow}
         onAddColumn={() => setShowAddColumn(true)}
         onBulkSend={() => setShowBulk(true)}
@@ -236,20 +254,30 @@ export default function CrmApp() {
       />
 
       {selectedIds.length > 0 && (
-        <div className="bg-orange-50 border-b border-orange-200 px-4 py-1.5 text-sm flex items-center gap-3">
-          <span>{selectedIds.length} שורות נבחרו</span>
-          <button onClick={handleDeleteSelected} className="text-red-600 hover:underline">
-            מחק נבחרים
-          </button>
-          <button onClick={() => setShowBulk(true)} className="text-green-700 hover:underline">
-            שלח WhatsApp לנבחרים
-          </button>
+        <div className="bg-brand-600 text-white px-5 py-2 text-sm flex items-center gap-4 animate-fade-in">
+          <span className="font-semibold">{selectedIds.length} שורות נבחרו</span>
+          <button onClick={() => setShowBulk(true)} className="hover:underline flex items-center gap-1">💬 שלח WhatsApp</button>
+          <button onClick={handleDeleteSelected} className="hover:underline flex items-center gap-1 text-white/90">🗑️ מחק</button>
+          <button onClick={() => { gridApiRef.current?.deselectAll(); }} className="mr-auto text-white/70 hover:text-white text-xs">בטל בחירה ✕</button>
         </div>
       )}
 
-      <div className="flex-1 p-3 overflow-hidden">
+      <div className="flex-1 px-4 pb-4 pt-3 overflow-hidden">
         {loading ? (
-          <div className="h-full flex items-center justify-center text-slate-400">טוען נתונים…</div>
+          <GridSkeleton />
+        ) : holders.length === 0 ? (
+          <div className="card h-full">
+            <EmptyState
+              title="אין עדיין בעלי זכויות"
+              subtitle="ייבאו קובץ Excel קיים, או הוסיפו שורה ראשונה כדי להתחיל."
+              action={
+                <div className="flex gap-2">
+                  <Button variant="primary" icon="⬆️" onClick={() => setShowImport(true)}>ייבוא קובץ</Button>
+                  <Button variant="secondary" icon="＋" onClick={handleAddRow}>הוסף שורה</Button>
+                </div>
+              }
+            />
+          </div>
         ) : (
           <DataGrid
             holders={filteredHolders}
@@ -276,23 +304,21 @@ export default function CrmApp() {
         />
       )}
 
-      {showAddColumn && (
-        <AddColumnDialog
-          onClose={() => setShowAddColumn(false)}
-          onAdded={(col) => setColumns((prev) => [...prev, col])}
-        />
-      )}
+      {showAddColumn && <AddColumnDialog onClose={() => setShowAddColumn(false)} onAdded={(col) => setColumns((prev) => [...prev, col])} />}
       {showImport && <ImportDialog onClose={() => setShowImport(false)} onImported={reload} />}
-      {showBulk && (
-        <BulkSendDialog
-          holders={selectedHolders}
-          onClose={() => setShowBulk(false)}
-          onDone={reload}
-        />
-      )}
-      {showSigners && (
-        <SignersMatchDialog onClose={() => setShowSigners(false)} onApplied={reload} />
-      )}
+      {showBulk && <BulkSendDialog holders={selectedHolders} onClose={() => setShowBulk(false)} onDone={reload} />}
+      {showSigners && <SignersMatchDialog onClose={() => setShowSigners(false)} onApplied={reload} />}
+    </div>
+  );
+}
+
+function GridSkeleton() {
+  return (
+    <div className="card h-full p-4 space-y-2.5">
+      <div className="skeleton h-11 w-full" />
+      {Array.from({ length: 10 }).map((_, i) => (
+        <div key={i} className="skeleton h-12 w-full" style={{ opacity: 1 - i * 0.06 }} />
+      ))}
     </div>
   );
 }

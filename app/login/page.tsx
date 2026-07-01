@@ -33,36 +33,51 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-100 p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style={{
+        background:
+          "radial-gradient(1000px 600px at 80% -10%, #ffd9b0 0%, transparent 55%), radial-gradient(800px 500px at 10% 110%, #ffe4c4 0%, transparent 50%), linear-gradient(180deg,#fff7ed,#fef3e2)",
+      }}>
+      {/* עיטורים */}
+      <div className="absolute -top-16 -right-16 w-72 h-72 rounded-full bg-brand-200/40 blur-3xl" />
+      <div className="absolute -bottom-20 -left-10 w-80 h-80 rounded-full bg-amber-200/40 blur-3xl" />
+
+      <div className="w-full max-w-md bg-white/90 backdrop-blur rounded-3xl shadow-pop p-8 relative animate-pop-in">
         <div className="text-center mb-8">
-          <div className="text-4xl mb-2">🍊</div>
-          <h1 className="text-2xl font-bold text-orange-900">שביל התפוזים</h1>
-          <p className="text-slate-500 mt-1">מערכת ניהול בעלי זכויות</p>
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-4xl shadow-brand mb-3">
+            🍊
+          </div>
+          <h1 className="text-2xl font-extrabold text-slate-800">שביל התפוזים</h1>
+          <p className="text-slate-400 mt-1">מערכת ניהול בעלי זכויות</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">סיסמת כניסה</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">סיסמת כניסה</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoFocus
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none"
-              placeholder="הזינו סיסמה"
+              dir="ltr"
+              className="focus-ring w-full px-4 py-3 border border-slate-200 rounded-xl outline-none text-center tracking-widest"
+              placeholder="••••••••"
             />
           </div>
-          {error && <p className="text-red-600 text-sm">{error}</p>}
+          {error && (
+            <div className="bg-red-50 text-red-600 text-sm rounded-xl px-3 py-2 flex items-center gap-2 animate-fade-in">
+              <span>⚠️</span> {error}
+            </div>
+          )}
           <button
             type="submit"
             disabled={loading || !password}
-            className="w-full bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition"
+            className="w-full bg-gradient-to-b from-brand-500 to-brand-600 hover:to-brand-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-brand transition-all active:translate-y-px flex items-center justify-center gap-2"
           >
-            {loading ? "מתחבר…" : "כניסה"}
+            {loading ? <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : "כניסה למערכת"}
           </button>
         </form>
-        <p className="text-xs text-slate-400 text-center mt-6">
-          גישה מאובטחת — נתוני בעלי הזכויות הם מידע אישי מוגן.
+        <p className="text-xs text-slate-400 text-center mt-6 flex items-center justify-center gap-1.5">
+          🔒 גישה מאובטחת — נתוני בעלי הזכויות הם מידע אישי מוגן
         </p>
       </div>
     </div>

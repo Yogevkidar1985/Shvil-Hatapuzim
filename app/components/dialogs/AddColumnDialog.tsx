@@ -1,9 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { clsx } from "clsx";
 import Modal from "./Modal";
+import Button from "../ui/Button";
+import { useToast } from "../ui/Toast";
 import { api } from "@/app/lib/api-client";
 import type { ColumnDefDTO } from "@/app/lib/types";
+
+const TYPES = [
+  { value: "text", label: "טקסט", icon: "🔤" },
+  { value: "number", label: "מספר", icon: "🔢" },
+  { value: "date", label: "תאריך", icon: "📅" },
+  { value: "select", label: "בחירה", icon: "📋" },
+];
 
 export default function AddColumnDialog({
   onClose,
@@ -12,19 +22,18 @@ export default function AddColumnDialog({
   onClose: () => void;
   onAdded: (col: ColumnDefDTO) => void;
 }) {
+  const { toast } = useToast();
   const [label, setLabel] = useState("");
   const [type, setType] = useState("text");
   const [options, setOptions] = useState("");
-  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function handleAdd() {
     if (!label.trim()) {
-      setError("חובה להזין שם עמודה");
+      toast("חובה להזין שם עמודה", "error");
       return;
     }
     setSaving(true);
-    setError("");
     try {
       const { column } = await api.createColumn({
         label: label.trim(),
@@ -32,65 +41,62 @@ export default function AddColumnDialog({
         options: type === "select" ? options.split(",").map((s) => s.trim()).filter(Boolean) : [],
       });
       onAdded(column);
+      toast("העמודה נוספה", "success");
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "הוספה נכשלה");
+      toast(e instanceof Error ? e.message : "הוספה נכשלה", "error");
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <Modal title="הוספת עמודה" onClose={onClose}>
-      <div className="space-y-4">
+    <Modal title="הוספת עמודה" subtitle="עמודה חדשה תתווסף לכל השורות" icon="➕" onClose={onClose}>
+      <div className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">שם העמודה</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">שם העמודה</label>
           <input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             autoFocus
-            className="w-full border border-slate-300 rounded-lg px-3 py-2"
-            placeholder="למשל: גוש / חלקה / כתובת"
+            className="focus-ring w-full border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none"
+            placeholder="למשל: גוש · חלקה · כתובת"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">סוג</label>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2"
-          >
-            <option value="text">טקסט</option>
-            <option value="number">מספר</option>
-            <option value="date">תאריך</option>
-            <option value="select">בחירה</option>
-          </select>
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">סוג העמודה</label>
+          <div className="grid grid-cols-4 gap-2">
+            {TYPES.map((t) => (
+              <button
+                key={t.value}
+                onClick={() => setType(t.value)}
+                className={clsx(
+                  "flex flex-col items-center gap-1 py-3 rounded-xl border transition-all",
+                  type === t.value
+                    ? "border-brand-400 bg-brand-50 text-brand-700 ring-2 ring-brand-100"
+                    : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                )}
+              >
+                <span className="text-xl">{t.icon}</span>
+                <span className="text-xs font-semibold">{t.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
         {type === "select" && (
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              אפשרויות (מופרדות בפסיק)
-            </label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">אפשרויות (מופרדות בפסיק)</label>
             <input
               value={options}
               onChange={(e) => setOptions(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2"
-              placeholder="אופציה 1, אופציה 2"
+              className="focus-ring w-full border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none"
+              placeholder="אופציה 1, אופציה 2, אופציה 3"
             />
           </div>
         )}
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-        <div className="flex gap-2 justify-end">
-          <button onClick={onClose} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">
-            ביטול
-          </button>
-          <button
-            onClick={handleAdd}
-            disabled={saving}
-            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg disabled:opacity-50"
-          >
-            {saving ? "מוסיף…" : "הוסף עמודה"}
-          </button>
+        <div className="flex gap-2 justify-end pt-1">
+          <Button variant="ghost" onClick={onClose}>ביטול</Button>
+          <Button variant="primary" loading={saving} onClick={handleAdd}>הוסף עמודה</Button>
         </div>
       </div>
     </Modal>
