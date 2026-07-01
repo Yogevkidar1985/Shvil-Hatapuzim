@@ -9,11 +9,13 @@ import type {
   GridApi,
   ColumnMovedEvent,
   GetRowIdParams,
+  ICellRendererParams,
 } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import type { HolderDTO, ColumnDefDTO } from "@/app/lib/types";
 import { STATUS_LABELS } from "@/app/lib/types";
+import { formatNumber, formatPhone } from "@/app/lib/format";
 
 // חבילת ag-grid-community רושמת אוטומטית את כל המודולים — אין צורך ב-ModuleRegistry ידני.
 
@@ -29,12 +31,25 @@ interface Props {
   onGridApi?: (api: GridApi) => void;
 }
 
-// תא סטטוס צבעוני
-function StatusRenderer(p: { value: string }) {
+function StatusRenderer(p: ICellRendererParams<HolderDTO>) {
   const v = (p.value || "pending") as keyof typeof STATUS_LABELS;
   const cls =
     v === "signed" ? "status-signed" : v === "objected" ? "status-objected" : "status-pending";
   return <span className={`status-pill ${cls}`}>{STATUS_LABELS[v] ?? "ממתין"}</span>;
+}
+
+function NameRenderer(p: ICellRendererParams<HolderDTO>) {
+  const name = String(p.value || "");
+  const initials =
+    name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("") || "?";
+  return (
+    <div className="flex items-center gap-2.5 h-full">
+      <span className="w-7 h-7 rounded-full bg-gradient-to-br from-brand-300 to-brand-500 text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+        {initials}
+      </span>
+      <span className="font-semibold text-slate-700 truncate">{name || <span className="text-slate-300">— ללא שם —</span>}</span>
+    </div>
+  );
 }
 
 export default function DataGrid({
@@ -61,34 +76,48 @@ export default function DataGrid({
         headerName: "",
         checkboxSelection: true,
         headerCheckboxSelection: true,
-        width: 48,
+        width: 46,
         pinned: "right",
         lockPosition: true,
         suppressMovable: true,
         sortable: false,
         filter: false,
         editable: false,
+        resizable: false,
       },
     ];
 
     for (const col of visibleCols) {
       const isStatus = col.type === "status";
       const isFirst = col.key === "name";
+      const isNumber = col.type === "number";
+      const isPhone = col.type === "phone";
       const def: ColDef<HolderDTO> = {
         headerName: col.label,
-        field: col.isCustom ? (`extra.${col.key}` as any) : (col.key as any),
+        field: col.isCustom ? (`extra.${col.key}` as never) : (col.key as never),
         editable: !isStatus,
         sortable: true,
-        filter: col.type === "number" ? "agNumberColumnFilter" : "agTextColumnFilter",
+        filter: isNumber ? "agNumberColumnFilter" : "agTextColumnFilter",
         resizable: true,
-        minWidth: 110,
-        flex: isFirst ? 1.4 : 1,
-        pinned: isFirst ? "right" : undefined, // הקפאת עמודת השם בגלילה
+        minWidth: isFirst ? 180 : 110,
+        flex: isFirst ? 1.6 : 1,
+        pinned: isFirst ? "right" : undefined,
         colId: col.key,
+        headerClass: isFirst ? "ag-header-cell--first" : undefined,
       };
 
       if (col.isCustom) {
         def.valueGetter = (params) => params.data?.extra?.[col.key] ?? "";
+      }
+
+      if (isFirst) {
+        def.cellRenderer = NameRenderer;
+      } else if (isNumber) {
+        def.valueFormatter = (p) => formatNumber(String(p.value ?? ""));
+        def.cellClass = "tabular-nums text-slate-700";
+      } else if (isPhone) {
+        def.valueFormatter = (p) => formatPhone(String(p.value ?? ""));
+        def.cellClass = "tabular-nums text-slate-600";
       }
 
       if (isStatus) {
@@ -96,46 +125,42 @@ export default function DataGrid({
         def.editable = true;
         def.cellEditor = "agSelectCellEditor";
         def.cellEditorParams = { values: ["pending", "signed", "objected"] };
-        def.refData = STATUS_LABELS as unknown as { [key: string]: string };
       }
       cols.push(def);
     }
 
-    // עמודת פעולות (WhatsApp + פתיחת כרטיס)
     cols.push({
       headerName: "פעולות",
       colId: "_actions",
-      width: 130,
+      width: 120,
       pinned: "left",
       sortable: false,
       filter: false,
       editable: false,
+      resizable: false,
       lockPosition: true,
       suppressMovable: true,
-      cellRenderer: (p: { data: HolderDTO }) => {
-        const wrap = document.createElement("div");
-        wrap.style.cssText = "display:flex;gap:6px;align-items:center;height:100%";
-        const wa = document.createElement("button");
-        wa.innerHTML = "💬";
-        wa.title = "שלח WhatsApp";
-        wa.style.cssText =
-          "background:#16a34a;color:#fff;border:none;border-radius:6px;width:30px;height:28px;cursor:pointer;font-size:14px";
-        wa.onclick = (e) => {
-          e.stopPropagation();
-          onSendWhatsApp(p.data);
-        };
-        const card = document.createElement("button");
-        card.innerHTML = "📋";
-        card.title = "פתח כרטיס";
-        card.style.cssText =
-          "background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;width:30px;height:28px;cursor:pointer;font-size:14px";
-        card.onclick = (e) => {
-          e.stopPropagation();
-          onOpenContact(p.data);
-        };
-        wrap.appendChild(wa);
-        wrap.appendChild(card);
-        return wrap;
+      cellRenderer: (p: ICellRendererParams<HolderDTO>) => {
+        const data = p.data;
+        if (!data) return null;
+        return (
+          <div className="flex gap-1.5 items-center h-full">
+            <button
+              title="שלח WhatsApp"
+              className="grid-action-btn grid-action-wa"
+              onClick={(e) => { e.stopPropagation(); onSendWhatsApp(data); }}
+            >
+              💬
+            </button>
+            <button
+              title="פתח כרטיס"
+              className="grid-action-btn grid-action-card"
+              onClick={(e) => { e.stopPropagation(); onOpenContact(data); }}
+            >
+              👁
+            </button>
+          </div>
+        );
       },
     });
 
@@ -152,8 +177,7 @@ export default function DataGrid({
 
   const handleCellChanged = useCallback(
     (e: CellValueChangedEvent<HolderDTO>) => {
-      const col = e.colDef;
-      const colId = col.colId as string;
+      const colId = e.colDef.colId as string;
       const meta = visibleCols.find((c) => c.key === colId);
       if (!meta || !e.data) return;
       const value = e.newValue == null ? "" : String(e.newValue);
@@ -189,16 +213,14 @@ export default function DataGrid({
         onGridReady={onGridReady}
         onCellValueChanged={handleCellChanged}
         onColumnMoved={handleColumnMoved}
-        onSelectionChanged={(e) =>
-          onSelectionChange(e.api.getSelectedRows().map((r) => r.id))
-        }
+        onSelectionChanged={(e) => onSelectionChange(e.api.getSelectedRows().map((r) => r.id))}
         onRowDoubleClicked={(e) => e.data && onOpenContact(e.data)}
         animateRows={true}
         stopEditingWhenCellsLoseFocus={true}
+        rowHeight={52}
+        headerHeight={46}
         defaultColDef={{ filter: true, floatingFilter: false }}
-        localeText={{
-          noRowsToShow: "אין נתונים להצגה — ייבאו קובץ או הוסיפו שורה",
-        }}
+        overlayNoRowsTemplate={'<span style="color:#94a3b8;padding:24px">אין נתונים להצגה — ייבאו קובץ או הוסיפו שורה</span>'}
       />
     </div>
   );

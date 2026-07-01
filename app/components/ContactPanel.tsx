@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { clsx } from "clsx";
 import type { HolderDTO, MessageDTO } from "@/app/lib/types";
 import { STATUS_LABELS } from "@/app/lib/types";
 import { api } from "@/app/lib/api-client";
 import { DEFAULT_TEMPLATES, renderTemplate } from "@/app/lib/template";
+import { formatPhone, formatDaySeparator, formatTimeOnly, formatNumber } from "@/app/lib/format";
+import { Avatar, StatusBadge, Spinner } from "./ui/atoms";
+import Button from "./ui/Button";
+import { useToast } from "./ui/Toast";
 
 interface Props {
   holder: HolderDTO;
@@ -12,25 +17,12 @@ interface Props {
   onHolderUpdated: (h: HolderDTO) => void;
 }
 
-function formatTime(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString("he-IL", {
-      day: "2-digit",
-      month: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-}
-
 export default function ContactPanel({ holder, onClose, onHolderUpdated }: Props) {
+  const { toast } = useToast();
   const [messages, setMessages] = useState<MessageDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState("");
   const [tab, setTab] = useState<"chat" | "details">("chat");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -39,8 +31,8 @@ export default function ContactPanel({ holder, onClose, onHolderUpdated }: Props
     try {
       const { messages } = await api.getMessages(holder.id);
       setMessages(messages);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "טעינת הודעות נכשלה");
+    } catch {
+      toast("טעינת ההיסטוריה נכשלה", "error");
     } finally {
       setLoading(false);
     }
@@ -52,14 +44,13 @@ export default function ContactPanel({ holder, onClose, onHolderUpdated }: Props
   }, [holder.id]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [messages]);
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages, loading]);
 
   async function handleSend() {
     const text = draft.trim();
     if (!text) return;
     setSending(true);
-    setError("");
     try {
       const res = await api.sendMessage(holder.id, text);
       setMessages((m) => [...m, res.message]);
@@ -67,10 +58,10 @@ export default function ContactPanel({ holder, onClose, onHolderUpdated }: Props
       if (res.ok) {
         onHolderUpdated({ ...holder, lastMessageAt: res.message.timestamp });
       } else {
-        setError(res.error || "ההודעה נכשלה");
+        toast(res.error || "ההודעה נכשלה", "error");
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "שליחה נכשלה");
+      toast(e instanceof Error ? e.message : "שליחה נכשלה", "error");
     } finally {
       setSending(false);
     }
@@ -78,131 +69,164 @@ export default function ContactPanel({ holder, onClose, onHolderUpdated }: Props
 
   async function handleStatusChange(status: string) {
     try {
-      const { holder: updated } = await api.updateHolder(holder.id, { status: status as HolderDTO["status"] });
+      const { holder: updated } = await api.updateHolder(holder.id, {
+        status: status as HolderDTO["status"],
+      });
       onHolderUpdated(updated);
+      toast("הסטטוס עודכן", "success");
     } catch {
-      /* מטופל בשקט */
+      toast("עדכון הסטטוס נכשל", "error");
     }
   }
 
+  // קיבוץ הודעות לפי יום
+  const grouped: { day: string; items: MessageDTO[] }[] = [];
+  for (const m of messages) {
+    const day = formatDaySeparator(m.timestamp);
+    const last = grouped[grouped.length - 1];
+    if (last && last.day === day) last.items.push(m);
+    else grouped.push({ day, items: [m] });
+  }
+
   return (
-    <div className="fixed inset-y-0 left-0 z-40 w-full max-w-md bg-white shadow-2xl border-l border-slate-200 flex flex-col animate-slide-in">
-      {/* כותרת */}
-      <div className="bg-orange-600 text-white p-4 flex items-start justify-between">
-        <div>
-          <h2 className="text-lg font-bold">{holder.name || "ללא שם"}</h2>
-          <p className="text-orange-100 text-sm">{holder.phone || "אין טלפון"}</p>
-        </div>
-        <button onClick={onClose} className="text-white/80 hover:text-white text-2xl leading-none">
-          ×
-        </button>
-      </div>
-
-      {/* טאבים */}
-      <div className="flex border-b border-slate-200">
-        <button
-          onClick={() => setTab("chat")}
-          className={`flex-1 py-2.5 text-sm font-medium ${
-            tab === "chat" ? "text-orange-600 border-b-2 border-orange-600" : "text-slate-500"
-          }`}
-        >
-          💬 שיחה
-        </button>
-        <button
-          onClick={() => setTab("details")}
-          className={`flex-1 py-2.5 text-sm font-medium ${
-            tab === "details" ? "text-orange-600 border-b-2 border-orange-600" : "text-slate-500"
-          }`}
-        >
-          📋 פרטים
-        </button>
-      </div>
-
-      {tab === "details" ? (
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 text-sm">
-          <DetailRow label="שווי יחסי" value={holder.relativeValue} />
-          <DetailRow label="מצב" value={holder.state} />
-          <DetailRow label="תשלומי איזון — משלם" value={holder.balancePay} />
-          <DetailRow label="תשלומי איזון — מקבל" value={holder.balanceReceive} />
-          <DetailRow label="הערות" value={holder.notes} />
-          <div>
-            <label className="block text-slate-500 mb-1">סטטוס</label>
-            <select
-              value={holder.status}
-              onChange={(e) => handleStatusChange(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2"
-            >
-              {Object.entries(STATUS_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </select>
+    <>
+      <div className="fixed inset-0 z-30 bg-slate-900/30 backdrop-blur-[2px] animate-fade-in" onClick={onClose} />
+      <div className="fixed inset-y-0 left-0 z-40 w-full max-w-md bg-white shadow-pop flex flex-col animate-slide-in">
+        {/* כותרת */}
+        <div className="bg-gradient-to-l from-brand-600 to-brand-500 text-white px-4 py-3.5 flex items-center gap-3">
+          <button onClick={onClose} className="text-white/90 hover:text-white text-xl w-8 h-8 rounded-full hover:bg-white/15 flex items-center justify-center shrink-0">
+            ✕
+          </button>
+          <Avatar name={holder.name} size={44} />
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base font-bold truncate">{holder.name || "ללא שם"}</h2>
+            <p className="text-brand-50/90 text-xs flex items-center gap-1.5">
+              <span>{holder.phone ? formatPhone(holder.phone) : "אין טלפון"}</span>
+            </p>
           </div>
-          {Object.entries(holder.extra || {}).map(([k, v]) => (
-            <DetailRow key={k} label={k} value={v} />
+          <StatusBadge status={holder.status} />
+        </div>
+
+        {/* טאבים */}
+        <div className="flex border-b border-slate-200 bg-white shrink-0">
+          {(["chat", "details"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={clsx(
+                "flex-1 py-2.5 text-sm font-semibold transition-colors relative",
+                tab === t ? "text-brand-600" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              {t === "chat" ? "💬 שיחה" : "📋 פרטים"}
+              {tab === t && <span className="absolute bottom-0 inset-x-6 h-0.5 bg-brand-500 rounded-full" />}
+            </button>
           ))}
         </div>
-      ) : (
-        <>
-          {/* היסטוריית שיחה */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50">
-            {loading ? (
-              <p className="text-center text-slate-400 mt-8">טוען היסטוריה…</p>
-            ) : messages.length === 0 ? (
-              <p className="text-center text-slate-400 mt-8">
-                אין הודעות עדיין. שלחו הודעה ראשונה למטה.
-              </p>
-            ) : (
-              messages.map((m) => <MessageBubble key={m.id} message={m} />)
-            )}
-          </div>
 
-          {/* תיבת כתיבה + תבניות */}
-          <div className="border-t border-slate-200 p-3 bg-white">
-            {error && <p className="text-red-600 text-xs mb-2">{error}</p>}
-            <div className="flex gap-1 mb-2 flex-wrap">
-              {DEFAULT_TEMPLATES.map((t) => (
-                <button
-                  key={t.name}
-                  onClick={() => setDraft(renderTemplate(t.text, holder))}
-                  className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded-full hover:bg-orange-100"
-                >
-                  {t.name}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2 items-end">
-              <textarea
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleSend();
-                }}
-                rows={2}
-                placeholder="הקלידו הודעה… (Ctrl+Enter לשליחה)"
-                className="flex-1 border border-slate-300 rounded-lg px-3 py-2 resize-none text-sm focus:ring-2 focus:ring-orange-400 outline-none"
-              />
-              <button
-                onClick={handleSend}
-                disabled={sending || !draft.trim()}
-                className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg px-4 py-2 font-medium text-sm whitespace-nowrap"
-              >
-                {sending ? "שולח…" : "שלח"}
-              </button>
+        {tab === "details" ? (
+          <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+            <DetailRow label="שווי יחסי" value={formatNumber(holder.relativeValue)} />
+            <DetailRow label="מצב" value={holder.state} />
+            <DetailRow label="תשלומי איזון — משלם" value={formatNumber(holder.balancePay)} />
+            <DetailRow label="תשלומי איזון — מקבל" value={formatNumber(holder.balanceReceive)} />
+            <DetailRow label="הערות" value={holder.notes} />
+            {Object.entries(holder.extra || {}).map(([k, v]) => (
+              <DetailRow key={k} label={k} value={v} />
+            ))}
+            <div className="pt-2">
+              <label className="block text-xs font-semibold text-slate-500 mb-1.5">סטטוס</label>
+              <div className="flex gap-2">
+                {(["signed", "pending", "objected"] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => handleStatusChange(s)}
+                    className={clsx(
+                      "flex-1 py-2 rounded-xl text-sm font-semibold border transition-all",
+                      holder.status === s
+                        ? s === "signed"
+                          ? "bg-green-600 text-white border-green-600"
+                          : s === "objected"
+                            ? "bg-red-600 text-white border-red-600"
+                            : "bg-slate-700 text-white border-slate-700"
+                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                    )}
+                  >
+                    {STATUS_LABELS[s]}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </>
-      )}
-    </div>
+        ) : (
+          <>
+            {/* שיחה */}
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 chat-wallpaper flex flex-col gap-2">
+              {loading ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <Spinner />
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-400">
+                  <div className="text-4xl mb-2">💬</div>
+                  <p className="font-medium text-slate-500">אין הודעות עדיין</p>
+                  <p className="text-sm">שלחו הודעה ראשונה למטה, או בחרו תבנית.</p>
+                </div>
+              ) : (
+                grouped.map((g, gi) => (
+                  <div key={gi} className="flex flex-col gap-1.5">
+                    <div className="flex justify-center my-1">
+                      <span className="chat-date-sep">{g.day}</span>
+                    </div>
+                    {g.items.map((m) => (
+                      <MessageBubble key={m.id} message={m} />
+                    ))}
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* מחבר */}
+            <div className="border-t border-slate-200 p-3 bg-white shrink-0">
+              <div className="flex gap-1.5 mb-2 flex-wrap">
+                {DEFAULT_TEMPLATES.map((t) => (
+                  <button
+                    key={t.name}
+                    onClick={() => setDraft(renderTemplate(t.text, holder))}
+                    className="text-xs bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full hover:bg-brand-100 font-medium transition-colors"
+                  >
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2 items-end">
+                <textarea
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleSend();
+                  }}
+                  rows={2}
+                  placeholder="הקלידו הודעה…  (Ctrl+Enter לשליחה)"
+                  className="focus-ring flex-1 border border-slate-200 rounded-xl px-3 py-2 resize-none text-sm outline-none bg-slate-50"
+                />
+                <Button variant="whatsapp" loading={sending} disabled={!draft.trim()} onClick={handleSend} className="shrink-0">
+                  שלח
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </>
   );
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b border-slate-100 pb-1">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-800">{value || "—"}</span>
+    <div className="flex justify-between items-center gap-3 bg-slate-50 rounded-xl px-3.5 py-2.5">
+      <span className="text-slate-400 text-sm shrink-0">{label}</span>
+      <span className="font-semibold text-slate-700 text-sm text-left truncate">{value || "—"}</span>
     </div>
   );
 }
@@ -210,29 +234,16 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 function MessageBubble({ message }: { message: MessageDTO }) {
   const isOut = message.direction === "out";
   const failed = message.status === "failed";
+  const tick = failed ? "⚠️" : message.status === "read" ? "✓✓" : message.status === "delivered" ? "✓✓" : "✓";
   return (
-    <div className={`flex ${isOut ? "justify-start" : "justify-end"}`}>
-      <div
-        className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-          isOut
-            ? failed
-              ? "bg-red-100 text-red-800"
-              : "bg-green-100 text-green-900"
-            : "bg-white border border-slate-200 text-slate-800"
-        }`}
-      >
-        <p className="whitespace-pre-wrap break-words">{message.body}</p>
-        <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-400 justify-end">
-          <span>{formatTime(message.timestamp)}</span>
-          {isOut && (
-            <span>
-              {failed ? "⚠️ נכשל" : message.status === "read" ? "✓✓" : message.status === "delivered" ? "✓✓" : "✓"}
-            </span>
-          )}
+    <div className={clsx("flex", isOut ? "justify-start" : "justify-end")}>
+      <div className={clsx("chat-bubble", failed ? "chat-bubble-failed" : isOut ? "chat-bubble-out" : "chat-bubble-in")}>
+        <p className="whitespace-pre-wrap">{message.body}</p>
+        <div className={clsx("flex items-center gap-1 mt-0.5 text-[10px] justify-end", failed ? "text-red-500" : "text-slate-400")}>
+          <span>{formatTimeOnly(message.timestamp)}</span>
+          {isOut && <span className={message.status === "read" ? "text-sky-500" : ""}>{tick}</span>}
         </div>
-        {failed && message.errorText && (
-          <p className="text-[10px] text-red-600 mt-1">{message.errorText}</p>
-        )}
+        {failed && message.errorText && <p className="text-[10px] text-red-500 mt-1 border-t border-red-200 pt-1">{message.errorText}</p>}
       </div>
     </div>
   );
