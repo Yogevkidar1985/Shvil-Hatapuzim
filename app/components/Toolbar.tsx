@@ -3,7 +3,9 @@
 import { clsx } from "clsx";
 import Button from "./ui/Button";
 import StatCard from "./ui/StatCard";
+import Logo from "./ui/Logo";
 import { Chip } from "./ui/atoms";
+import { PROJECT } from "@/app/lib/project";
 import type { HolderDTO } from "@/app/lib/types";
 
 interface Props {
@@ -36,40 +38,42 @@ export default function Toolbar(p: Props) {
   const waOk = p.waState?.configured && p.waState.state === "authorized";
 
   return (
-    <header className="glass-header border-b border-slate-200/70 sticky top-0 z-20">
-      {/* שורה עליונה: מיתוג + סטטוס */}
-      <div className="px-5 pt-3 pb-2 flex items-center justify-between gap-3 flex-wrap">
+    <header className="sticky top-0 z-20">
+      {/* באנר עליון — ירוק כהה עם זהב */}
+      <div className="bg-gradient-to-l from-brand-800 to-brand-700 text-white px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-2xl shadow-brand">
-            🍊
-          </div>
+          <Logo size={46} />
           <div>
-            <h1 className="font-extrabold text-slate-800 leading-tight text-lg">שביל התפוזים</h1>
-            <p className="text-xs text-slate-400 leading-tight">מערכת ניהול בעלי זכויות · הוד השרון</p>
+            <h1 className="font-extrabold leading-tight text-lg">{PROJECT.name}</h1>
+            <p className="text-[12px] text-white/60 leading-tight">
+              תכנית מתאר מקומית {PROJECT.plan} · {PROJECT.subtitle}
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <IdChip label="תכנית" value={PROJECT.plan} />
+          <IdChip label="גוש" value={PROJECT.block} />
           <span
             className={clsx(
               "text-xs px-2.5 py-1 rounded-full font-semibold flex items-center gap-1.5",
-              waOk ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+              waOk ? "bg-brand-500/30 text-white" : "bg-white/10 text-white/70"
             )}
             title="מצב חיבור WhatsApp (GreenAPI)"
           >
-            <span className={clsx("w-2 h-2 rounded-full", waOk ? "bg-green-500" : "bg-amber-500")} />
+            <span className={clsx("w-2 h-2 rounded-full", waOk ? "bg-green-400" : "bg-amber-400")} />
             WhatsApp {p.waState?.configured ? p.waState.state ?? "?" : "לא מחובר"}
           </span>
           <SaveIndicator state={p.saveState} />
-          <Button variant="ghost" size="sm" onClick={p.onLogout}>
+          <button onClick={p.onLogout} className="text-sm text-white/70 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10">
             יציאה ←
-          </Button>
+          </button>
         </div>
       </div>
-
+      <div className="glass-header border-b border-slate-200/70 pt-3">
       {/* כרטיסי KPI */}
       <div className="px-5 pb-3 flex gap-2.5 flex-wrap">
-        <StatCard label="סה״כ בעלי זכויות" value={counts.total} icon="👥" tone="brand"
+        <StatCard label="סה״כ בעלי זכויות" value={counts.total} icon="👥" tone="gold"
           active={p.statusFilter === ""} onClick={() => p.onStatusFilter("")} />
         <StatCard label="חתמו" value={counts.signed} icon="✅" tone="green"
           active={p.statusFilter === "signed"} onClick={() => p.onStatusFilter("signed")} />
@@ -119,7 +123,18 @@ export default function Toolbar(p: Props) {
           שליחה לנבחרים {p.selectedCount > 0 && `(${p.selectedCount})`}
         </Button>
       </div>
+      </div>
     </header>
+  );
+}
+
+function IdChip({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="flex items-center gap-1.5 bg-white/10 border border-white/15 rounded-full px-3 py-1 text-xs">
+      <span className="w-1.5 h-1.5 rounded-full bg-gold-300" />
+      <span className="text-white/60">{label}</span>
+      <span className="font-semibold tabular-nums">{value}</span>
+    </span>
   );
 }
 

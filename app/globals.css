@@ -5,19 +5,24 @@
 @tailwind utilities;
 
 /* ============================================================
-   שביל התפוזים — Design System 2.0
+   פרויקט גוש 6446 · הוד השרון — Design System 2.0
    ============================================================ */
 :root {
-  /* מותג — כתום התפוזים */
-  --brand-50: #fff7ed;
-  --brand-100: #ffedd5;
-  --brand-200: #fed7aa;
-  --brand-300: #fdba74;
-  --brand-400: #fb923c;
-  --brand-500: #f97316;
-  --brand-600: #ea580c;
-  --brand-700: #c2410c;
-  --brand-800: #9a3412;
+  /* מותג — ירוק מקרקעין */
+  --brand-50: #eaf3ef;
+  --brand-100: #cfe6da;
+  --brand-200: #a1cdba;
+  --brand-300: #6cae94;
+  --brand-400: #3d9070;
+  --brand-500: #1f785b;
+  --brand-600: #146149;
+  --brand-700: #0f4d3a;
+  --brand-800: #0c3b2d;
+  --brand-900: #08281f;
+  /* זהב — משני */
+  --gold-300: #d8b35f;
+  --gold-500: #b8924f;
+  --gold-600: #9c7a3c;
 
   /* ניטרלים */
   --ink: #0f172a;
@@ -58,8 +63,8 @@ body {
 /* רקע עדין למסך הראשי */
 .app-canvas {
   background:
-    radial-gradient(1200px 500px at 100% -10%, #fff3e6 0%, rgba(255, 243, 230, 0) 55%),
-    radial-gradient(900px 500px at -10% 0%, #eef2ff 0%, rgba(238, 242, 255, 0) 50%),
+    radial-gradient(1200px 500px at 100% -10%, #eef5f0 0%, rgba(238, 245, 240, 0) 55%),
+    radial-gradient(900px 500px at -10% 0%, #faf5e9 0%, rgba(250, 245, 233, 0) 50%),
     var(--canvas);
 }
 
@@ -150,8 +155,8 @@ body {
   --ag-header-background-color: #ffffff;
   --ag-header-foreground-color: #64748b;
   --ag-header-column-separator-display: none;
-  --ag-row-hover-color: #fff8f1;
-  --ag-selected-row-background-color: #fff1e3;
+  --ag-row-hover-color: #f2f8f4;
+  --ag-selected-row-background-color: #e9f4ee;
   --ag-border-color: #eef1f5;
   --ag-row-border-color: #f1f4f8;
   --ag-cell-horizontal-border: solid #f4f6f9;
@@ -180,8 +185,8 @@ body {
   letter-spacing: 0.01em;
   color: #64748b;
 }
-.ag-theme-quartz .ag-header-cell.ag-header-cell--first {
-  color: var(--brand-800);
+.ag-theme-quartz .ag-header-cell--first .ag-header-cell-text {
+  color: var(--brand-700);
 }
 .ag-theme-quartz .ag-row {
   border-bottom: 1px solid var(--ag-row-border-color);
@@ -197,7 +202,7 @@ body {
   border-color: var(--line) !important;
 }
 .ag-theme-quartz .ag-row-selected {
-  box-shadow: inset 3px 0 0 var(--brand-500);
+  box-shadow: inset 3px 0 0 var(--gold-500);
 }
 /* כפתורי פעולה בתא */
 .grid-action-btn {
@@ -219,10 +224,10 @@ body {
 
 /* ===== בועות שיחה (WhatsApp) ===== */
 .chat-wallpaper {
-  background-color: #f3efe7;
+  background-color: #eef2ee;
   background-image:
-    radial-gradient(circle at 20% 30%, rgba(234, 88, 12, 0.04) 0, transparent 40%),
-    radial-gradient(circle at 80% 70%, rgba(234, 88, 12, 0.05) 0, transparent 40%);
+    radial-gradient(circle at 20% 30%, rgba(20, 97, 73, 0.04) 0, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(184, 146, 79, 0.05) 0, transparent 40%);
 }
 .chat-bubble {
   max-width: 82%;
