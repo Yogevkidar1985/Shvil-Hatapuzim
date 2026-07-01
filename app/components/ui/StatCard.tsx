@@ -6,14 +6,15 @@ interface Props {
   label: string;
   value: number | string;
   icon: string;
-  tone?: "brand" | "green" | "red" | "slate";
+  tone?: "brand" | "gold" | "green" | "red" | "slate";
   active?: boolean;
   onClick?: () => void;
 }
 
 const tones = {
   brand: { ring: "ring-brand-200", icon: "bg-brand-100 text-brand-700", val: "text-brand-700" },
-  green: { ring: "ring-green-200", icon: "bg-green-100 text-green-700", val: "text-green-700" },
+  gold: { ring: "ring-gold-200", icon: "bg-gold-100 text-gold-700", val: "text-gold-700" },
+  green: { ring: "ring-brand-200", icon: "bg-brand-100 text-brand-700", val: "text-brand-700" },
   red: { ring: "ring-red-200", icon: "bg-red-100 text-red-700", val: "text-red-700" },
   slate: { ring: "ring-slate-200", icon: "bg-slate-100 text-slate-600", val: "text-slate-700" },
 };

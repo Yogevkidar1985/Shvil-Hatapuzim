@@ -22,12 +22,12 @@ export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
       .join("") || "?";
   // צבע יציב לפי שם
   const colors = [
-    "from-orange-400 to-orange-600",
-    "from-amber-400 to-orange-500",
-    "from-rose-400 to-red-500",
-    "from-emerald-400 to-green-600",
-    "from-sky-400 to-blue-500",
-    "from-violet-400 to-purple-600",
+    "from-brand-400 to-brand-600",
+    "from-gold-400 to-gold-600",
+    "from-emerald-400 to-brand-600",
+    "from-teal-400 to-teal-600",
+    "from-amber-400 to-gold-600",
+    "from-slate-400 to-slate-600",
   ];
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
@@ -59,7 +59,7 @@ export function Spinner({ className }: { className?: string }) {
 
 /** מצב ריק */
 export function EmptyState({
-  icon = "🍊",
+  icon = "🗂️",
   title,
   subtitle,
   action,

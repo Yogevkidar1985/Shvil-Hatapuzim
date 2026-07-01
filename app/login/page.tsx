@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Logo from "../components/ui/Logo";
+import { PROJECT } from "../lib/project";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,19 +38,21 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
       style={{
         background:
-          "radial-gradient(1000px 600px at 80% -10%, #ffd9b0 0%, transparent 55%), radial-gradient(800px 500px at 10% 110%, #ffe4c4 0%, transparent 50%), linear-gradient(180deg,#fff7ed,#fef3e2)",
+          "radial-gradient(1000px 600px at 80% -10%, #cfe6da 0%, transparent 55%), radial-gradient(800px 500px at 10% 110%, #f2e6c8 0%, transparent 50%), linear-gradient(180deg,#eef5f0,#f4efe4)",
       }}>
       {/* עיטורים */}
       <div className="absolute -top-16 -right-16 w-72 h-72 rounded-full bg-brand-200/40 blur-3xl" />
-      <div className="absolute -bottom-20 -left-10 w-80 h-80 rounded-full bg-amber-200/40 blur-3xl" />
+      <div className="absolute -bottom-20 -left-10 w-80 h-80 rounded-full bg-gold-200/40 blur-3xl" />
 
       <div className="w-full max-w-md bg-white/90 backdrop-blur rounded-3xl shadow-pop p-8 relative animate-pop-in">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-4xl shadow-brand mb-3">
-            🍊
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-brand-700 to-brand-800 flex items-center justify-center shadow-brand mb-3">
+            <Logo size={64} className="border-0" />
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-800">שביל התפוזים</h1>
-          <p className="text-slate-400 mt-1">מערכת ניהול בעלי זכויות</p>
+          <h1 className="text-2xl font-extrabold text-slate-800">{PROJECT.name}</h1>
+          <p className="text-slate-400 mt-1">
+            תכנית {PROJECT.plan} · {PROJECT.subtitle}
+          </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
