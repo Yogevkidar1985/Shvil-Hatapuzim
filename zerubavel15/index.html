@@ -66,8 +66,8 @@
   .kpi .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-inline-end:5px;vertical-align:1px}
 
   /* ===== Layout ===== */
-  main{max-width:1320px;margin:26px auto 40px;padding:0 22px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:26px;align-items:start}
-  @media (max-width:960px){ main{grid-template-columns:1fr} .viz-panel{position:static;order:-1} }
+  main{max-width:1320px;margin:26px auto 40px;padding:0 22px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:26px}
+  @media (max-width:960px){ main{grid-template-columns:1fr} .viz-panel{order:-1} .photo-wrap{flex:none;aspect-ratio:1/1;min-height:0} }
 
   .floors-col{display:flex;flex-direction:column;gap:14px;min-width:0}
   .col-title{margin:0;font-size:20px;font-weight:800;color:var(--navy);border-bottom:3px solid var(--tan);padding-bottom:8px}
@@ -78,8 +78,8 @@
   .gallery img{width:100%;height:92px;object-fit:cover;display:block}
 
   /* ===== Building visualization panel ===== */
-  .viz-panel{position:sticky;top:16px}
-  .panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+  .viz-panel{display:flex;min-width:0}
+  .panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;flex:1;min-width:0}
   .viz-tabs{display:flex;gap:8px;margin-bottom:14px}
   .viz-tabs button{
     flex:1;padding:9px 6px;border-radius:10px;border:1.5px solid var(--line);
@@ -122,10 +122,10 @@
   .bld-street{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);font-weight:700;padding:4px 36px 0 4px}
 
   /* render photo */
-  .photo-wrap{position:relative;border-radius:10px;overflow:hidden;display:none}
-  .photo-wrap img{width:100%;display:block}
+  .photo-wrap{position:relative;border-radius:10px;overflow:hidden;display:none;flex:1;min-height:340px}
+  .photo-wrap img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
   .pbadge{
-    position:absolute;width:38px;height:38px;border-radius:10px;background:var(--navy);color:#fff;
+    position:absolute;width:38px;height:38px;border-radius:10px;transform:translate(-50%,-50%);background:var(--navy);color:#fff;
     display:grid;place-items:center;font-weight:800;font-size:14px;cursor:pointer;border:2px solid #fff;
     box-shadow:0 2px 6px rgba(0,0,0,.35);font-variant-numeric:tabular-nums;font-size:16px;
   }
@@ -268,7 +268,7 @@ const STATUSES = {
   reserved:    {label:'שמור',        color:'#7A7264', icon:'◆'},
   sold:        {label:'נמכרה',       color:'#B23F38', icon:'✕'},
 };
-const LS_KEY = 'zrubavel15-status-v2';
+const LS_KEY = 'zrubavel15-status-v3';
 
 const apt = (id,name,rooms,size,outdoor,facing,kind)=>(
   {id,name,rooms,size,outdoor,facing,kind,status:'marketing',note:''});
@@ -276,19 +276,22 @@ const apt = (id,name,rooms,size,outdoor,facing,kind)=>(
 const DEFAULT_STATE = {
   meta:{title:'זרובבל 15', subtitle:'דירות בוטיק בלב העיר', address:'זרובבל 15, תל אביב'},
   floors:[
-    {id:'f6',num:6,label:'קומה 6',apts:[apt('a10','פנטהאוז','','70','2 מרפסות · 50 מ״ר כל אחת','נוף פתוח לעיר','penthouse')]},
-    {id:'f5',num:5,label:'קומה 5',apts:[
+    {id:'f7',num:7,label:'קומה 7',apts:[apt('a12','פנטהאוז','','70','2 מרפסות · 50 מ״ר כל אחת','נוף פתוח לעיר','penthouse')]},
+    {id:'f6',num:6,label:'קומה 6',apts:[
       apt('a10','דירה 10','3 חדרים','70','מרפסת 12 מ״ר','חזית לרחוב זרובבל','big'),
       apt('a11','דירה 11','2 חדרים','50','מרפסת 8 מ״ר','חזית לרחוב אהרונסון','small')]},
-    {id:'f4',num:4,label:'קומה 4',apts:[
+    {id:'f5',num:5,label:'קומה 5',apts:[
       apt('a8','דירה 8','3 חדרים','70','מרפסת 12 מ״ר','חזית לרחוב זרובבל','big'),
       apt('a9','דירה 9','2 חדרים','50','מרפסת 8 מ״ר','חזית לרחוב אהרונסון','small')]},
-    {id:'f3',num:3,label:'קומה 3',apts:[
+    {id:'f4',num:4,label:'קומה 4',apts:[
       apt('a6','דירה 6','3 חדרים','70','מרפסת 12 מ״ר','חזית לרחוב זרובבל','big'),
       apt('a7','דירה 7','2 חדרים','50','מרפסת 8 מ״ר','חזית לרחוב אהרונסון','small')]},
-    {id:'f2',num:2,label:'קומה 2',apts:[
+    {id:'f3',num:3,label:'קומה 3',apts:[
       apt('a4','דירה 4','3 חדרים','70','מרפסת 12 מ״ר','חזית לרחוב זרובבל','big'),
       apt('a5','דירה 5','2 חדרים','50','מרפסת 8 מ״ר','חזית לרחוב אהרונסון','small')]},
+    {id:'f2',num:2,label:'קומה 2',apts:[
+      apt('a2','דירה 2','3 חדרים','70','מרפסת 12 מ״ר','חזית לרחוב זרובבל','big'),
+      apt('a3','דירה 3','2 חדרים','50','מרפסת 8 מ״ר','חזית לרחוב אהרונסון','small')]},
     {id:'f1',num:1,label:'קומה 1',apts:[apt('a1','דירת גן','','50','גינה 46 מ״ר','כניסה פרטית מהגינה','garden')]},
   ],
 };
@@ -418,18 +421,34 @@ function renderBld(){
   wrap.appendChild(el('div','bld-ground'));
   wrap.appendChild(el('div','bld-street','<span>רחוב זרובבל ←</span><span>→ רחוב אהרונסון</span>'));
 
-  // photo badges
+  // photo badges — spread along the facade, exact position computed in positionBadges()
   const pb = $('#pbadges'); pb.innerHTML='';
-  const ys = {6:16,5:28.5,4:41,3:53.5,2:66,1:78};
-  for (const f of floors){
-    const y = ys[f.num]; if (y==null) continue;
+  const n = floors.length;
+  floors.forEach((f, i)=>{
     const b = el('button','pbadge', String(f.num));
-    b.style.top = y+'%'; b.style.right = '72%';
+    b.dataset.y = n > 1 ? (12 + 67 * i / (n - 1)) : 46;
     b.setAttribute('aria-label','מעבר ל'+f.label);
     b.addEventListener('click',()=>focusFloor(f.id));
     pb.appendChild(b);
+  });
+  positionBadges();
+}
+
+/* the facade photo is square and cover-cropped; map image coordinates to the container */
+function positionBadges(){
+  const wrapEl = $('#photo'), pb = $('#pbadges');
+  const W = wrapEl.clientWidth, H = wrapEl.clientHeight;
+  if (!W || !H || !pb.children.length) return;
+  const s = Math.max(W, H);            // displayed size of the square image
+  const offX = (s - W) / 2, offY = (s - H) / 2;
+  const left = (0.25 * s - offX) / W * 100;   // building edge sits at 25% of the image width
+  for (const b of pb.children){
+    const fy = parseFloat(b.dataset.y) / 100;
+    b.style.left = left + '%';
+    b.style.top = ((fy * s - offY) / H * 100) + '%';
   }
 }
+window.addEventListener('resize', positionBadges);
 
 function focusApt(id){
   const c = document.getElementById('apt-'+id);
@@ -574,7 +593,7 @@ $('#tab-schema').addEventListener('click',()=>{
 });
 $('#tab-photo').addEventListener('click',()=>{
   $('#tab-photo').classList.add('act'); $('#tab-schema').classList.remove('act');
-  $('#bld').style.display='none'; $('#photo').style.display='block'; $('#gallery').style.display='grid';
+  $('#bld').style.display='none'; $('#photo').style.display='block'; $('#gallery').style.display='grid'; positionBadges();
 });
 
 
@@ -606,4 +625,5 @@ renderGallery();
 
 renderAll();
 document.getElementById('tab-photo').click();
+if (window.ResizeObserver) new ResizeObserver(positionBadges).observe(document.getElementById('photo'));
 </script>
