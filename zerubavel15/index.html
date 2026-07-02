@@ -77,6 +77,14 @@
   }
   .btn-share:hover{background:var(--tan); color:var(--navy-deep)}
   .btn-share svg{width:13px;height:13px}
+  .sync-ind{
+    display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700;
+    color:rgba(240,238,255,.55); padding:4px 8px; border-radius:999px;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+  }
+  .sync-ind::before{content:""; width:6px; height:6px; border-radius:50%; background:currentColor}
+  .sync-ind.cloud{color:#8FD3A6}
+  .sync-ind.saving{color:var(--tan)}
   .btn-edit{
     width:26px; height:26px; padding:0; border-radius:7px; cursor:pointer; font-size:12px;
     border:1px solid rgba(255,255,255,.14); background:transparent; color:rgba(240,238,255,.4);
@@ -448,6 +456,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
           שיתוף הפרויקט
         </button>
+        <span class="sync-ind" id="sync-ind" title="הנתונים נשמרים בתוך קישור השיתוף — אפשר לפתוח בכל מכשיר">שמור בקישור</span>
         <button class="btn-edit" id="btn-edit" title="מצב עריכה — לניהול הסטטוסים והפרטים" aria-label="מצב עריכה">✎</button>
       </div>
     </div>
@@ -585,10 +594,49 @@ function saveState(silent){
   state.meta.updatedAt = Date.now();
   try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
   try{
-    history.replaceState(null,'', '#d='+btoa(unescape(encodeURIComponent(JSON.stringify(state)))));
+    history.replaceState(null,'', location.pathname + location.search +
+      '#d='+btoa(unescape(encodeURIComponent(JSON.stringify(state)))));
   }catch(e){}
   if(!silent) toast('נשמר ✓');
+  cloudSaveDebounced();
   renderAll();
+}
+
+/* ---------- cloud sync (works when self-hosted; falls back to the shareable link) ---------- */
+const CLOUD_BASE = 'https://kvdb.io';
+let cloudId = (new URLSearchParams(location.search)).get('c') || null;
+let cloudSaveT = null;
+function setSync(mode){
+  const el = document.getElementById('sync-ind'); if(!el) return;
+  el.classList.remove('cloud','saving');
+  if (mode==='cloud'){ el.classList.add('cloud'); el.textContent='מסונכרן בענן'; }
+  else if (mode==='saving'){ el.classList.add('saving'); el.textContent='שומר…'; }
+  else { el.textContent='שמור בקישור'; }
+}
+async function cloudSave(){
+  try{
+    setSync('saving');
+    if (!cloudId){
+      const r = await fetch(CLOUD_BASE+'/', {method:'POST'});
+      if(!r.ok) throw 0;
+      cloudId = (await r.text()).trim();
+      const u = new URL(location.href); u.searchParams.set('c', cloudId);
+      history.replaceState(null,'', u.pathname + u.search + u.hash);
+    }
+    const r2 = await fetch(`${CLOUD_BASE}/${cloudId}/state`, {method:'PUT', body: JSON.stringify(state)});
+    if(!r2.ok) throw 0;
+    setSync('cloud');
+  }catch(e){ setSync('local'); }   // חסום/לא זמין → נשמר בקישור המקומי
+}
+function cloudSaveDebounced(){ clearTimeout(cloudSaveT); cloudSaveT = setTimeout(cloudSave, 700); }
+async function cloudInit(){
+  if (!cloudId) return;
+  try{
+    const r = await fetch(`${CLOUD_BASE}/${cloudId}/state`, {cache:'no-store'});
+    if(!r.ok) throw 0;
+    const s = await r.json();
+    if (s && s.floors){ state = s; setSync('cloud'); renderAll(); }
+  }catch(e){ setSync('local'); }
 }
 
 /* ---------- helpers ---------- */
@@ -1055,5 +1103,6 @@ function renderGallery(){
 renderAll();
 renderGallery();
 setTab('photo');
+cloudInit();
 if (window.ResizeObserver) new ResizeObserver(positionBadges).observe(document.getElementById('photo'));
 </script>
