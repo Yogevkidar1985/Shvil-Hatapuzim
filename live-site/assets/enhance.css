@@ -1,0 +1,285 @@
+/* ============================================================
+   שכבת שיפור נראות — פרויקט גוש 6446 · הוד השרון
+   מתלבשת מעל עיצוב האפליקציה הקיים (ירוק/זהב) ומעלה אותו לרמה פרימיום.
+   לא נוגעת בקוד או בנתונים. דגש מיוחד על חוויית WhatsApp.
+   ============================================================ */
+
+:root {
+  --e-accent: #0f6e63;
+  --e-accent-2: #14897a;
+  --e-accent-deep: #0b514a;
+  --e-gold: #b08d4f;
+  --e-gold-2: #c8a25e;
+  --e-wa: #22a565;      /* WhatsApp green */
+  --e-wa-deep: #128c4f;
+  --e-ink: #14232b;
+  --e-line: #e7e2d8;
+  --e-shadow-sm: 0 1px 2px rgba(20,35,43,.05), 0 2px 6px rgba(20,35,43,.05);
+  --e-shadow-md: 0 10px 30px rgba(20,35,43,.10), 0 3px 8px rgba(20,35,43,.06);
+  --e-shadow-lg: 0 28px 70px rgba(20,35,43,.16);
+}
+
+/* רקע כללי חמים ועדין */
+body {
+  background:
+    radial-gradient(1100px 480px at 100% -8%, #eef5f1 0%, rgba(238,245,241,0) 55%),
+    radial-gradient(900px 460px at -6% 0%, #f6efdf 0%, rgba(246,239,223,0) 52%),
+    #f4f1ea !important;
+}
+
+/* ===================== HEADER / MASTHEAD ===================== */
+.masthead {
+  background: linear-gradient(135deg, #0c332c 0%, #10554b 55%, #0d443c 100%) !important;
+  box-shadow: 0 18px 44px rgba(12,51,44,.28) !important;
+  border-radius: 0 0 26px 26px !important;
+  position: relative;
+  overflow: hidden;
+}
+.masthead::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(600px 200px at 88% -30%, rgba(200,162,95,.22), transparent 70%);
+  pointer-events: none;
+}
+.masthead h1 { letter-spacing: -.01em; }
+.crest {
+  background: linear-gradient(150deg, rgba(255,255,255,.12), rgba(255,255,255,0)) !important;
+  border: 1px solid rgba(200,162,95,.35) !important;
+  box-shadow: 0 8px 22px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.15) !important;
+  border-radius: 16px !important;
+}
+/* צ'יפים של גוש/תכנית בהדר */
+.masthead .pill, .masthead [class*=chip] {
+  background: rgba(255,255,255,.10) !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  backdrop-filter: blur(6px);
+}
+
+/* ===================== KPI CARDS ===================== */
+.kpi, .prog-card {
+  border: 1px solid var(--e-line) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--e-shadow-sm) !important;
+  transition: transform .16s ease, box-shadow .16s ease !important;
+  background: #fff !important;
+}
+.kpi:hover, .prog-card:hover { transform: translateY(-2px); box-shadow: var(--e-shadow-md) !important; }
+.kpi { position: relative; overflow: hidden; }
+.kpi::before {
+  content:""; position:absolute; inset-inline-start:0; top:0; bottom:0; width:4px;
+  background: linear-gradient(var(--e-accent), var(--e-accent-2));
+  opacity:.85;
+}
+.kpi.gold::before, .prog-card.gold::before { background: linear-gradient(var(--e-gold), #d8b35f); }
+.kpi__v, .kpi__tot { font-variant-numeric: tabular-nums; letter-spacing:-.02em; }
+
+/* פסי התקדמות */
+.progress, .progress__bar { border-radius: 999px !important; }
+.progress { background:#eef1ee !important; overflow:hidden; height:10px !important; }
+.progress__bar {
+  background: linear-gradient(90deg, var(--e-accent-2), var(--e-accent)) !important;
+  box-shadow: 0 1px 4px rgba(15,110,99,.35);
+}
+.prog-card.gold .progress__bar { background: linear-gradient(90deg,#d8b35f,var(--e-gold)) !important; }
+
+/* ===================== CONTROLS BAR ===================== */
+.controls {
+  border: 1px solid var(--e-line) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--e-shadow-sm) !important;
+  background: rgba(255,255,255,.94) !important;
+  backdrop-filter: blur(8px);
+}
+.search input {
+  border-radius: 11px !important;
+  transition: box-shadow .15s, border-color .15s !important;
+}
+.search input:focus { box-shadow: 0 0 0 3px rgba(15,110,99,.16) !important; border-color: var(--e-accent) !important; }
+
+/* טוגלים מקוטעים (segmented) */
+.segmented {
+  background:#f1efe8 !important; border:1px solid var(--e-line) !important;
+  border-radius: 11px !important; padding:3px !important; gap:2px !important;
+}
+.segmented button { border-radius: 8px !important; transition: all .14s !important; font-weight:600; }
+.segmented button.on {
+  background:#fff !important; color:var(--e-accent) !important;
+  box-shadow: 0 1px 3px rgba(20,35,43,.14) !important;
+}
+
+/* ===================== BUTTONS ===================== */
+.btn {
+  border-radius: 11px !important;
+  font-weight: 650 !important;
+  transition: transform .12s, box-shadow .12s, filter .12s !important;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn-accent {
+  background: linear-gradient(180deg, var(--e-accent-2), var(--e-accent)) !important;
+  color:#fff !important; border:none !important;
+  box-shadow: 0 8px 20px rgba(15,110,99,.28) !important;
+}
+.btn-accent:hover { filter: brightness(1.05); }
+.btn-ghost { border:1px solid var(--e-line) !important; background:#fff !important; }
+.icon-btn { border-radius: 9px !important; transition: all .12s !important; }
+.icon-btn:hover { background: rgba(15,110,99,.08) !important; }
+
+/* ===================== TABLE ===================== */
+.table-wrap {
+  border: 1px solid var(--e-line) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--e-shadow-md) !important;
+  overflow: hidden;
+}
+table.alloc thead th, table.crm-grid thead th {
+  background: linear-gradient(#123b34,#0f342e) !important;
+  letter-spacing:.01em;
+}
+table.crm-grid tbody tr { transition: background .12s; }
+table.crm-grid tbody tr:hover { background:#f3f8f5 !important; }
+.row-signed { box-shadow: inset 3px 0 0 rgba(34,165,101,.55); }
+.row-unsigned { box-shadow: inset 3px 0 0 rgba(180,141,79,.4); }
+.cell-edit {
+  border-radius: 8px !important;
+  transition: box-shadow .14s, border-color .14s, background .14s !important;
+}
+.cell-edit:focus {
+  box-shadow: 0 0 0 3px rgba(15,110,99,.15) !important;
+  border-color: var(--e-accent) !important; background:#fff !important;
+}
+.cell-edit.strong { font-weight: 650; }
+
+/* תגיות שונות */
+.serial-badge, .src-badge, .migr-badge {
+  border-radius: 999px !important; font-weight:700 !important; letter-spacing:.01em;
+}
+.src-badge.src-now { background:#e6f1ee !important; color:#0f6e63 !important; }
+.src-badge.src-old { background:#f3ebdb !important; color:#8a6d34 !important; }
+
+/* מתג חתימה */
+.switch .slider { transition: all .18s !important; border-radius:999px !important; }
+.switch input:checked + .slider { background: var(--e-wa) !important; }
+.sign-yes { color:#1c8a54 !important; font-weight:700; }
+.sign-no { color:#9a7a3a !important; }
+
+/* ===================== WHATSAPP — הכוכב של השדרוג ===================== */
+
+/* פס תבנית פעילה → סרגל פרימיום */
+.active-tpl-bar {
+  background: linear-gradient(180deg,#ffffff,#fbfaf6) !important;
+  border: 1px solid var(--e-line) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--e-shadow-sm) !important;
+  padding: 10px 14px !important;
+  gap: 10px !important;
+}
+.active-tpl-bar select {
+  border-radius: 10px !important;
+  border: 1px solid var(--e-line) !important;
+  padding: 7px 12px !important;
+  font-weight: 600;
+  background:#fff;
+  transition: box-shadow .14s;
+}
+.active-tpl-bar select:focus { box-shadow: 0 0 0 3px rgba(15,110,99,.15); outline:none; }
+
+/* מצב חיבור WhatsApp — פילים ברורים */
+.ga-badge {
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+  padding: 6px 12px !important;
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid transparent !important;
+}
+.ga-badge.on {
+  background: #e6f7ee !important; color: #128c4f !important;
+  border-color: #bce8d0 !important;
+}
+.ga-badge.off {
+  background: #fff2ec !important; color: #c25230 !important;
+  border-color: #f3d4c4 !important;
+  animation: e-pulse 2.4s ease-in-out infinite;
+}
+@keyframes e-pulse { 0%,100%{ box-shadow:0 0 0 0 rgba(194,82,48,.0);} 50%{ box-shadow:0 0 0 4px rgba(194,82,48,.10);} }
+
+/* אינדיקציית ענן */
+.cloud-status-bar {
+  border-radius: 999px !important; font-weight:700 !important; padding:6px 12px !important;
+  display:inline-flex; align-items:center; gap:6px; border:1px solid transparent !important;
+}
+.cloud-status-bar.on { background:#e6f1ee !important; color:#0f6e63 !important; border-color:#bfe0d6 !important; }
+.cloud-status-bar.off { background:#f3ebdb !important; color:#8a6d34 !important; border-color:#e6d6b6 !important; cursor:pointer; }
+.cloud-status-bar.syncing { background:#eaf1fb !important; color:#3160a0 !important; }
+
+/* צ'יפ מונה */
+.count-chip {
+  background: var(--e-gold, #f3ebdb) !important;
+  background: #f3ebdb !important; color:#7d6130 !important;
+  border:1px solid #e6d6b6 !important; border-radius:999px !important;
+  font-weight:700 !important;
+}
+
+/* פילי חברות בקבוצה */
+.group-pill {
+  border-radius: 999px !important; font-weight:700 !important;
+  transition: all .14s !important; border:1px solid var(--e-line) !important;
+  padding:5px 11px !important; display:inline-flex; align-items:center; gap:5px;
+}
+.group-pill.on { background:#e6f7ee !important; color:#128c4f !important; border-color:#bce8d0 !important; }
+.group-pill.out { background:#f6f4ee !important; color:#8a7a55 !important; }
+.group-pill:hover { transform: translateY(-1px); box-shadow: var(--e-shadow-sm); }
+
+/* ===== סרגל בחירה צף — קריאה לפעולה מרכזית לשליחת הודעות ===== */
+.selection-bar {
+  position: sticky; bottom: 16px; z-index: 40;
+  margin: 14px auto 6px !important;
+  width: fit-content; max-width: 96%;
+  background: linear-gradient(135deg, #0c332c, #10554b) !important;
+  color: #fff !important;
+  border: 1px solid rgba(200,162,95,.28) !important;
+  border-radius: 999px !important;
+  box-shadow: var(--e-shadow-lg) !important;
+  padding: 10px 14px 10px 18px !important;
+  display: flex; align-items: center; gap: 12px !important;
+  animation: e-riseup .26s cubic-bezier(.22,1,.36,1);
+}
+@keyframes e-riseup { from{ transform: translateY(14px); opacity:0;} to{ transform:translateY(0); opacity:1;} }
+.selection-bar .sel-count { color:#fff !important; font-weight:650; }
+.selection-bar .sel-count i { color: #d8c69a !important; font-style: normal; opacity:.9; }
+.selection-bar .sel-count b { color:#fff !important; }
+/* כפתור "שלח לנבחרים" — ירוק WhatsApp בולט */
+.selection-bar .btn-accent {
+  background: linear-gradient(180deg, #26b56f, var(--e-wa-deep)) !important;
+  box-shadow: 0 10px 24px rgba(18,140,79,.4) !important;
+  padding: 10px 18px !important; font-size: .95rem !important;
+}
+.selection-bar .btn-ghost {
+  background: rgba(255,255,255,.12) !important;
+  border: 1px solid rgba(255,255,255,.22) !important;
+  color:#fff !important;
+}
+.selection-bar .btn-ghost:hover { background: rgba(255,255,255,.2) !important; }
+
+/* ===== מסך הגדרות (WhatsApp/ענן) — טפסים נקיים ===== */
+.field input, .settings input {
+  border-radius: 10px !important; border:1px solid var(--e-line) !important;
+  padding: 10px 12px !important; transition: box-shadow .14s;
+}
+.field input:focus, .settings input:focus { box-shadow:0 0 0 3px rgba(15,110,99,.15); outline:none; border-color:var(--e-accent) !important; }
+.sql-box, pre.sql-box {
+  border-radius: 12px !important; border:1px solid #d9e6e1 !important;
+  background:#0f342e !important; color:#d7ecdf !important;
+}
+.conn-status.ok { color:#128c4f !important; font-weight:700; }
+.conn-status.error { color:#c2412a !important; font-weight:700; }
+
+/* טאבים עליונים */
+.tabs button, .tab-body .tabs button { transition: all .14s !important; border-radius: 11px 11px 0 0 !important; }
+
+/* מחוון "נשמר" */
+.saved-chip { border-radius:999px !important; background:#e6f1ee !important; color:#0f6e63 !important; font-weight:700 !important; }
+
+/* בקרת התצוגה שלי (זום/רווח) — התאמה לשפה החדשה */
+#viewCtrls .vc-group { border-radius: 11px !important; box-shadow: var(--e-shadow-sm); }
+#viewCtrls button.vc-btn { border-radius: 9px !important; }
