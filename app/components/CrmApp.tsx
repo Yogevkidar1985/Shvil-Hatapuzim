@@ -14,6 +14,7 @@ import SignersMatchDialog from "./dialogs/SignersMatchDialog";
 import { ToastProvider, useToast } from "./ui/Toast";
 import { EmptyState } from "./ui/atoms";
 import Button from "./ui/Button";
+import ViewControls, { ZOOM_DEFAULT, PAD_DEFAULT } from "./ui/ViewControls";
 import { api } from "@/app/lib/api-client";
 import { exportToExcel } from "@/app/lib/export-client";
 import type { HolderDTO, ColumnDefDTO } from "@/app/lib/types";
@@ -54,6 +55,38 @@ function CrmContent() {
   const [showGroup, setShowGroup] = useState(false);
   const [showSigners, setShowSigners] = useState(false);
   const [checkingPhones, setCheckingPhones] = useState(false);
+
+  // ===== העדפות תצוגת טבלה (זום + רווח עמודות) — נשמרות ב-localStorage =====
+  const [gridZoom, setGridZoom] = useState(ZOOM_DEFAULT);
+  const [gridPad, setGridPad] = useState(PAD_DEFAULT);
+
+  useEffect(() => {
+    try {
+      const z = parseFloat(localStorage.getItem("gridZoom") ?? "");
+      const p = parseInt(localStorage.getItem("gridPad") ?? "", 10);
+      if (Number.isFinite(z) && z >= 0.7 && z <= 1.5) setGridZoom(z);
+      if (Number.isFinite(p) && p >= 4 && p <= 26) setGridPad(p);
+    } catch {
+      /* localStorage לא זמין */
+    }
+  }, []);
+
+  const handleZoom = useCallback((z: number) => {
+    setGridZoom(z);
+    try { localStorage.setItem("gridZoom", String(z)); } catch {}
+  }, []);
+  const handlePad = useCallback((p: number) => {
+    setGridPad(p);
+    try { localStorage.setItem("gridPad", String(p)); } catch {}
+  }, []);
+  const handleViewReset = useCallback(() => {
+    setGridZoom(ZOOM_DEFAULT);
+    setGridPad(PAD_DEFAULT);
+    try {
+      localStorage.removeItem("gridZoom");
+      localStorage.removeItem("gridPad");
+    } catch {}
+  }, []);
 
   const gridApiRef = useRef<GridApi | null>(null);
   const undoStack = useRef<EditEntry[]>([]);
@@ -300,7 +333,23 @@ function CrmContent() {
         </div>
       )}
 
-      <div className="flex-1 px-4 pb-4 pt-3 overflow-hidden">
+      <div className="flex-1 px-4 pb-4 pt-2 overflow-hidden flex flex-col">
+        {/* בקרת תצוגה — זום ורווח עמודות */}
+        {!loading && holders.length > 0 && (
+          <div className="flex items-center justify-between pb-2">
+            <ViewControls
+              zoom={gridZoom}
+              pad={gridPad}
+              onZoom={handleZoom}
+              onPad={handlePad}
+              onReset={handleViewReset}
+            />
+            <span className="text-xs text-slate-400">
+              מציג {filteredHolders.length} מתוך {holders.length}
+            </span>
+          </div>
+        )}
+        <div className="flex-1 min-h-0">
         {loading ? (
           <GridSkeleton />
         ) : holders.length === 0 ? (
@@ -321,6 +370,9 @@ function CrmContent() {
             holders={filteredHolders}
             columns={columns}
             quickFilter={search}
+            zoom={gridZoom}
+            cellPad={gridPad}
+            selectedIds={selectedIds}
             onCellChange={handleCellChange}
             onSelectionChange={setSelectedIds}
             onOpenContact={setContactHolder}
@@ -329,6 +381,7 @@ function CrmContent() {
             onGridApi={(a) => (gridApiRef.current = a)}
           />
         )}
+        </div>
       </div>
 
       {contactHolder && (

@@ -23,6 +23,12 @@ interface Props {
   holders: HolderDTO[];
   columns: ColumnDefDTO[];
   quickFilter: string;
+  /** זום תצוגה (1 = 100%) — משנה גודל טקסט וגובה שורות */
+  zoom?: number;
+  /** רווח אופקי בין עמודות בפיקסלים */
+  cellPad?: number;
+  /** שורות שנבחרו — משוחזרות אחרי שינוי זום (שמרכיב מחדש את הטבלה) */
+  selectedIds?: string[];
   onCellChange: (id: string, key: string, value: string, isCustom: boolean) => void;
   onSelectionChange: (ids: string[]) => void;
   onOpenContact: (holder: HolderDTO) => void;
@@ -118,6 +124,9 @@ export default function DataGrid({
   holders,
   columns,
   quickFilter,
+  zoom = 1,
+  cellPad = 14,
+  selectedIds,
   onCellChange,
   onSelectionChange,
   onOpenContact,
@@ -126,6 +135,8 @@ export default function DataGrid({
   onGridApi,
 }: Props) {
   const apiRef = useRef<GridApi | null>(null);
+  const selectedIdsRef = useRef<string[]>(selectedIds ?? []);
+  selectedIdsRef.current = selectedIds ?? [];
 
   const visibleCols = useMemo(
     () => columns.filter((c) => c.visible).sort((a, b) => a.order - b.order),
@@ -258,6 +269,13 @@ export default function DataGrid({
     (e: GridReadyEvent) => {
       apiRef.current = e.api;
       onGridApi?.(e.api);
+      // שחזור בחירה אחרי remount (שינוי זום מרכיב את הטבלה מחדש)
+      const ids = new Set(selectedIdsRef.current);
+      if (ids.size > 0) {
+        e.api.forEachNode((node) => {
+          if (node.data && ids.has(node.data.id)) node.setSelected(true);
+        });
+      }
     },
     [onGridApi]
   );
@@ -288,9 +306,16 @@ export default function DataGrid({
 
   const getRowId = useCallback((p: GetRowIdParams<HolderDTO>) => p.data.id, []);
 
+  // זום: טקסט ורווחים דרך משתני CSS (חי); גובה שורות מחייב הרכבה מחדש — לכן key לפי זום
+  const gridStyle = {
+    "--ag-font-size": `${Math.round(14 * zoom)}px`,
+    "--ag-cell-horizontal-padding": `${cellPad}px`,
+  } as React.CSSProperties;
+
   return (
-    <div className="ag-theme-quartz w-full h-full">
+    <div className="ag-theme-quartz w-full h-full" style={gridStyle}>
       <AgGridReact<HolderDTO>
+        key={`zoom-${zoom}`}
         rowData={holders}
         columnDefs={colDefs}
         enableRtl={true}
@@ -305,8 +330,8 @@ export default function DataGrid({
         onRowDoubleClicked={(e) => e.data && onOpenContact(e.data)}
         animateRows={true}
         stopEditingWhenCellsLoseFocus={true}
-        rowHeight={52}
-        headerHeight={46}
+        rowHeight={Math.round(52 * zoom)}
+        headerHeight={Math.round(46 * zoom)}
         defaultColDef={{ filter: true, floatingFilter: false }}
         overlayNoRowsTemplate={'<span style="color:#94a3b8;padding:24px">אין נתונים להצגה — ייבאו קובץ או הוסיפו שורה</span>'}
       />
