@@ -29,12 +29,28 @@ model RightsHolder {
   extra         String   @default("{}") // ערכי עמודות דינמיות (JSON)
   rowOrder      Int      @default(0) // סדר תצוגה
   lastMessageAt DateTime?
+  // ===== קבוצת WhatsApp =====
+  groupId       String?  // מזהה GreenAPI של הקבוצה (…@g.us) שאליה שויך
+  groupStatus   String   @default("none") // none | added | invited | left | failed
+  groupAddedAt  DateTime?
+  // ===== בדיקת תקינות מספר (checkWhatsapp) =====
+  waCheck       String   @default("unknown") // unknown | valid | invalid
   messages      Message[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@index([status])
   @@index([phone])
+  @@index([groupStatus])
+}
+
+/// קבוצת WhatsApp שנוצרה/מנוהלת מהמערכת (דרך GreenAPI)
+model WhatsappGroup {
+  id         String   @id @default(uuid())
+  gaGroupId  String   @unique // chatId של הקבוצה, למשל 12036302…@g.us
+  name       String
+  inviteLink String   @default("")
+  createdAt  DateTime @default(now())
 }
 
 /// הגדרת עמודה — תומך בסכמה דינמית (הוספה/מחיקה/סידור עמודות בזמן ריצה)

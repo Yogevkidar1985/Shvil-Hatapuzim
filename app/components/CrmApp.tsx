@@ -9,6 +9,7 @@ import ContactPanel from "./ContactPanel";
 import AddColumnDialog from "./dialogs/AddColumnDialog";
 import ImportDialog from "./dialogs/ImportDialog";
 import BulkSendDialog from "./dialogs/BulkSendDialog";
+import GroupDialog from "./dialogs/GroupDialog";
 import SignersMatchDialog from "./dialogs/SignersMatchDialog";
 import { ToastProvider, useToast } from "./ui/Toast";
 import { EmptyState } from "./ui/atoms";
@@ -50,7 +51,9 @@ function CrmContent() {
   const [showAddColumn, setShowAddColumn] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
+  const [showGroup, setShowGroup] = useState(false);
   const [showSigners, setShowSigners] = useState(false);
+  const [checkingPhones, setCheckingPhones] = useState(false);
 
   const gridApiRef = useRef<GridApi | null>(null);
   const undoStack = useRef<EditEntry[]>([]);
@@ -214,6 +217,38 @@ function CrmContent() {
     }
   }, [reload, toast]);
 
+  // בדיקת תקינות מספרים — קורא בלולאה במנות קטנות עד שכולם נבדקו
+  const handleCheckPhones = useCallback(async () => {
+    if (checkingPhones) return;
+    setCheckingPhones(true);
+    toast("בודק מספרים מול WhatsApp…", "info");
+    const ids = selectedIds.length > 0 ? selectedIds : undefined;
+    let totalChecked = 0;
+    let totalValid = 0;
+    let totalInvalid = 0;
+    try {
+      // עד 40 סבבים (200 מספרים) בקריאה אחת של המשתמש
+      for (let i = 0; i < 40; i++) {
+        const r = await api.checkPhones(ids);
+        totalChecked += r.checked;
+        totalValid += r.valid;
+        totalInvalid += r.invalid;
+        if (r.remaining === 0 || r.checked === 0) break;
+        await new Promise((res) => setTimeout(res, 800));
+      }
+      if (totalChecked === 0) {
+        toast("כל המספרים כבר נבדקו ✓", "success");
+      } else {
+        toast(`נבדקו ${totalChecked} מספרים: ${totalValid} תקינים · ${totalInvalid} ללא WhatsApp`, "success");
+        reload();
+      }
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "בדיקת המספרים נכשלה", "error");
+    } finally {
+      setCheckingPhones(false);
+    }
+  }, [checkingPhones, selectedIds, toast, reload]);
+
   const handleExport = useCallback(() => {
     exportToExcel(statusFilter ? holders.filter((h) => h.status === statusFilter) : holders, columns);
     toast("הקובץ יוצא בהצלחה", "success");
@@ -248,6 +283,8 @@ function CrmContent() {
         onAddRow={handleAddRow}
         onAddColumn={() => setShowAddColumn(true)}
         onBulkSend={() => setShowBulk(true)}
+        onGroup={() => setShowGroup(true)}
+        onCheckPhones={handleCheckPhones}
         onSigners={() => setShowSigners(true)}
         onSync={handleSync}
         onLogout={handleLogout}
@@ -257,6 +294,7 @@ function CrmContent() {
         <div className="bg-brand-600 text-white px-5 py-2 text-sm flex items-center gap-4 animate-fade-in">
           <span className="font-semibold">{selectedIds.length} שורות נבחרו</span>
           <button onClick={() => setShowBulk(true)} className="hover:underline flex items-center gap-1">💬 שלח WhatsApp</button>
+          <button onClick={() => setShowGroup(true)} className="hover:underline flex items-center gap-1">👥 הוסף לקבוצה</button>
           <button onClick={handleDeleteSelected} className="hover:underline flex items-center gap-1 text-white/90">🗑️ מחק</button>
           <button onClick={() => { gridApiRef.current?.deselectAll(); }} className="mr-auto text-white/70 hover:text-white text-xs">בטל בחירה ✕</button>
         </div>
@@ -307,6 +345,7 @@ function CrmContent() {
       {showAddColumn && <AddColumnDialog onClose={() => setShowAddColumn(false)} onAdded={(col) => setColumns((prev) => [...prev, col])} />}
       {showImport && <ImportDialog onClose={() => setShowImport(false)} onImported={reload} />}
       {showBulk && <BulkSendDialog holders={selectedHolders} onClose={() => setShowBulk(false)} onDone={reload} />}
+      {showGroup && <GroupDialog holders={selectedHolders} onClose={() => setShowGroup(false)} onDone={reload} />}
       {showSigners && <SignersMatchDialog onClose={() => setShowSigners(false)} onApplied={reload} />}
     </div>
   );

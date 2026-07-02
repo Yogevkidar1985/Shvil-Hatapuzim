@@ -15,6 +15,31 @@ export interface ColumnDefDTO {
   options: string[];
 }
 
+/** סטטוס חברות בקבוצת WhatsApp */
+export type GroupStatus = "none" | "added" | "invited" | "left" | "failed";
+
+/** תוצאת בדיקת מספר (checkWhatsapp) */
+export type WaCheck = "unknown" | "valid" | "invalid";
+
+/** סיכום הודעות לכל בעל זכויות — מחושב בצד שרת מטבלת ההודעות */
+export interface MsgStats {
+  out: number; // נשלחו אליו
+  in: number; // התקבלו ממנו
+  failed: number; // כשלונות שליחה
+  lastBody: string | null; // תוכן ההודעה האחרונה
+  lastDirection: "in" | "out" | null;
+  lastAt: string | null;
+}
+
+export const EMPTY_MSG_STATS: MsgStats = {
+  out: 0,
+  in: 0,
+  failed: 0,
+  lastBody: null,
+  lastDirection: null,
+  lastAt: null,
+};
+
 export interface HolderDTO {
   id: string;
   name: string;
@@ -28,9 +53,31 @@ export interface HolderDTO {
   extra: Record<string, string>;
   rowOrder: number;
   lastMessageAt: string | null;
+  groupId: string | null;
+  groupStatus: GroupStatus;
+  groupAddedAt: string | null;
+  waCheck: WaCheck;
+  msgStats: MsgStats;
   createdAt: string;
   updatedAt: string;
 }
+
+export interface GroupDTO {
+  id: string;
+  gaGroupId: string;
+  name: string;
+  inviteLink: string;
+  memberCount: number; // כמה בעלי זכויות משויכים אליה במערכת
+  createdAt: string;
+}
+
+export const GROUP_STATUS_LABELS: Record<GroupStatus, string> = {
+  none: "לא בקבוצה",
+  added: "בקבוצה",
+  invited: "הוזמן",
+  left: "עזב",
+  failed: "נכשל",
+};
 
 export interface MessageDTO {
   id: string;

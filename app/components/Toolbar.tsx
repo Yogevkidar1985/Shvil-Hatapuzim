@@ -22,6 +22,8 @@ interface Props {
   onAddRow: () => void;
   onAddColumn: () => void;
   onBulkSend: () => void;
+  onGroup: () => void;
+  onCheckPhones: () => void;
   onSigners: () => void;
   onSync: () => void;
   onLogout: () => void;
@@ -33,6 +35,8 @@ export default function Toolbar(p: Props) {
     signed: p.holders.filter((h) => h.status === "signed").length,
     pending: p.holders.filter((h) => h.status === "pending").length,
     objected: p.holders.filter((h) => h.status === "objected").length,
+    messagesSent: p.holders.reduce((sum, h) => sum + (h.msgStats?.out ?? 0), 0),
+    inGroup: p.holders.filter((h) => h.groupStatus === "added").length,
   };
 
   const waOk = p.waState?.configured && p.waState.state === "authorized";
@@ -81,6 +85,8 @@ export default function Toolbar(p: Props) {
           active={p.statusFilter === "pending"} onClick={() => p.onStatusFilter("pending")} />
         <StatCard label="התנגדו" value={counts.objected} icon="🚫" tone="red"
           active={p.statusFilter === "objected"} onClick={() => p.onStatusFilter("objected")} />
+        <StatCard label="הודעות שנשלחו" value={counts.messagesSent} icon="💬" tone="brand" />
+        <StatCard label="בקבוצת WhatsApp" value={counts.inGroup} icon="👥" tone="gold" />
       </div>
 
       {/* סרגל פעולות */}
@@ -109,10 +115,23 @@ export default function Toolbar(p: Props) {
         <Button variant="secondary" size="sm" icon="⬆️" onClick={p.onImport}>ייבוא</Button>
         <Button variant="secondary" size="sm" icon="⬇️" onClick={p.onExport}>ייצוא</Button>
         <Button variant="secondary" size="sm" icon="✅" onClick={p.onSigners}>חתומים</Button>
-        <Button variant="secondary" size="sm" icon="🔄" onClick={p.onSync}>סנכרון</Button>
+        <Button variant="secondary" size="sm" icon="🔄" onClick={p.onSync} title="משיכת הודעות נכנסות">סנכרון</Button>
+        <Button variant="secondary" size="sm" icon="✔" onClick={p.onCheckPhones} title="בדיקה מול WhatsApp אילו מספרים תקינים">
+          בדיקת מספרים
+        </Button>
 
         <div className="flex-1" />
 
+        <Button
+          variant="secondary"
+          size="md"
+          icon="👥"
+          disabled={p.selectedCount === 0}
+          onClick={p.onGroup}
+          title="צירוף הנבחרים לקבוצת WhatsApp"
+        >
+          קבוצה {p.selectedCount > 0 && `(${p.selectedCount})`}
+        </Button>
         <Button
           variant="whatsapp"
           size="md"

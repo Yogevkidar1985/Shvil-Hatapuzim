@@ -112,6 +112,67 @@ export async function getStateInstance(
   return res.json();
 }
 
+// ===== ניהול קבוצות WhatsApp =====
+
+export interface CreateGroupResult {
+  created: boolean;
+  chatId: string; // מזהה הקבוצה, למשל 1203…@g.us
+  groupInviteLink: string;
+}
+
+/** יצירת קבוצה חדשה עם רשימת משתתפים ראשונית (chatIds בפורמט 972…@c.us) */
+export async function createGroup(
+  cfg: GreenApiConfig,
+  groupName: string,
+  chatIds: string[]
+): Promise<CreateGroupResult> {
+  return call<CreateGroupResult>(cfg, "createGroup", { groupName, chatIds });
+}
+
+/** הוספת משתתף לקבוצה קיימת. מחזיר false אם ההוספה נחסמה (הגדרות פרטיות) */
+export async function addGroupParticipant(
+  cfg: GreenApiConfig,
+  groupId: string,
+  participantChatId: string
+): Promise<boolean> {
+  const res = await call<{ addParticipant: boolean }>(cfg, "addGroupParticipant", {
+    groupId,
+    participantChatId,
+  });
+  return Boolean(res?.addParticipant);
+}
+
+export interface GroupData {
+  groupId: string;
+  subject: string;
+  groupInviteLink?: string;
+  participants: { id: string; isAdmin?: boolean }[];
+}
+
+/** נתוני קבוצה — כולל רשימת המשתתפים בפועל (לסנכרון "מי נכנס") */
+export async function getGroupData(cfg: GreenApiConfig, groupId: string): Promise<GroupData> {
+  return call<GroupData>(cfg, "getGroupData", { groupId });
+}
+
+/** שליחת הודעה ל-chatId גולמי (כולל קבוצות @g.us) — ללא נרמול טלפון */
+export async function sendRawMessage(
+  cfg: GreenApiConfig,
+  chatId: string,
+  message: string
+): Promise<SendMessageResult> {
+  return call<SendMessageResult>(cfg, "sendMessage", { chatId, message });
+}
+
+/** בדיקה האם למספר יש חשבון WhatsApp (ניהול נכון של מספרי טלפון) */
+export async function checkWhatsapp(cfg: GreenApiConfig, phone: string): Promise<boolean | null> {
+  const normalized = normalizeIsraeliPhone(phone);
+  if (!normalized) return null;
+  const res = await call<{ existsWhatsapp: boolean }>(cfg, "checkWhatsapp", {
+    phoneNumber: Number(normalized.msisdn),
+  });
+  return Boolean(res?.existsWhatsapp);
+}
+
 // ===== קבלת הודעות נכנסות בשיטת polling (חלופה ל-webhook) =====
 
 export interface IncomingNotification {

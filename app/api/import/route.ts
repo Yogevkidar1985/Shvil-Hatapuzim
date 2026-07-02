@@ -70,5 +70,5 @@ export async function POST(req: NextRequest) {
     )
   );
 
-  return NextResponse.json({ ok: true, count: created.length, holders: created.map(serializeHolder) });
+  return NextResponse.json({ ok: true, count: created.length, holders: created.map((h) => serializeHolder(h)) });
 }
