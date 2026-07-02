@@ -14,8 +14,8 @@ import type {
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import type { HolderDTO, ColumnDefDTO } from "@/app/lib/types";
-import { STATUS_LABELS } from "@/app/lib/types";
-import { formatNumber, formatPhone } from "@/app/lib/format";
+import { STATUS_LABELS, GROUP_STATUS_LABELS } from "@/app/lib/types";
+import { formatNumber, formatPhone, formatDateTime } from "@/app/lib/format";
 
 // חבילת ag-grid-community רושמת אוטומטית את כל המודולים — אין צורך ב-ModuleRegistry ידני.
 
@@ -36,6 +36,68 @@ function StatusRenderer(p: ICellRendererParams<HolderDTO>) {
   const cls =
     v === "signed" ? "status-signed" : v === "objected" ? "status-objected" : "status-pending";
   return <span className={`status-pill ${cls}`}>{STATUS_LABELS[v] ?? "ממתין"}</span>;
+}
+
+/** תא "הודעות" — כמה נשלחו/התקבלו + תוכן ההודעה האחרונה ב-tooltip. מונע כפילויות במבט אחד. */
+function MessagesRenderer(p: ICellRendererParams<HolderDTO>) {
+  const s = p.data?.msgStats;
+  if (!s || (s.out === 0 && s.in === 0 && s.failed === 0)) {
+    return <span className="text-slate-300 text-xs">— לא נשלחה הודעה —</span>;
+  }
+  const tooltip = s.lastBody
+    ? `אחרונה (${s.lastDirection === "in" ? "התקבלה" : "נשלחה"} ${formatDateTime(s.lastAt)}):\n${s.lastBody}`
+    : "";
+  return (
+    <div className="flex items-center gap-1.5 h-full" title={tooltip}>
+      <span className="inline-flex items-center gap-1 bg-brand-50 text-brand-700 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums">
+        💬 {s.out}
+      </span>
+      {s.in > 0 && (
+        <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums" title="הודעות שהתקבלו ממנו">
+          ↩ {s.in}
+        </span>
+      )}
+      {s.failed > 0 && (
+        <span className="inline-flex items-center gap-1 bg-red-50 text-red-600 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums" title="שליחות שנכשלו">
+          ⚠ {s.failed}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** תא "קבוצה" — סטטוס חברות בקבוצת WhatsApp */
+function GroupRenderer(p: ICellRendererParams<HolderDTO>) {
+  const st = p.data?.groupStatus ?? "none";
+  const label = GROUP_STATUS_LABELS[st] ?? st;
+  const cls =
+    st === "added"
+      ? "bg-green-100 text-green-700"
+      : st === "invited"
+        ? "bg-amber-100 text-amber-700"
+        : st === "left" || st === "failed"
+          ? "bg-red-50 text-red-600"
+          : "bg-slate-100 text-slate-400";
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls}`}>
+      {st === "added" && "✓ "}
+      {label}
+    </span>
+  );
+}
+
+/** תא טלפון — מספר מפורמט + אינדיקציית תקינות (checkWhatsapp) */
+function PhoneRenderer(p: ICellRendererParams<HolderDTO>) {
+  const phone = String(p.value ?? "");
+  if (!phone) return <span className="text-slate-300">—</span>;
+  const check = p.data?.waCheck ?? "unknown";
+  return (
+    <span className="flex items-center gap-1.5 tabular-nums text-slate-600">
+      {check === "valid" && <span className="text-green-500 text-xs" title="למספר יש WhatsApp">✔</span>}
+      {check === "invalid" && <span className="text-red-500 text-xs" title="למספר אין WhatsApp — לא ניתן לשלוח">✖</span>}
+      {formatPhone(phone)}
+    </span>
+  );
 }
 
 function NameRenderer(p: ICellRendererParams<HolderDTO>) {
@@ -116,8 +178,7 @@ export default function DataGrid({
         def.valueFormatter = (p) => formatNumber(String(p.value ?? ""));
         def.cellClass = "tabular-nums text-slate-700";
       } else if (isPhone) {
-        def.valueFormatter = (p) => formatPhone(String(p.value ?? ""));
-        def.cellClass = "tabular-nums text-slate-600";
+        def.cellRenderer = PhoneRenderer;
       }
 
       if (isStatus) {
@@ -128,6 +189,32 @@ export default function DataGrid({
       }
       cols.push(def);
     }
+
+    // ===== עמודות מערכת קבועות: הודעות + קבוצה =====
+    cols.push({
+      headerName: "הודעות",
+      colId: "_messages",
+      width: 170,
+      sortable: true,
+      filter: false,
+      editable: false,
+      suppressMovable: true,
+      valueGetter: (p) => p.data?.msgStats?.out ?? 0, // מיון לפי כמות שנשלחו
+      cellRenderer: MessagesRenderer,
+      onCellClicked: (e) => e.data && onOpenContact(e.data),
+      cellClass: "cursor-pointer",
+    });
+    cols.push({
+      headerName: "קבוצת WhatsApp",
+      colId: "_group",
+      width: 140,
+      sortable: true,
+      filter: false,
+      editable: false,
+      suppressMovable: true,
+      valueGetter: (p) => p.data?.groupStatus ?? "none",
+      cellRenderer: GroupRenderer,
+    });
 
     cols.push({
       headerName: "פעולות",
@@ -192,7 +279,8 @@ export default function DataGrid({
       const ordered = apiRef.current
         .getAllGridColumns()
         .map((c) => c.getColId())
-        .filter((id) => id !== "_actions" && id !== "" && !id.startsWith("ag-"));
+        // מסנן עמודות מערכת (_messages, _group, _actions) ועמודות פנימיות של AG Grid
+        .filter((id) => id !== "" && !id.startsWith("_") && !id.startsWith("ag-"));
       onColumnMoved(ordered);
     },
     [onColumnMoved]

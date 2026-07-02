@@ -1,12 +1,22 @@
 // המרת רשומות Prisma ל-DTO לצד לקוח
-import type { HolderDTO, MessageDTO, ColumnDefDTO, HolderStatus, ColumnType } from "./types";
+import type {
+  HolderDTO, MessageDTO, ColumnDefDTO, GroupDTO,
+  HolderStatus, ColumnType, GroupStatus, WaCheck, MsgStats,
+} from "./types";
+import { EMPTY_MSG_STATS } from "./types";
 
 // טיפוסים גמישים לרשומות Prisma (נמנעים מתלות בייבוא טיפוסי @prisma/client לפני generate)
 type HolderRecord = {
   id: string; name: string; relativeValue: string; state: string;
   balancePay: string; balanceReceive: string; phone: string; status: string;
   notes: string; extra: string; rowOrder: number;
-  lastMessageAt: Date | null; createdAt: Date; updatedAt: Date;
+  lastMessageAt: Date | null;
+  groupId: string | null; groupStatus: string; groupAddedAt: Date | null; waCheck: string;
+  createdAt: Date; updatedAt: Date;
+};
+
+type GroupRecord = {
+  id: string; gaGroupId: string; name: string; inviteLink: string; createdAt: Date;
 };
 
 type MessageRecord = {
@@ -28,7 +38,10 @@ function parseJson<T>(s: string, fallback: T): T {
   }
 }
 
-export function serializeHolder(h: HolderRecord): HolderDTO {
+const GROUP_STATUSES = new Set(["none", "added", "invited", "left", "failed"]);
+const WA_CHECKS = new Set(["unknown", "valid", "invalid"]);
+
+export function serializeHolder(h: HolderRecord, msgStats?: MsgStats): HolderDTO {
   return {
     id: h.id,
     name: h.name,
@@ -42,8 +55,24 @@ export function serializeHolder(h: HolderRecord): HolderDTO {
     extra: parseJson<Record<string, string>>(h.extra, {}),
     rowOrder: h.rowOrder,
     lastMessageAt: h.lastMessageAt ? h.lastMessageAt.toISOString() : null,
+    groupId: h.groupId ?? null,
+    groupStatus: (GROUP_STATUSES.has(h.groupStatus) ? h.groupStatus : "none") as GroupStatus,
+    groupAddedAt: h.groupAddedAt ? h.groupAddedAt.toISOString() : null,
+    waCheck: (WA_CHECKS.has(h.waCheck) ? h.waCheck : "unknown") as WaCheck,
+    msgStats: msgStats ?? EMPTY_MSG_STATS,
     createdAt: h.createdAt.toISOString(),
     updatedAt: h.updatedAt.toISOString(),
+  };
+}
+
+export function serializeGroup(g: GroupRecord, memberCount: number): GroupDTO {
+  return {
+    id: g.id,
+    gaGroupId: g.gaGroupId,
+    name: g.name,
+    inviteLink: g.inviteLink,
+    memberCount,
+    createdAt: g.createdAt.toISOString(),
   };
 }
 

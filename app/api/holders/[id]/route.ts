@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/lib/db";
 import { isAuthenticated } from "@/app/lib/auth";
 import { serializeHolder } from "@/app/lib/serialize";
+import { computeMsgStats } from "@/app/lib/msg-stats";
 import { BUILTIN_KEYS } from "@/app/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -51,7 +52,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     where: { id: params.id },
     data: updates,
   });
-  return NextResponse.json({ holder: serializeHolder(holder) });
+  const statsMap = await computeMsgStats(holder.id);
+  return NextResponse.json({ holder: serializeHolder(holder, statsMap.get(holder.id)) });
 }
 
 // DELETE /api/holders/[id]
