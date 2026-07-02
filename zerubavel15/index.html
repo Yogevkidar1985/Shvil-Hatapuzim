@@ -136,7 +136,7 @@
   .seg button.act{background:#fff; box-shadow:inset 0 0 0 1px var(--line)}
 
   /* ---------- premium photo ---------- */
-  .photo-wrap{position:relative; border-radius:var(--r-md); overflow:hidden; display:none; flex:1; min-height:340px;
+  .photo-wrap{position:relative; border-radius:var(--r-md); overflow:hidden; display:none; aspect-ratio:1/1;
     box-shadow:inset 0 0 0 1px rgba(27,36,103,.08)}
   .photo-wrap img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block}
   .photo-cap{
@@ -144,10 +144,10 @@
     background:linear-gradient(180deg, transparent, rgba(16,21,62,.78)); pointer-events:none; text-shadow:0 1px 8px rgba(0,0,0,.4);
   }
   .pbadge{
-    position:absolute; width:26px; height:26px; border-radius:50%; transform:translate(-50%,-50%);
-    background:rgba(16,21,62,.42); backdrop-filter:blur(3px); color:#fff;
-    display:grid; place-items:center; font-weight:700; font-size:12px; cursor:pointer;
-    border:1px solid rgba(255,255,255,.55);
+    position:absolute; width:28px; height:28px; border-radius:8px; transform:translate(-50%,-50%);
+    background:rgba(16,21,62,.5); backdrop-filter:blur(3px); color:#fff;
+    display:grid; place-items:center; font-weight:700; font-size:12.5px; cursor:pointer;
+    border:1px solid rgba(255,255,255,.5);
     font-variant-numeric:tabular-nums; transition:background .15s, transform .15s;
   }
   .pbadge:hover{background:var(--tan); color:var(--navy-deep); border-color:var(--tan); transform:translate(-50%,-50%) scale(1.12)}
@@ -277,17 +277,20 @@
     margin-bottom:13px; overflow:hidden; cursor:zoom-in; display:grid; place-items:center; padding:6px;
   }
   .pop-plan img{max-width:100%; max-height:100%; object-fit:contain}
+  /* frameless plan preview — clean, no box */
   .plan-thumb{
-    flex:0 0 88px; height:88px; background:#fff; border:1px solid var(--line); border-radius:12px;
-    overflow:hidden; cursor:zoom-in; padding:5px 5px 16px; display:grid; place-items:center; position:relative;
-    transition:border-color .15s;
+    flex:0 0 auto; width:112px; height:74px; background:none; border:none; border-radius:8px;
+    overflow:hidden; cursor:zoom-in; padding:0; display:block; position:relative;
+    transition:transform .16s;
   }
-  .plan-thumb img{max-width:100%; max-height:100%; object-fit:contain; display:block}
-  .plan-thumb .pt-label{
-    position:absolute; inset-inline:0; bottom:0; text-align:center; font-size:9.5px; font-weight:800;
-    letter-spacing:.06em; color:var(--tan-deep); background:var(--tan-soft); padding:2px 0;
+  .plan-thumb img{width:100%; height:100%; object-fit:cover; object-position:center; display:block; mix-blend-mode:multiply}
+  .plan-thumb::after{
+    content:"⤢"; position:absolute; top:4px; inset-inline-start:4px; width:19px; height:19px; border-radius:6px;
+    display:grid; place-items:center; font-size:11px; color:var(--navy);
+    background:rgba(255,255,255,.85); opacity:0; transition:opacity .16s;
   }
-  .plan-thumb:hover{border-color:var(--tan-deep)}
+  .plan-thumb:hover{transform:scale(1.04)}
+  .plan-thumb:hover::after{opacity:1}
   .lightbox{
     position:fixed; inset:0; z-index:120; background:rgba(12,16,44,.88); backdrop-filter:blur(10px);
     display:grid; place-items:center; padding:28px; cursor:zoom-out; animation:popIn .18s ease;
@@ -337,14 +340,8 @@
   .pill svg{width:16px; height:16px; flex:0 0 auto}
   .pill i{width:7px; height:7px; border-radius:50%; display:inline-block; background:currentColor}
   .pill.static{cursor:default}
-  /* card status column: larger, more prominent indicator */
-  .status-cell{display:flex; flex-direction:column; align-items:stretch; gap:0; min-width:118px}
-  .status-cell .pill{
-    justify-content:center; padding:11px 14px; border-radius:12px; font-size:13.5px; gap:8px;
-    box-shadow:inset 0 0 0 1px currentColor;
-  }
-  .status-cell .pill svg{width:17px; height:17px}
-  .status-cell .stat-hint{margin-top:6px; text-align:center; font-size:10.5px; color:var(--muted); font-weight:600; letter-spacing:.02em}
+  /* status pill inside a card — ringed for prominence */
+  .apt-top .pill{box-shadow:inset 0 0 0 1px currentColor}
   .smenu{
     position:absolute; z-index:80; background:rgba(255,253,249,.94); backdrop-filter:blur(14px);
     border:1px solid var(--line); border-radius:16px;
@@ -376,25 +373,26 @@
   .mini-btn:hover{border-color:var(--tan-deep); background:var(--tan-soft)}
   .mini-btn.danger{color:var(--st-sold)}
   .apt{
-    display:flex; gap:16px; align-items:center; padding:15px 18px;
+    display:flex; flex-direction:column; gap:11px; padding:16px 18px;
     border-top:1px solid var(--line); transition:background .18s;
   }
-  .apt:hover{background:rgba(208,168,140,.07)}
+  .apt:hover{background:rgba(208,168,140,.05)}
   .apt.flash{animation:flash 1.8s ease-out}
-  @keyframes flash{0%,55%{background:rgba(208,168,140,.35)}100%{background:transparent}}
-  .apt .info{flex:1; min-width:0}
-  .apt .name{font-size:17px; font-weight:800; color:var(--navy); letter-spacing:-.01em}
-  .apt .name .rooms{color:var(--tan-deep); font-weight:800}
-  .apt .name .nm-sep{color:var(--tan); margin:0 6px}
-  .chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:7px}
+  @keyframes flash{0%,55%{background:rgba(208,168,140,.3)}100%{background:transparent}}
+  .apt-top{display:flex; align-items:center; justify-content:space-between; gap:12px}
+  .apt-top .name{font-size:17.5px; font-weight:800; color:var(--navy); letter-spacing:-.01em}
+  .apt-top .name .rooms{color:var(--tan-deep); font-weight:800}
+  .apt-top .name .nm-sep{color:var(--tan); margin:0 6px}
+  .apt-bot{display:flex; align-items:center; justify-content:space-between; gap:14px}
+  .chips{display:flex; flex-wrap:wrap; gap:6px}
   .chip{
-    display:inline-flex; align-items:center; gap:6px; background:rgba(27,36,103,.055);
-    border-radius:8px; padding:4px 10px; font-size:12.5px; color:#565272; font-weight:600;
+    display:inline-flex; align-items:center; gap:6px; background:rgba(27,36,103,.05);
+    border-radius:8px; padding:5px 11px; font-size:12.5px; color:#565272; font-weight:600;
   }
-  .chip svg{flex:0 0 auto; opacity:.65}
+  .chip svg{flex:0 0 auto; opacity:.6}
   .chip b{color:var(--navy); font-weight:800; font-variant-numeric:tabular-nums}
-  .apt .note{font-size:12.5px; color:var(--tan-deep); margin-top:7px; font-weight:600}
-  .apt .side{display:flex; flex-direction:column; align-items:flex-start; gap:7px}
+  .apt .note{font-size:12.5px; color:var(--tan-deep); font-weight:600}
+  .apt .info{flex:1; min-width:0; display:flex; flex-direction:column; gap:10px}
 
   /* edit fields */
   .efield{display:flex; flex-direction:column; gap:4px; font-size:11.5px; color:var(--muted); font-weight:700}
@@ -412,10 +410,10 @@
   .add-floor{align-self:center}
 
   /* legend */
-  .legend{margin-top:16px; padding-top:14px; border-top:1px solid var(--line);
-    display:flex; align-items:center; gap:10px; flex-wrap:wrap}
-  .legend h3{margin:0; font-size:12.5px; font-weight:800; color:var(--muted); letter-spacing:.08em}
-  .legend .row{display:flex; gap:7px; flex-wrap:wrap}
+  .legend{margin-top:16px; padding-top:14px; border-top:1px solid var(--line)}
+  .legend h3{margin:0 0 10px; font-size:12px; font-weight:800; color:var(--muted); letter-spacing:.1em}
+  .legend .row{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  .legend .row .pill{justify-content:flex-start; box-shadow:inset 0 0 0 1px currentColor}
 
   /* toast */
   .toast{
@@ -805,7 +803,11 @@ function renderBld(){
   const n = floors.length;
   floors.forEach((f, i)=>{
     const b = el('button','pbadge', String(f.num));
-    b.dataset.y = n > 1 ? (12 + 67 * i / (n - 1)) : 46;
+    // slight organic (asymmetric) spread; the ground/garden badge sits a touch lower
+    let y = n > 1 ? (11 + 67 * i / (n - 1)) : 46;
+    if (i === n - 1) y += 6;                 // דירת גן (מספר 1) — טיפה למטה
+    else y += (i % 2 ? 1.4 : -1.2);          // מעט אי-סימטריה בין הקומות
+    b.dataset.y = y;
     b.setAttribute('aria-label','מעבר ל'+f.label);
     b.addEventListener('click',()=>focusFloor(f.id));
     pb.appendChild(b);
@@ -875,8 +877,8 @@ function renderFloors(){
 
     for (const a of f.apts){
       const row = el('div','apt'); row.id = 'apt-'+a.id;
-      const info = el('div','info');
       if (editMode){
+        const info = el('div','info');
         info.innerHTML = `<div class="egrid">
           <label class="efield">שם הדירה<input data-k="name" value="${esc(a.name)}"></label>
           <label class="efield">חדרים<input data-k="rooms" value="${esc(a.rooms)}" placeholder="למשל: 3 חדרים"></label>
@@ -897,35 +899,36 @@ function renderFloors(){
           sp.appendChild(b);
         }
         info.appendChild(sp);
-      } else {
-        const nm = a.rooms
-          ? `${esc(a.name)}<span class="nm-sep">·</span><span class="rooms">${esc(a.rooms)}</span>`
-          : esc(a.name);
-        info.innerHTML = `<div class="name">${nm}</div>${chipsHTML(a)}`+
-          (a.note?`<div class="note">${esc(a.note)}</div>`:'');
-      }
-      const plan = PLANS[a.plan];
-      // RIGHT: status indicator (prominent)
-      const side = el('div','status-cell');
-      side.appendChild(makeStatusPill(a));
-      if (!editMode){ side.appendChild(el('div','stat-hint','לחצו לעדכון סטטוס')); }
-      if (editMode){
-        const del = el('button','mini-btn danger','מחיקה');
+        const del = el('button','mini-btn danger','מחיקת דירה');
+        del.style.alignSelf='flex-start';
         del.addEventListener('click',()=>{
           if (confirm(`למחוק את "${a.name}"?`)){ f.apts = f.apts.filter(x=>x!==a); saveState(); }
         });
-        side.appendChild(del);
-      }
-      row.appendChild(side);
-      // MIDDLE: details
-      row.appendChild(info);
-      // LEFT: floor plan thumbnail
-      if (!editMode && plan){
-        const th = el('button','plan-thumb', `<img src="${plan.src}" alt="${esc(plan.label)}"><span class="pt-label">תכנית</span>`);
-        th.title = plan.label + ' — להגדלה';
-        th.setAttribute('aria-label', plan.label + ' — להגדלה');
-        th.addEventListener('click', ()=>openLightbox(plan));
-        row.appendChild(th);
+        info.appendChild(del);
+        row.appendChild(info);
+      } else {
+        const plan = PLANS[a.plan];
+        // TOP LINE: name (right) · status (left)
+        const top = el('div','apt-top');
+        const nm = a.rooms
+          ? `${esc(a.name)}<span class="nm-sep">·</span><span class="rooms">${esc(a.rooms)}</span>`
+          : esc(a.name);
+        top.appendChild(el('div','name', nm));
+        top.appendChild(makeStatusPill(a));
+        row.appendChild(top);
+        // BOTTOM LINE: spec chips (right) · frameless plan preview (left)
+        const bot = el('div','apt-bot');
+        const chips = el('div',null, chipsHTML(a)); // wrapper so chips sit on the right
+        bot.appendChild(chips.firstElementChild);
+        if (plan){
+          const th = el('button','plan-thumb', `<img src="${plan.src}" alt="${esc(plan.label)}">`);
+          th.title = plan.label + ' — להגדלה';
+          th.setAttribute('aria-label', plan.label + ' — הגדלת התכנית');
+          th.addEventListener('click', ()=>openLightbox(plan));
+          bot.appendChild(th);
+        }
+        row.appendChild(bot);
+        if (a.note) row.appendChild(el('div','note', esc(a.note)));
       }
       card.appendChild(row);
     }
@@ -986,11 +989,11 @@ function setTab(which){
   $('#photo').style.display = photo?'block':'none';
   $('#gallery').style.display = photo?'grid':'none';
   $('#scene').style.display = photo?'none':'flex';
-  // photo fills to match the cards column; schematic stays compact & sticky
+  // panel stays compact & sticky in both modes (cards column is much taller)
   const vp = document.querySelector('.viz-panel');
-  vp.style.alignSelf = photo ? 'stretch' : 'start';
-  vp.style.position = photo ? 'static' : 'sticky';
-  vp.style.top = photo ? '' : '16px';
+  vp.style.alignSelf = 'start';
+  vp.style.position = 'sticky';
+  vp.style.top = '16px';
   if (photo) positionBadges();
 }
 $('#tab-photo').addEventListener('click',()=>setTab('photo'));
