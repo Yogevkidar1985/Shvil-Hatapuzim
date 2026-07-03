@@ -1170,7 +1170,10 @@ function updateStickiness(){
   const panel = vp && vp.firstElementChild;
   if (!panel) return;
   vp.style.alignSelf = 'start';
-  const fits = panel.getBoundingClientRect().height <= (window.innerHeight - 24);
+  // דביקות רלוונטית רק בפריסת שתי-העמודות בדסקטופ. במובייל (עמודה אחת) —
+  // תמיד סטטי, אחרת הפאנל "ננעץ" למעלה והגלילה נתקעת.
+  const singleCol = window.innerWidth <= 960;
+  const fits = !singleCol && panel.getBoundingClientRect().height <= (window.innerHeight - 24);
   vp.style.position = fits ? 'sticky' : 'static';
   vp.style.top = fits ? '16px' : '';
 }
