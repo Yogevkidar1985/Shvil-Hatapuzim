@@ -715,7 +715,7 @@ function renderKpis(){
   for (const key of ['marketing','negotiation','reserved','sold']){
     const s=STATUSES[key];
     k.appendChild(el('div','kpi',
-      `<b>${counts[key]||0}</b><span><i class="dot" style="background:${key==='negotiation'?'#8FA0E8':s.color}"></i>${esc(s.label)}</span>`));
+      `<b>${counts[key]||0}</b><span><i class="dot" style="background:${s.color}"></i>${esc(s.label)}</span>`));
   }
   const lg = $('#legend'); lg.innerHTML='';
   for (const key of Object.keys(STATUSES)) lg.appendChild(makePillEl(key,false));
