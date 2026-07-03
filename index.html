@@ -697,7 +697,7 @@ const STATUSES = {
   sold:        {label:'נמכרה',      color:'#B23F38',
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3M17 6l2.5 2.5M14.5 8.5 17 11"/></svg>'},
 };
-const LS_KEY = 'zrubavel15-status-v8';
+const LS_KEY = 'zrubavel15-status-v9';   // הקפצת גרסה — מצב ישן שנשמר בדפדפן לא ידרוס עוד את העדכונים
 
 /* floor plans extracted from the permit sheet (תכנית הגשה) — high-res */
 const PLANS = {
@@ -708,8 +708,8 @@ const PLANS = {
 };
 const PLAN_ORDER = ['ground','typical','floor6','roof'];
 
-const apt = (id,name,rooms,size,outdoor,facing,kind,plan)=>(
-  {id,name,rooms,size,outdoor,facing,kind,plan,status:'marketing',note:''});
+const apt = (id,name,rooms,size,outdoor,facing,kind,plan,status)=>(
+  {id,name,rooms,size,outdoor,facing,kind,plan,status:status||'marketing',note:''});
 
 const DEFAULT_STATE = {
   meta:{title:'זרובבל 15', subtitle:'פסיעה אחת מקו החוף של תל אביב', address:'זרובבל 15, תל אביב', tagline:'היהלום בין הכרם לים',
@@ -731,7 +731,7 @@ const DEFAULT_STATE = {
     {id:'f2',num:2,label:'קומה 2',apts:[
       apt('a3','דירה 3','3 חדרים','70','מרפסת 12 מ״ר','חזית לרחוב זרובבל','big','typical'),
       apt('a2','דירה 2','2 חדרים','46','מרפסת 12 מ״ר','חזית לרחוב אהרונסון','small','typical')]},
-    {id:'f1',num:1,label:'קומה 1',apts:[apt('a1','דירת גן · דירה 1','','50','גינה 46 מ״ר','כניסה פרטית','garden','ground')]},
+    {id:'f1',num:1,label:'קומה 1',apts:[apt('a1','דירת גן · דירה 1','','50','גינה 46 מ״ר','כניסה פרטית','garden','ground','sold')]},
   ],
 };
 
