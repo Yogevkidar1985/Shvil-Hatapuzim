@@ -16,6 +16,7 @@ const TARGET_OPTIONS = [
   { value: "balancePay", label: "תשלומי איזון — משלם" },
   { value: "balanceReceive", label: "תשלומי איזון — מקבל" },
   { value: "phone", label: "טלפון" },
+  { value: "status", label: "סטטוס חתימה" },
   { value: "notes", label: "הערות" },
 ];
 
