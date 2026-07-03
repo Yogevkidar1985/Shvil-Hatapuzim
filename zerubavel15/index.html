@@ -29,8 +29,7 @@
     font-family:"Almoni ML v5 AAA","Almoni Neue","Almoni","almoni-dl-aaa","Assistant",-apple-system,"Segoe UI",Arial,sans-serif;
     direction:rtl; line-height:1.5;
     -webkit-font-smoothing:antialiased;
-    overflow-x:hidden;                    /* אין גלילה אופקית מקרית */
-    overscroll-behavior-y:none;           /* מונע "קפיצת" גלילה בקצוות */
+    overflow-x:clip;                      /* מונע גלילה אופקית בלי ליצור מיכל-גלילה שמפריע לגלילה האנכית */
   }
   /* קפיצות עוגן נוחתות עם אוויר מלמעלה */
   .floor, .viz-panel{scroll-margin-top:18px}
@@ -220,7 +219,7 @@
     opacity:.75;
   }
   .bfloor{display:flex; gap:8px; align-items:stretch}
-  .frail{flex:0 0 34px; position:relative; display:grid; place-items:center}
+  .frail{flex:0 0 30px; position:relative; display:grid; place-items:center; margin-inline-end:-6px}
   .frail::before{content:""; position:absolute; top:-8px; bottom:-8px; right:50%; width:1px;
     background:rgba(255,255,255,.14)}
   .fbadge{
@@ -230,24 +229,22 @@
     transition:background .15s, color .15s;
   }
   .fbadge:hover{background:var(--tan); color:var(--navy-deep); border-color:var(--tan)}
-  .bunits{flex:1; display:flex; gap:9px; min-height:52px}
+  .bunits{flex:1; display:flex; gap:9px; min-height:54px; margin-inline-start:22px}  /* מרווח מימין לאיזון — הבניין ממורכז */
   .bunit{
-    flex:1; border-radius:9px; display:flex; flex-direction:column; justify-content:center; gap:2px;
-    padding:7px 11px; cursor:pointer; text-align:right; min-width:0; position:relative;
-    background:rgba(255,253,249,.96);
-    border:1px solid rgba(255,255,255,.14);
-    box-shadow:inset 3px 0 0 var(--acc,#2E7D4E);
-    transition:transform .16s, background .16s;
+    flex:1; border-radius:10px; display:flex; flex-direction:column; justify-content:center; gap:3px;
+    padding:8px 12px; cursor:pointer; text-align:right; min-width:0; position:relative;
+    border:1px solid; box-shadow:inset 5px 0 0 var(--acc,#2E7D4E);
+    transition:transform .16s, filter .16s;
   }
-  .bunit:hover, .bunit:focus-visible{transform:translateY(-2px); background:#fff}
-  .bunit b{font-size:12.5px; font-weight:800; color:var(--navy); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-  .bunit small{font-size:10.5px; color:#8A8398; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-  .bunit .brow{display:flex; align-items:center; justify-content:space-between; gap:6px}
-  .bunit .st{display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:800; color:var(--acc)}
-  .bunit .st i{width:5px; height:5px; border-radius:50%; background:var(--acc); display:inline-block}
+  .bunit:hover, .bunit:focus-visible{transform:translateY(-2px); filter:brightness(1.03)}
+  .bunit b{font-size:13px; font-weight:800; color:var(--navy); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .bunit small{font-size:10.5px; color:#6E6A82; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .bunit .brow{display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:1px}
+  .bunit .st{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:800; color:var(--acc)}
+  .bunit .st svg{width:14px; height:14px; flex:0 0 auto}
   .bunit .planchip{
     display:inline-flex; align-items:center; gap:3px; font-size:9px; font-weight:800; color:var(--tan-deep);
-    background:var(--tan-soft); border-radius:5px; padding:1px 5px; white-space:nowrap;
+    background:var(--tan-soft); border-radius:5px; padding:2px 6px; white-space:nowrap;
   }
   .terr{
     flex:0 0 54px; border:1.5px dashed rgba(208,168,140,.55); border-radius:11px;
@@ -659,6 +656,8 @@ const $ = s=>document.querySelector(s);
 const el = (tag, cls, html)=>{const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e;};
 const esc = s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tint = (hex,a)=>{const n=parseInt(hex.slice(1),16);return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`;};
+const mixWhite = (hex,w)=>{const n=parseInt(hex.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;
+  return `rgb(${Math.round(r+(255-r)*w)},${Math.round(g+(255-g)*w)},${Math.round(b+(255-b)*w)})`;};
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1900); }
 function uid(){ return 'x'+Math.random().toString(36).slice(2,9); }
 const IC = {
@@ -843,9 +842,11 @@ function renderBld(){
       const s = STATUSES[a.status] || STATUSES.marketing;
       const u = el('div','bunit');
       u.style.setProperty('--acc', s.color);
+      u.style.background = mixWhite(s.color, .88);   // הקובייה נצבעת בגוון הסטטוס — קריא וברור
+      u.style.borderColor = mixWhite(s.color, .5);
       u.style.flexGrow = Math.max(1, (parseFloat(a.size)||50)/50);
       u.innerHTML = `<b>${esc(a.name)}</b><small>${esc(a.size)} מ״ר${a.rooms?' · '+esc(a.rooms):''}</small>`+
-        `<div class="brow"><span class="st"><i></i>${esc(s.label)}</span>`+
+        `<div class="brow"><span class="st">${s.icon}${esc(s.label)}</span>`+
         (PLANS[a.plan]?`<span class="planchip">▦ תכנית</span>`:'')+`</div>`;
       u.setAttribute('role','button'); u.tabIndex=0;
       u.setAttribute('aria-label', `${a.name} — ${s.label}. פתיחת פרטים`);
@@ -873,7 +874,7 @@ function renderBld(){
   const pb = $('#pbadges'); pb.innerHTML='';
   const n = floors.length;
   // מיקומי הקומות מכוילים לחזית שבתמונה (7 קומות) — מסודר וטבעי לעין
-  const YMAP7 = [17, 30, 43, 55, 66.5, 77, 87];   // קומה 7 → 1 (מלמעלה למטה)
+  const YMAP7 = [14, 27, 39.5, 51.5, 63, 74, 86];   // קומה 7 → 1 (מלמעלה למטה) — 2-7 מעט למעלה
   floors.forEach((f, i)=>{
     const b = el('button','pbadge', String(f.num));
     b.dataset.y = (n === 7) ? YMAP7[i]
@@ -1089,16 +1090,18 @@ function setTab(which){
   updateStickiness();
   if (photo) positionBadges();
 }
-/* הפאנל דביק — הבניין נשאר בשדה הראייה בזמן גלילת הכרטיסים (בלי חלל ריק) */
+/* הפאנל דביק רק כשהוא נכנס במלואו במסך — אחרת גלילה רגילה, בלי היתקעות */
 function updateStickiness(){
   const vp = document.querySelector('.viz-panel');
-  if (!vp) return;
+  const panel = vp && vp.firstElementChild;
+  if (!panel) return;
   vp.style.alignSelf = 'start';
-  vp.style.position = 'sticky';
-  vp.style.top = '16px';
+  const fits = panel.getBoundingClientRect().height <= (window.innerHeight - 24);
+  vp.style.position = fits ? 'sticky' : 'static';
+  vp.style.top = fits ? '16px' : '';
 }
 let stickT=null;
-window.addEventListener('resize', ()=>{ clearTimeout(stickT); stickT=setTimeout(positionBadges,120); });
+window.addEventListener('resize', ()=>{ clearTimeout(stickT); stickT=setTimeout(()=>{ updateStickiness(); positionBadges(); },120); });
 $('#tab-photo').addEventListener('click',()=>setTab('photo'));
 $('#tab-schema').addEventListener('click',()=>setTab('schema'));
 $('#all-plans').addEventListener('click', openAllPlans);
