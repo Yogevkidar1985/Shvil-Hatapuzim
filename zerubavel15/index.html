@@ -19,7 +19,7 @@
     --shadow-2:0 8px 30px rgba(27,36,103,.09);
   }
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
+  html{scroll-behavior:smooth; -webkit-text-size-adjust:100%}
   @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none!important;animation:none!important} }
   body{
     margin:0; color:var(--ink);
@@ -29,7 +29,11 @@
     font-family:"Almoni ML v5 AAA","Almoni Neue","Almoni","almoni-dl-aaa","Assistant",-apple-system,"Segoe UI",Arial,sans-serif;
     direction:rtl; line-height:1.5;
     -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;                    /* אין גלילה אופקית מקרית */
+    overscroll-behavior-y:none;           /* מונע "קפיצת" גלילה בקצוות */
   }
+  /* קפיצות עוגן נוחתות עם אוויר מלמעלה */
+  .floor, .viz-panel{scroll-margin-top:18px}
   button{font-family:inherit}
   button:focus-visible,[contenteditable]:focus-visible,input:focus-visible{
     outline:3px solid var(--tan); outline-offset:2px; border-radius:8px;
@@ -364,9 +368,10 @@
     overflow:hidden; transition:border-color .2s;
   }
   .floor:hover{border-color:#DAC7B2}
-  /* scroll-reveal */
-  .reveal{opacity:0; transform:translateY(22px)}
-  .reveal.in{opacity:1; transform:none; transition:opacity .6s cubic-bezier(.2,.7,.3,1), transform .6s cubic-bezier(.2,.7,.3,1)}
+  /* scroll-reveal — עדין וחלק */
+  .reveal{opacity:0; transform:translateY(14px); will-change:opacity, transform}
+  .reveal.in{opacity:1; transform:none; transition:opacity .5s cubic-bezier(.22,.61,.36,1), transform .5s cubic-bezier(.22,.61,.36,1)}
+  .reveal.in{will-change:auto}
   @media (prefers-reduced-motion: reduce){ .reveal{opacity:1; transform:none} }
   .floor-head{display:flex; align-items:center; gap:12px; padding:13px 18px 11px}
   .floor-chip{
@@ -881,15 +886,16 @@ function positionBadges(){
 }
 window.addEventListener('resize', positionBadges);
 
+const smoothOK = !matchMedia('(prefers-reduced-motion: reduce)').matches;
 function focusApt(id){
   const c = document.getElementById('apt-'+id);
   if(!c) return;
-  c.scrollIntoView({block:'center'});
+  c.scrollIntoView({block:'center', behavior: smoothOK?'smooth':'auto'});
   c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash');
 }
 function focusFloor(id){
   const c = document.getElementById('floor-'+id);
-  if(c) c.scrollIntoView({block:'start'});
+  if(c) c.scrollIntoView({block:'start', behavior: smoothOK?'smooth':'auto'});
 }
 
 /* ---------- floor cards ---------- */
@@ -1022,7 +1028,7 @@ function setupReveals(){
   if (!revealObserver){
     revealObserver = new IntersectionObserver((entries)=>{
       entries.forEach(en=>{ if (en.isIntersecting){ en.target.classList.add('in'); revealObserver.unobserve(en.target); } });
-    }, {rootMargin:'0px 0px -8% 0px', threshold:.08});
+    }, {rootMargin:'0px 0px 80px 0px', threshold:0});   // נחשף מעט לפני הכניסה למסך — חלק יותר
   }
   document.querySelectorAll('.reveal:not(.in)').forEach(e=>revealObserver.observe(e));
 }
@@ -1062,13 +1068,19 @@ function setTab(which){
   $('#photo').style.display = photo?'block':'none';
   $('#gallery').style.display = photo?'grid':'none';
   $('#scene').style.display = photo?'none':'flex';
-  // panel stays compact & sticky in both modes (cards column is much taller)
+  updateStickiness();
+  if (photo) positionBadges();
+}
+/* הפאנל דביק — הבניין נשאר בשדה הראייה בזמן גלילת הכרטיסים (בלי חלל ריק) */
+function updateStickiness(){
   const vp = document.querySelector('.viz-panel');
+  if (!vp) return;
   vp.style.alignSelf = 'start';
   vp.style.position = 'sticky';
   vp.style.top = '16px';
-  if (photo) positionBadges();
 }
+let stickT=null;
+window.addEventListener('resize', ()=>{ clearTimeout(stickT); stickT=setTimeout(positionBadges,120); });
 $('#tab-photo').addEventListener('click',()=>setTab('photo'));
 $('#tab-schema').addEventListener('click',()=>setTab('schema'));
 $('#all-plans').addEventListener('click', openAllPlans);
@@ -1104,5 +1116,8 @@ renderAll();
 renderGallery();
 setTab('photo');
 cloudInit();
+// לאחר טעינת התמונות/גופנים — לחשב מחדש גובה הפאנל והדביקות
+window.addEventListener('load', ()=>{ updateStickiness(); positionBadges(); });
+document.querySelector('#mainphoto').addEventListener('load', updateStickiness, {once:true});
 if (window.ResizeObserver) new ResizeObserver(positionBadges).observe(document.getElementById('photo'));
 </script>
