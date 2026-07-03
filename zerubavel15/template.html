@@ -528,7 +528,6 @@
   <div class="floors-col">
     <div class="col-head">
       <h2 class="col-title">סטטוס הדירות בפרויקט</h2>
-      <span class="col-upd" id="col-upd"></span>
     </div>
     <section class="floors" id="floors"></section>
   </div>
@@ -537,7 +536,6 @@
     <div class="panel">
       <div class="panel-head">
         <h2>הדמיית הבניין</h2>
-        <p class="hint">ריחוף או לחיצה על דירה — לכל הפרטים</p>
       </div>
       <div class="seg" role="tablist">
         <button id="tab-photo" role="tab">תמונת הפרויקט</button>
@@ -773,10 +771,6 @@ function renderKpis(){
   }
   const lg = $('#legend'); lg.innerHTML='';
   for (const key of Object.keys(STATUSES)) lg.appendChild(makePillEl(key,false));
-  const upd = $('#col-upd');
-  upd.textContent = state.meta.updatedAt
-    ? 'עודכן: ' + new Date(state.meta.updatedAt).toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'})
-    : '';
 }
 
 /* ---------- apartment popover ---------- */
