@@ -20,10 +20,22 @@ const HEADER_ALIASES: Record<string, BuiltinKey> = {
   "נייד": "phone",
   "טלפון נייד": "phone",
   "הערות": "notes",
+  "סטטוס": "status",
+  "סטטוס חתימה": "status",
+  "חתימה": "status",
+  "חתם": "status",
 };
 
 function normalizeHeader(h: string): string {
   return String(h ?? "").replace(/\s+/g, " ").trim();
+}
+
+/** מנרמל ערך סטטוס חתימה מהקובץ לערך המערכת (signed/objected/pending) */
+export function normalizeStatusValue(raw: string): "pending" | "signed" | "objected" {
+  const v = String(raw ?? "").trim().toLowerCase();
+  if (["signed", "חתם", "חתמו", "כן", "yes", "true", "✓", "v"].includes(v)) return "signed";
+  if (["objected", "התנגד", "התנגדו", "מתנגד", "no", "לא"].includes(v)) return "objected";
+  return "pending";
 }
 
 export interface ColumnMapping {
@@ -91,7 +103,9 @@ export function mapRows(
     for (const [source, target] of Object.entries(mapping)) {
       if (!target) continue; // התעלמות
       const val = cellToString(row[source]);
-      if (BUILTIN_SET.has(target)) {
+      if (target === "status") {
+        out.status = normalizeStatusValue(val);
+      } else if (BUILTIN_SET.has(target)) {
         (out as unknown as Record<string, string>)[target] = val;
       } else {
         out.extra[target] = val;
