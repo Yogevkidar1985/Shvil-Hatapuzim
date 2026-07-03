@@ -44,6 +44,13 @@ model RightsHolder {
   @@index([groupStatus])
 }
 
+/// הגדרות מערכת (key-value) — כולל מפתחות GreenAPI, נשמר בענן ולא מקומית
+model AppConfig {
+  key       String   @id
+  value     String   @default("")
+  updatedAt DateTime @updatedAt @default(now())
+}
+
 /// תבנית הודעת WhatsApp שהמשתמש יוצר ומנהל מתוך המערכת
 model MessageTemplate {
   id        String   @id @default(uuid())

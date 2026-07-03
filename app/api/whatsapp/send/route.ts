@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
   let cfg;
   try {
-    cfg = getGreenApiConfig();
+    cfg = await getGreenApiConfig();
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof GreenApiError ? e.message : "GreenAPI לא מוגדר" },

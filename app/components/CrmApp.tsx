@@ -11,6 +11,7 @@ import ImportDialog from "./dialogs/ImportDialog";
 import BulkSendDialog from "./dialogs/BulkSendDialog";
 import GroupDialog from "./dialogs/GroupDialog";
 import TemplatesDialog from "./dialogs/TemplatesDialog";
+import SettingsDialog from "./dialogs/SettingsDialog";
 import SignersMatchDialog from "./dialogs/SignersMatchDialog";
 import { ToastProvider, useToast } from "./ui/Toast";
 import { EmptyState } from "./ui/atoms";
@@ -55,6 +56,7 @@ function CrmContent() {
   const [showBulk, setShowBulk] = useState(false);
   const [showGroup, setShowGroup] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [showSigners, setShowSigners] = useState(false);
   const [checkingPhones, setCheckingPhones] = useState(false);
 
@@ -348,6 +350,7 @@ function CrmContent() {
         onBulkSend={() => setShowBulk(true)}
         onGroup={() => setShowGroup(true)}
         onTemplates={() => setShowTemplates(true)}
+        onSettings={() => setShowSettings(true)}
         onCheckPhones={handleCheckPhones}
         onSigners={() => setShowSigners(true)}
         onSync={handleSync}
@@ -431,6 +434,12 @@ function CrmContent() {
       {showBulk && <BulkSendDialog holders={selectedHolders} onClose={() => setShowBulk(false)} onDone={reload} />}
       {showGroup && <GroupDialog holders={selectedHolders} onClose={() => setShowGroup(false)} onDone={reload} />}
       {showTemplates && <TemplatesDialog onClose={() => setShowTemplates(false)} onChange={() => {}} />}
+      {showSettings && (
+        <SettingsDialog
+          onClose={() => setShowSettings(false)}
+          onSaved={() => api.whatsappStatus().then(setWaState).catch(() => {})}
+        />
+      )}
       {showSigners && <SignersMatchDialog onClose={() => setShowSigners(false)} onApplied={reload} />}
     </div>
   );

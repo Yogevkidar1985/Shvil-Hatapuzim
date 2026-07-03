@@ -56,6 +56,18 @@ export const api = {
   syncMessages: () =>
     request<{ ok: boolean; processed: number; saved: number }>("/api/whatsapp/sync", { method: "POST" }),
 
+  // ===== הגדרות מערכת (נשמרות בענן) =====
+  getSettings: () =>
+    request<{
+      cloud: { connected: boolean; provider: string };
+      greenApi: { idInstance: string; apiTokenMasked: string; hasToken: boolean; apiUrl: string; source: string };
+    }>("/api/settings"),
+  saveSettings: (data: { idInstance?: string; apiToken?: string; apiUrl?: string; test?: boolean }) =>
+    request<{ ok: boolean; tested?: boolean; state?: string; error?: string }>("/api/settings", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
   // ===== תבניות הודעה =====
   listTemplates: () => request<{ templates: TemplateDTO[] }>("/api/templates"),
   createTemplate: (name: string, body: string) =>
