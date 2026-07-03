@@ -478,6 +478,54 @@
   .foot-lead{margin:0 0 5px; color:var(--tan); font-weight:800; font-size:16px; letter-spacing:.01em; text-align:center}
   .foot-line{margin:0; display:block; text-align:center}
 
+  /* ================= HOVER & MICRO-INTERACTIONS — אפקטים שמרשימים בלי להעמיס ================= */
+  .floor{position:relative}
+  @media (hover:hover) and (pointer:fine){
+    /* תמונת הפרויקט — זום איטי ויוקרתי בסגנון Ken Burns */
+    .photo-wrap img{transition:transform 5s cubic-bezier(.22,.61,.36,1)}
+    .photo-wrap:hover img{transform:scale(1.07)}
+    /* גלריה — התמונה מתקרבת בעדינות בתוך המסגרת */
+    .gallery button img{transition:transform .5s ease}
+    .gallery button:hover img{transform:scale(1.12)}
+    /* כרטיסי הקומות — פס אור חולף (sheen) בריחוף */
+    .floor::after{content:""; position:absolute; top:0; bottom:0; width:45%; inset-inline-start:-60%;
+      background:linear-gradient(105deg, transparent 25%, rgba(255,255,255,.45) 50%, transparent 75%);
+      transform:skewX(-16deg); pointer-events:none; opacity:0}
+    .floor:hover::after{animation:sheen .85s ease}
+    /* שבבי המפרט — מתעוררים בריחוף על הדירה */
+    .chip{transition:border-color .18s, background .18s, transform .18s}
+    .apt:hover .chip{border-color:#DEC9B1}
+    .chip:hover{background:var(--tan-soft); border-color:var(--tan-deep); transform:translateY(-1px)}
+    /* תגית הסטטוס — הרמה קלה */
+    .pill:not(.static){transition:filter .15s, transform .15s}
+    .pill:not(.static):hover{transform:translateY(-1px)}
+    /* התשריט מתקרב יחד עם הריחוף על שורת הדירה */
+    .apt:hover .plan-thumb{transform:scale(1.03)}
+    /* קוביות החתך — עומק וצל בריחוף */
+    .bunit{transition:transform .18s, filter .18s, box-shadow .18s}
+    .bunit:hover, .bunit:focus-visible{transform:translateY(-2px) scale(1.015); filter:brightness(1.03);
+      box-shadow:inset 7px 0 0 var(--acc,#2E7D4E), 0 12px 26px rgba(0,0,0,.3)}
+    .scene-status .sc{transition:background .18s, border-color .18s}
+    .scene-status .sc:hover{background:rgba(255,255,255,.13); border-color:rgba(255,255,255,.3)}
+    .fbadge{transition:background .15s, color .15s, transform .15s}
+    .fbadge:hover{transform:scale(1.12)}
+    /* כפתורים */
+    .btn-share{transition:background .16s, color .16s, border-color .16s, transform .16s}
+    .btn-share:hover{transform:translateY(-1px)}
+    .seg button:not(.act):hover{background:rgba(255,255,255,.6)}
+    .plans-cta svg{transition:transform .2s, opacity .2s}
+    .plans-cta:hover svg{transform:scale(1.18); opacity:1}
+    /* הלוגו — הילה חמה עדינה בריחוף */
+    .logo-img{transition:transform .5s ease, filter .5s ease}
+    .head-brand:hover .logo-img{transform:scale(1.03); filter:drop-shadow(0 0 18px rgba(208,168,140,.35))}
+    .foot-logo{transition:transform .4s ease, opacity .4s ease}
+    .foot-logo:hover{transform:scale(1.05); opacity:1}
+  }
+  @keyframes sheen{from{inset-inline-start:-60%; opacity:1} to{inset-inline-start:120%; opacity:1}}
+  /* תגי הקומות על תמונת הבניין — דופק עדין שמזמין לחיצה */
+  @keyframes badgePulse{0%,100%{box-shadow:0 0 0 0 rgba(208,168,140,0)}50%{box-shadow:0 0 0 7px rgba(208,168,140,.22)}}
+  .pbadge{animation:badgePulse 3.4s ease-in-out infinite}
+
   /* ================= MOBILE — נמצא בסוף כדי לגבור על כללי הבסיס ================= */
   @media (max-width:700px){
     /* מקרא הסטטוסים מוסתר במובייל — הצבעים מוסברים בבר הלבן ובחתך עצמו */
@@ -747,6 +795,16 @@ const tint = (hex,a)=>{const n=parseInt(hex.slice(1),16);return `rgba(${n>>16},$
 const mixWhite = (hex,w)=>{const n=parseInt(hex.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;
   return `rgb(${Math.round(r+(255-r)*w)},${Math.round(g+(255-g)*w)},${Math.round(b+(255-b)*w)})`;};
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1900); }
+/* ספירה עולה למספרי הבר הלבן — פעם אחת, בטעינה */
+function animateCount(elm, to){
+  const dur = 900, t0 = performance.now();
+  const step = t=>{
+    const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);   // easeOutCubic
+    elm.textContent = Math.round(to * e);
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
 function uid(){ return 'x'+Math.random().toString(36).slice(2,9); }
 const IC = {
   area:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 15h16M15 4v16" opacity=".45"/></svg>',
@@ -807,6 +865,11 @@ function renderKpis(){
     tile.style.setProperty('--kc', s.color);          // פס עליון וצבע המספר בריחוף
     tile.style.setProperty('--kbg', tint(s.color,.06)); // רקע עדין בגוון הסטטוס בריחוף
     k.appendChild(tile);
+  }
+  // ספירה עולה — רק בטעינה הראשונה, לא בכל שמירה
+  if (!window._kpiAnimated && !matchMedia('(prefers-reduced-motion: reduce)').matches){
+    window._kpiAnimated = true;
+    k.querySelectorAll('.kpi b').forEach(b=>{ const v = +b.textContent || 0; if (v > 0) animateCount(b, v); });
   }
   const lg = $('#legend'); lg.innerHTML='';
   for (const key of Object.keys(STATUSES)) lg.appendChild(makePillEl(key,false));
