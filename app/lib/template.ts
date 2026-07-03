@@ -22,6 +22,17 @@ export function renderTemplate(template: string, holder: HolderDTO): string {
   });
 }
 
+/** משתנים זמינים לשילוב בתבניות (מוחלפים בערכי בעל הזכויות בשליחה) */
+export const TEMPLATE_VARS: { token: string; label: string }[] = [
+  { token: "{שם}", label: "שם" },
+  { token: "{טלפון}", label: "טלפון" },
+  { token: "{מצב}", label: "מצב" },
+  { token: "{שווי}", label: "שווי יחסי" },
+  { token: "{משלם}", label: "משלם" },
+  { token: "{מקבל}", label: "מקבל" },
+  { token: "{הערות}", label: "הערות" },
+];
+
 export const DEFAULT_TEMPLATES: { name: string; text: string }[] = [
   {
     name: "פנייה ראשונית",

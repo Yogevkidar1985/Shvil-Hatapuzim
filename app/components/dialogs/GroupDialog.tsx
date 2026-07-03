@@ -268,8 +268,8 @@ export default function GroupDialog({ holders, onClose, onDone }: Props) {
         )}
 
         <div className="flex gap-2 justify-between pt-1">
-          <Button variant="ghost" size="sm" onClick={handleSync} disabled={running} title="בודק מול WhatsApp מי נכנס בפועל ומעדכן סטטוסים">
-            🔄 סנכרן חברוּת
+          <Button variant="ghost" size="sm" onClick={handleSync} disabled={running} title="בדיקה ידנית עכשיו — המערכת גם מסנכרנת אוטומטית ברקע כל דקה">
+            🔄 סנכרן עכשיו
           </Button>
           <div className="flex gap-2">
             {!finished ? (

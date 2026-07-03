@@ -44,6 +44,16 @@ model RightsHolder {
   @@index([groupStatus])
 }
 
+/// תבנית הודעת WhatsApp שהמשתמש יוצר ומנהל מתוך המערכת
+model MessageTemplate {
+  id        String   @id @default(uuid())
+  name      String   // שם התבנית (לתצוגה בבורר)
+  body      String   // תוכן ההודעה עם משתנים כמו {שם}
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 /// קבוצת WhatsApp שנוצרה/מנוהלת מהמערכת (דרך GreenAPI)
 model WhatsappGroup {
   id         String   @id @default(uuid())

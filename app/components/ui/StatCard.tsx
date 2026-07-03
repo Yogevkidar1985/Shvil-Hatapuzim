@@ -12,11 +12,11 @@ interface Props {
 }
 
 const tones = {
-  brand: { ring: "ring-brand-200", icon: "bg-brand-100 text-brand-700", val: "text-brand-700" },
-  gold: { ring: "ring-gold-200", icon: "bg-gold-100 text-gold-700", val: "text-gold-700" },
-  green: { ring: "ring-brand-200", icon: "bg-brand-100 text-brand-700", val: "text-brand-700" },
-  red: { ring: "ring-red-200", icon: "bg-red-100 text-red-700", val: "text-red-700" },
-  slate: { ring: "ring-slate-200", icon: "bg-slate-100 text-slate-600", val: "text-slate-700" },
+  brand: { icon: "bg-brand-50 text-brand-700", val: "text-slate-900", ring: "ring-brand-500/30", bar: "bg-brand-500" },
+  gold: { icon: "bg-gold-100 text-gold-700", val: "text-slate-900", ring: "ring-gold-500/30", bar: "bg-gold-500" },
+  green: { icon: "bg-brand-50 text-brand-700", val: "text-slate-900", ring: "ring-brand-500/30", bar: "bg-brand-500" },
+  red: { icon: "bg-red-50 text-red-600", val: "text-slate-900", ring: "ring-red-400/30", bar: "bg-red-500" },
+  slate: { icon: "bg-slate-100 text-slate-500", val: "text-slate-900", ring: "ring-slate-400/30", bar: "bg-slate-400" },
 };
 
 export default function StatCard({ label, value, icon, tone = "slate", active, onClick }: Props) {
@@ -25,16 +25,16 @@ export default function StatCard({ label, value, icon, tone = "slate", active, o
     <button
       onClick={onClick}
       className={clsx(
-        "card flex items-center gap-3 px-4 py-3 text-right transition-all hover:shadow-card min-w-[150px]",
-        onClick && "cursor-pointer",
-        active && `ring-2 ${t.ring}`
+        "group relative flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white px-4 py-3 text-right transition-all duration-200 min-w-[156px] overflow-hidden",
+        onClick && "cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_4px_8px_-2px_rgba(16,24,40,0.08)]",
+        active ? `ring-2 ${t.ring} shadow-[0_4px_8px_-2px_rgba(16,24,40,0.08)]` : "shadow-[0_1px_2px_rgba(16,24,40,0.05)]"
       )}
     >
-      <span className={clsx("w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0", t.icon)}>
-        {icon}
-      </span>
+      {/* פס מבטא עליון עדין כשפעיל */}
+      <span className={clsx("absolute inset-x-0 top-0 h-0.5 transition-opacity", t.bar, active ? "opacity-100" : "opacity-0")} />
+      <span className={clsx("w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0", t.icon)}>{icon}</span>
       <div className="leading-tight">
-        <div className={clsx("text-2xl font-extrabold tabular-nums", t.val)}>{value}</div>
+        <div className={clsx("text-[22px] font-bold tabular-nums tracking-tight", t.val)}>{value}</div>
         <div className="text-xs text-slate-400 font-medium">{label}</div>
       </div>
     </button>

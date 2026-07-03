@@ -17,12 +17,12 @@ const variants: Record<Variant, string> = {
   primary:
     "bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-brand hover:from-brand-500 hover:to-brand-700 active:translate-y-px",
   secondary:
-    "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-soft",
-  ghost: "bg-transparent text-slate-600 hover:bg-slate-100",
-  danger: "bg-red-600 text-white hover:bg-red-700 shadow-soft",
-  success: "bg-green-600 text-white hover:bg-green-700 shadow-soft",
+    "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-[0_1px_2px_rgba(16,24,40,0.05)]",
+  ghost: "bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700",
+  danger: "bg-red-600 text-white hover:bg-red-700 shadow-[0_1px_2px_rgba(16,24,40,0.05)]",
+  success: "bg-green-600 text-white hover:bg-green-700 shadow-[0_1px_2px_rgba(16,24,40,0.05)]",
   whatsapp:
-    "bg-gradient-to-b from-green-500 to-green-600 text-white shadow-[0_8px_24px_rgba(22,163,74,0.28)] hover:from-green-500 hover:to-green-700 active:translate-y-px",
+    "bg-gradient-to-b from-green-500 to-green-600 text-white shadow-[0_6px_16px_rgba(22,163,74,0.24)] hover:from-green-500 hover:to-green-700 active:translate-y-px",
 };
 
 const sizes: Record<Size, string> = {

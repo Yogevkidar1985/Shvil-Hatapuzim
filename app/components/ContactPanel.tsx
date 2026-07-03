@@ -5,7 +5,8 @@ import { clsx } from "clsx";
 import type { HolderDTO, MessageDTO } from "@/app/lib/types";
 import { STATUS_LABELS, GROUP_STATUS_LABELS } from "@/app/lib/types";
 import { api } from "@/app/lib/api-client";
-import { DEFAULT_TEMPLATES, renderTemplate } from "@/app/lib/template";
+import { renderTemplate } from "@/app/lib/template";
+import { useTemplates } from "@/app/lib/useTemplates";
 import { formatPhone, formatDaySeparator, formatTimeOnly, formatNumber } from "@/app/lib/format";
 import { Avatar, StatusBadge, Spinner } from "./ui/atoms";
 import Button from "./ui/Button";
@@ -19,6 +20,7 @@ interface Props {
 
 export default function ContactPanel({ holder, onClose, onHolderUpdated }: Props) {
   const { toast } = useToast();
+  const { templates } = useTemplates();
   const [messages, setMessages] = useState<MessageDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
@@ -217,17 +219,19 @@ export default function ContactPanel({ holder, onClose, onHolderUpdated }: Props
 
             {/* מחבר */}
             <div className="border-t border-slate-200 p-3 bg-white shrink-0">
-              <div className="flex gap-1.5 mb-2 flex-wrap">
-                {DEFAULT_TEMPLATES.map((t) => (
-                  <button
-                    key={t.name}
-                    onClick={() => setDraft(renderTemplate(t.text, holder))}
-                    className="text-xs bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full hover:bg-brand-100 font-medium transition-colors"
-                  >
-                    {t.name}
-                  </button>
-                ))}
-              </div>
+              {templates.length > 0 && (
+                <div className="flex gap-1.5 mb-2 flex-wrap">
+                  {templates.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setDraft(renderTemplate(t.body, holder))}
+                      className="text-xs bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full hover:bg-brand-100 font-medium transition-colors"
+                    >
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="flex gap-2 items-end">
                 <textarea
                   value={draft}

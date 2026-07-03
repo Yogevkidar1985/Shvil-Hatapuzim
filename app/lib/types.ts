@@ -71,6 +71,13 @@ export interface GroupDTO {
   createdAt: string;
 }
 
+export interface TemplateDTO {
+  id: string;
+  name: string;
+  body: string;
+  order: number;
+}
+
 export const GROUP_STATUS_LABELS: Record<GroupStatus, string> = {
   none: "לא בקבוצה",
   added: "בקבוצה",
