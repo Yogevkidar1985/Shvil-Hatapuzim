@@ -19,7 +19,11 @@
     --shadow-2:0 8px 30px rgba(27,36,103,.09);
   }
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth; -webkit-text-size-adjust:100%}
+  html{scroll-behavior:smooth; -webkit-text-size-adjust:100%; scrollbar-color:var(--tan) rgba(27,36,103,.08)}
+  /* פס גלילה ממותג — זהב על קרם */
+  ::-webkit-scrollbar{width:11px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--tan),var(--tan-deep)); border-radius:8px; border:3px solid var(--cream)}
   @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none!important;animation:none!important} }
   body{
     margin:0; color:var(--ink);
@@ -146,6 +150,8 @@
   .floors-col{display:flex; flex-direction:column; gap:16px; min-width:0}
   .col-head{display:flex; align-items:flex-end; justify-content:space-between; gap:10px; padding-bottom:4px}
   .col-title{margin:0; font-size:30px; font-weight:800; color:var(--navy); letter-spacing:-.02em; line-height:1.12}
+  /* יהלום קטן לפני הכותרת — מהדהד את "היהלום בין הכרם לים" */
+  .col-title::before{content:"◆"; color:var(--tan); font-size:13px; margin-inline-end:9px; vertical-align:3px}
   .col-title::after{content:""; display:block; width:66px; height:5px; border-radius:3px; margin-top:10px;
     background:linear-gradient(90deg,var(--tan),var(--tan-deep))}
   .col-upd{font-size:12.5px; color:var(--muted); font-weight:600; padding-bottom:6px}
@@ -158,6 +164,7 @@
   }
   .panel-head{display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:14px}
   .panel h2{margin:0; font-size:19px; font-weight:800; color:var(--navy); letter-spacing:-.01em}
+  .panel h2::before{content:"◆"; color:var(--tan); font-size:10px; margin-inline-end:7px; vertical-align:2px}
   .panel .hint{margin:0; font-size:12px; color:var(--muted); font-weight:600}
 
   .seg{display:flex; background:rgba(27,36,103,.07); border-radius:13px; padding:4px; gap:4px; margin-bottom:16px}
@@ -204,13 +211,13 @@
   }
   .gallery button::after{content:""; position:absolute; inset:0; border-radius:var(--r-sm);
     box-shadow:inset 0 0 0 1px rgba(27,36,103,.14); transition:box-shadow .18s}
-  .gallery button.act::after{box-shadow:inset 0 0 0 3px var(--navy)}
+  .gallery button.act::after{box-shadow:inset 0 0 0 3px var(--tan-deep)}
   .gallery button:hover{transform:translateY(-2px)}
   .gallery img{width:100%; height:58px; object-fit:cover; display:block}
 
   /* ---------- architectural night section ---------- */
   .bld-scene{
-    display:none; flex:1; border-radius:var(--r-md); padding:22px 20px 0; position:relative; overflow:hidden;
+    display:none; flex:1; border-radius:var(--r-md); padding:22px 20px 14px; position:relative; overflow:hidden;
     background:linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 90%);
     flex-direction:column;
   }
@@ -238,6 +245,7 @@
   }
   .scene-top{position:relative; display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:16px}
   .scene-title{color:#fff; font-weight:800; font-size:15px; letter-spacing:.01em}
+  .scene-title::before{content:"◆"; color:var(--tan); font-size:9px; margin-inline-end:7px; vertical-align:2px}
   .scene-sub{color:var(--tan); font-weight:700; font-size:12px; letter-spacing:.06em}
   .scene-status{position:relative; display:flex; gap:7px; flex-wrap:wrap; margin-bottom:2px}
   .scene-status .sc{display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:#EDEBF5;
@@ -245,31 +253,46 @@
   .scene-status .sc i{width:9px; height:9px; border-radius:50%; flex:0 0 auto}
   .scene-status .sc b{color:#fff; font-weight:800; font-variant-numeric:tabular-nums}
   .bld{position:relative; display:flex; flex-direction:column; gap:11px; padding-bottom:0; max-width:440px; margin:0 auto; width:100%}
+  /* גג פרגולה — מצטט את הפרגולה האמיתית שעל גג הבניין */
   .bld-roof{
-    height:14px; border-radius:8px 8px 0 0; margin:0 38px;
-    background:repeating-linear-gradient(90deg, var(--tan) 0 8px, transparent 8px 16px);
-    opacity:.75;
+    height:17px; border-radius:9px 9px 0 0; margin:0 38px; position:relative;
+    background:repeating-linear-gradient(90deg, var(--tan) 0 6px, transparent 6px 14px);
+    opacity:.85;
   }
-  .bfloor{display:flex; gap:8px; align-items:stretch}
+  .bld-roof::after{content:""; position:absolute; inset-inline:-8px; bottom:-2px; height:3px;
+    border-radius:2px; background:linear-gradient(90deg, var(--tan-deep), var(--tan) 50%, var(--tan-deep))}
+  /* אנימציית "הבניין נבנה" — כל קומה עולה בתורה */
+  @keyframes floorIn{from{opacity:0; transform:translateY(14px)}to{opacity:1; transform:none}}
+  .bfloor{display:flex; gap:8px; align-items:stretch; animation:floorIn .5s cubic-bezier(.22,.61,.36,1) backwards}
   .bfloor::before{content:""; flex:0 0 30px}   /* מרווח מאוזן מימין לסרגל המספרים שמשמאל — הבניין ממורכז */
   .frail{flex:0 0 30px; position:relative; display:grid; place-items:center}
   .frail::before{content:""; position:absolute; top:-8px; bottom:-8px; right:50%; width:1px;
-    background:rgba(255,255,255,.14)}
+    background:linear-gradient(180deg, transparent, rgba(255,255,255,.22) 18% 82%, transparent)}
   .fbadge{
     position:relative; width:30px; height:30px; display:grid; place-items:center; border-radius:50%;
     background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.28); color:#EDE9E0;
     font-size:13.5px; font-weight:800; font-variant-numeric:tabular-nums; cursor:pointer;
-    transition:background .15s, color .15s;
+    transition:background .18s, color .18s, border-color .18s, box-shadow .18s;
   }
   .fbadge:hover{background:var(--tan); color:var(--navy-deep); border-color:var(--tan)}
+  /* ריחוף על קומה מדליק גם את מספר הקומה — הצלבה ויזואלית */
+  .bfloor:hover .fbadge{background:var(--tan); color:var(--navy-deep); border-color:var(--tan);
+    box-shadow:0 0 14px rgba(208,168,140,.45)}
   .bunits{flex:1; display:flex; gap:9px; min-height:54px}
   .bunit{
-    flex:1; border-radius:10px; display:flex; flex-direction:column; justify-content:center; gap:4px;
-    padding:9px 13px; cursor:pointer; text-align:right; min-width:0; position:relative;
-    border:1px solid; box-shadow:inset 7px 0 0 var(--acc,#2E7D4E);
-    transition:transform .16s, filter .16s;
+    flex:1; border-radius:12px; display:flex; flex-direction:column; justify-content:center; gap:4px;
+    padding:10px 14px; cursor:pointer; text-align:right; min-width:0; position:relative;
+    border:1px solid; box-shadow:inset 7px 0 0 var(--acc,#2E7D4E), inset 0 1px 0 rgba(255,255,255,.55);
+    transition:transform .16s, filter .16s, opacity .25s, box-shadow .16s;
   }
   .bunit:hover, .bunit:focus-visible{transform:translateY(-2px); filter:brightness(1.02)}
+  /* ספוטלייט — ריחוף על קומה מעמעם את שאר הבניין וממקד את המבט */
+  @media (hover:hover) and (pointer:fine){
+    .terr, .garden{transition:opacity .25s}
+    .bld:has(.bfloor:hover) .bfloor:not(:hover) .bunit{opacity:.5; filter:saturate(.75)}
+    .bld:has(.bfloor:hover) .bfloor:not(:hover) .terr,
+    .bld:has(.bfloor:hover) .bfloor:not(:hover) .garden{opacity:.45}
+  }
   .bunit b{font-size:13px; font-weight:800; color:var(--navy); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
   .bunit small{font-size:10.5px; color:#6E6A82; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
   .bunit .brow{display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:2px}
@@ -580,7 +603,7 @@
     .kpi.total b{font-size:34px}
     .kpi.total + .kpi{border-inline-start:none}
     .panel{padding:13px 10px}
-    .bld-scene{padding:16px 8px 0}
+    .bld-scene{padding:16px 8px 12px}
     .scene-body{padding-top:14px}
     /* הטקסט השיווקי הופך לזרימה רגילה וממורכז — בלי חלל ריק ענק */
     .scene-tagline{position:static; max-width:none; text-align:center; margin:2px 0 14px;
@@ -1037,15 +1060,18 @@ function renderBld(){
     const s=STATUSES[k];
     return `<span class="sc"><i style="background:${s.color}"></i><b>${ssum[k]||0}</b> ${esc(s.label)}</span>`;
   }).join('');
+  let rowIdx = 0;
   for (const f of floors){
     const row = el('div','bfloor');
+    row.style.animationDelay = (rowIdx++ * 60) + 'ms';   // הבניין "נבנה" קומה-קומה
     const units = el('div','bunits');
     for (const a of f.apts){
       if (a.kind==='penthouse') units.appendChild(el('div','terr','מרפסת<br>30 מ״ר'));   // צד ימין — לכיוון זרובבל
       const s = STATUSES[a.status] || STATUSES.marketing;
       const u = el('div','bunit');
       u.style.setProperty('--acc', s.color);
-      u.style.background = mixWhite(s.color, .82);   // הקובייה נצבעת חזק יותר בגוון הסטטוס — ברור מאוד
+      // מעבר צבע עדין מלמעלה למטה בגוון הסטטוס — עומק במקום צבע שטוח
+      u.style.background = `linear-gradient(180deg, ${mixWhite(s.color,.88)}, ${mixWhite(s.color,.76)})`;
       u.style.borderColor = mixWhite(s.color, .38);
       u.style.flexGrow = Math.max(1, (parseFloat(a.size)||50)/50);
       u.innerHTML = `<b>${esc(a.name)}</b><small>${esc(a.size)} מ״ר${a.rooms?' · '+esc(a.rooms):''}</small>`+
