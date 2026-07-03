@@ -475,11 +475,13 @@
   }
   footer.site b{color:var(--tan); font-weight:800}
   .foot-logo{width:98px; height:auto; display:block; margin:0 auto 14px; opacity:.96}
-  .foot-line{display:inline-flex; align-items:center; gap:9px; flex-wrap:wrap; justify-content:center}
-  .foot-sep{color:var(--tan); opacity:.7}
+  .foot-lead{margin:0 0 5px; color:var(--tan); font-weight:800; font-size:16px; letter-spacing:.01em; text-align:center}
+  .foot-line{margin:0; display:block; text-align:center}
 
   /* ================= MOBILE — נמצא בסוף כדי לגבור על כללי הבסיס ================= */
   @media (max-width:700px){
+    /* מקרא הסטטוסים מוסתר במובייל — הצבעים מוסברים בבר הלבן ובחתך עצמו */
+    .legend{display:none}
     /* הלוגו וכל הכותרות ממורכזים במובייל */
     header.site{padding-top:30px}
     .site-inner{flex-direction:column; gap:20px}
@@ -607,7 +609,8 @@
 
 <footer class="site">
   <img class="foot-logo" src="__LOGO__" alt="זרובבל 15">
-  <div class="foot-line"><b id="m-address">זרובבל 15, תל אביב</b><span class="foot-sep">·</span>פרויקט מגורים יוקרתי בלב העיר</div>
+  <p class="foot-lead" id="m-foot1">הזדמנות אחרונה להצטרף לנבחרת מנצחת</p>
+  <p class="foot-line" id="m-foot2">בפריים לוקיישן בין הכרם לים</p>
 </footer>
 
 <div class="toast" id="toast">נשמר ✓</div>
@@ -640,7 +643,8 @@ const apt = (id,name,rooms,size,outdoor,facing,kind,plan)=>(
   {id,name,rooms,size,outdoor,facing,kind,plan,status:'marketing',note:''});
 
 const DEFAULT_STATE = {
-  meta:{title:'זרובבל 15', subtitle:'פסיעה אחת מקו החוף של תל אביב', address:'זרובבל 15, תל אביב', tagline:'היהלום בין הכרם לים'},
+  meta:{title:'זרובבל 15', subtitle:'פסיעה אחת מקו החוף של תל אביב', address:'זרובבל 15, תל אביב', tagline:'היהלום בין הכרם לים',
+        foot1:'הזדמנות אחרונה להצטרף לנבחרת מנצחת', foot2:'בפריים לוקיישן בין הכרם לים'},
   floors:[
     {id:'f7',num:7,label:'קומה 7',apts:[apt('a12','פנטהאוז','','70','2 מרפסות · 50 מ״ר','חזית לרחוב זרובבל ורחוב אהרונסון','penthouse','roof')]},
     {id:'f6',num:6,label:'קומה 6',apts:[
@@ -1131,10 +1135,13 @@ function renderFloors(){
 
 /* ---------- meta ---------- */
 function renderMeta(){
-  const t=$('#m-title'), s=$('#m-subtitle'), ad=$('#m-address'), tg=$('#m-tagline');
-  t.textContent = state.meta.title; s.textContent = state.meta.subtitle; ad.textContent = state.meta.address;
-  tg.textContent = state.meta.tagline || 'היהלום בין הכרם לים';   // תאימות למצב שמור ישן ללא tagline
-  for (const [node,key] of [[t,'title'],[s,'subtitle'],[ad,'address'],[tg,'tagline']]){
+  const t=$('#m-title'), s=$('#m-subtitle'), tg=$('#m-tagline'), f1=$('#m-foot1'), f2=$('#m-foot2');
+  t.textContent = state.meta.title; s.textContent = state.meta.subtitle;
+  // תאימות למצב שמור ישן — ברירות מחדל לשדות שנוספו מאוחר יותר
+  tg.textContent = state.meta.tagline || 'היהלום בין הכרם לים';
+  f1.textContent = state.meta.foot1 || 'הזדמנות אחרונה להצטרף לנבחרת מנצחת';
+  f2.textContent = state.meta.foot2 || 'בפריים לוקיישן בין הכרם לים';
+  for (const [node,key] of [[t,'title'],[s,'subtitle'],[tg,'tagline'],[f1,'foot1'],[f2,'foot2']]){
     node.contentEditable = editMode ? 'true' : 'false';
     node.onblur = editMode ? ()=>{ state.meta[key]=node.textContent.trim(); saveState(true); toast('נשמר ✓'); } : null;
   }
