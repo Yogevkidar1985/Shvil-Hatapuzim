@@ -663,7 +663,16 @@ function saveState(silent){
 
 /* ---------- cloud sync (works when self-hosted; falls back to the shareable link) ---------- */
 const CLOUD_BASE = 'https://kvdb.io';
-let cloudId = (new URLSearchParams(location.search)).get('c') || null;
+const CLOUD_KEY = 'zrubavel15-cloud';   // זוכר את מזהה הדלי גם בין ביקורים — אותו דלי משותף
+let cloudId = (new URLSearchParams(location.search)).get('c')
+           || (()=>{ try{ return localStorage.getItem(CLOUD_KEY); }catch(e){ return null; } })()
+           || null;
+function rememberCloud(id){
+  cloudId = id;
+  try{ localStorage.setItem(CLOUD_KEY, id); }catch(e){}
+  const u = new URL(location.href); u.searchParams.set('c', id);
+  history.replaceState(null,'', u.pathname + u.search + u.hash);
+}
 let cloudSaveT = null;
 function setSync(mode){
   const el = document.getElementById('sync-ind'); if(!el) return;
@@ -678,9 +687,7 @@ async function cloudSave(){
     if (!cloudId){
       const r = await fetch(CLOUD_BASE+'/', {method:'POST'});
       if(!r.ok) throw 0;
-      cloudId = (await r.text()).trim();
-      const u = new URL(location.href); u.searchParams.set('c', cloudId);
-      history.replaceState(null,'', u.pathname + u.search + u.hash);
+      rememberCloud((await r.text()).trim());
     }
     const r2 = await fetch(`${CLOUD_BASE}/${cloudId}/state`, {method:'PUT', body: JSON.stringify(state)});
     if(!r2.ok) throw 0;
@@ -1126,11 +1133,16 @@ $('#btn-edit').addEventListener('click',()=>{
   $('#btn-edit').classList.toggle('on',editMode);
   $('#btn-edit').textContent = editMode ? '✓ סיום עריכה' : '✎';
   renderAll();
-  toast(editMode?'מצב עריכה פעיל — כל שדה ניתן לשינוי':'מצב תצוגה');
+  // עם כניסה למצב עריכה — מנסים לקבע דלי בענן כדי שהקישור יהיה "חי" מיד
+  if (editMode) cloudSave();
+  toast(editMode?'מצב עריכה פעיל — השינויים נשמרים בענן':'מצב תצוגה');
 });
 $('#btn-share').addEventListener('click',async ()=>{
   saveState(true);
+  // מוודאים שהדלי בענן קיים לפני ההעתקה — כדי שהקישור יכיל את מזהה הענן (?c=) ויהיה חי
+  try{ await cloudSave(); }catch(e){}
   const url = location.href;
+  const live = !!cloudId;   // האם הצלחנו לסנכרן בענן
   const shareData = {
     title: state.meta.title || 'זרובבל 15',
     text: `סטטוס הדירות בפרויקט ${state.meta.title || 'זרובבל 15'} — ${state.meta.address||''}`.trim(),
@@ -1142,7 +1154,8 @@ $('#btn-share').addEventListener('click',async ()=>{
     catch(e){ if (e && e.name === 'AbortError') return; }
   }
   // במחשב: העתקה ללוח
-  try{ await navigator.clipboard.writeText(url); toast('הקישור הועתק — אפשר לשלוח לקונים'); }
+  const msg = live ? 'הקישור הועתק — קישור חי, כל עדכון יופיע למי שנכנס' : 'הקישור הועתק — מכיל את הסטטוסים הנוכחיים';
+  try{ await navigator.clipboard.writeText(url); toast(msg); }
   catch(e){ prompt('העתיקו את הקישור:', url); }
 });
 
