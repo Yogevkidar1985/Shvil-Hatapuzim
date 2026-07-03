@@ -655,11 +655,11 @@
       <div class="bld-scene" id="scene">
         <div class="scene-top">
           <span class="scene-title">חתך הבניין · זרובבל 15</span>
-          <span class="scene-sub" id="scene-sub">7 קומות · 11 דירות</span>
+          <span class="scene-sub" id="scene-sub">7 קומות · 12 דירות</span>
         </div>
         <div class="scene-status" id="scene-status"></div>
         <div class="scene-body">
-          <div class="scene-tagline"><b>בוטיק ליד הים</b><span id="scene-meta">7 קומות · 11 דירות</span> · 100 מטר מהים · מעטפת פרטית לכל דירה</div>
+          <div class="scene-tagline"><b>בוטיק ליד הים</b><span id="scene-meta">7 קומות · 12 דירות</span> · 100 מטר מהים · מעטפת פרטית לכל דירה</div>
           <div id="bld" class="bld"></div>
         </div>
       </div>
@@ -697,7 +697,7 @@ const STATUSES = {
   sold:        {label:'נמכר',       color:'#B23F38',
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3M17 6l2.5 2.5M14.5 8.5 17 11"/></svg>'},
 };
-const LS_KEY = 'zrubavel15-status-v10';   // הקפצת גרסה — מצב ישן שנשמר בדפדפן לא ידרוס עוד את העדכונים
+const LS_KEY = 'zrubavel15-status-v11';   // הקפצת גרסה — מצב ישן שנשמר בדפדפן לא ידרוס עוד את העדכונים
 
 /* floor plans extracted from the permit sheet (תכנית הגשה) — high-res */
 const PLANS = {
@@ -715,7 +715,7 @@ const DEFAULT_STATE = {
   meta:{title:'זרובבל 15', subtitle:'פסיעה אחת מקו החוף של תל אביב', address:'זרובבל 15, תל אביב', tagline:'היהלום בין הכרם לים',
         foot1:'הזדמנות אחרונה להצטרף לנבחרת מנצחת', foot2:'בפריים לוקיישן בין הכרם לים'},
   floors:[
-    {id:'f7',num:7,label:'קומה 7',apts:[apt('a12','פנטהאוז','','70','2 מרפסות · 50 מ״ר','חזית לרחוב זרובבל ורחוב אהרונסון','penthouse','roof','reserved')]},
+    {id:'f7',num:7,label:'קומה 7',apts:[apt('a12','פנטהאוז · דירה 12','','70','מרפסות 50 מ״ר','חזית לרחוב זרובבל ורחוב אהרונסון','penthouse','roof','reserved')]},
     {id:'f6',num:6,label:'קומה 6',apts:[
       apt('a11','דירה 11','3 חדרים','70','מרפסת 12 מ״ר','חזית לרחוב זרובבל','big','floor6'),
       apt('a10','דירה 10','2 חדרים','46','מרפסת 12 מ״ר','חזית לרחוב אהרונסון','small','floor6')]},
@@ -882,13 +882,9 @@ function makeStatusPill(a){
 
 /* ---------- KPIs + legend ---------- */
 function renderKpis(){
+  // כל 12 הדירות נספרות — כולל הפנטהאוז (דירה 12)
   const counts = {marketing:0,negotiation:0,reserved:0,sold:0}; let regular=0;
   for(const f of state.floors) for(const a of f.apts){
-    if (a.kind==='penthouse'){
-      // הפנטהאוז לא מנפח את "בשיווק" (נשאר 11), אבל כן נספר כשהוא שמור/במו״מ/נמכר
-      if (a.status !== 'marketing') counts[a.status]=(counts[a.status]||0)+1;
-      continue;
-    }
     regular++;
     counts[a.status]=(counts[a.status]||0)+1;
   }
@@ -1029,16 +1025,13 @@ function renderBld(){
   wrap.appendChild(el('div','bld-roof'));
   const floors = [...state.floors].sort((x,y)=>y.num-x.num);
   // עדכון מוני הקומות/דירות בחתך כך שתמיד יהיו עקביים
-  const regularUnits = state.floors.reduce((n,f)=>n+f.apts.filter(a=>a.kind!=='penthouse').length,0);
-  const metaTxt = `${state.floors.length} קומות · ${regularUnits} דירות`;
+  const allUnits = state.floors.reduce((n,f)=>n+f.apts.length,0);   // כל 12 הדירות
+  const metaTxt = `${state.floors.length} קומות · ${allUnits} דירות`;
   const ss=$('#scene-sub'), sm=$('#scene-meta');
   if(ss) ss.textContent=metaTxt; if(sm) sm.textContent=metaTxt;
-  // סיכום סטטוס חי בחתך — אותו חוק כמו בבאנר: הפנטהאוז נספר רק כשאינו בשיווק
+  // סיכום סטטוס חי בחתך — כל הדירות כולל הפנטהאוז
   const ssum={marketing:0,negotiation:0,reserved:0,sold:0};
-  for(const f of state.floors) for(const a of f.apts){
-    if (a.kind==='penthouse'){ if (a.status!=='marketing') ssum[a.status]=(ssum[a.status]||0)+1; continue; }
-    ssum[a.status]=(ssum[a.status]||0)+1;
-  }
+  for(const f of state.floors) for(const a of f.apts) ssum[a.status]=(ssum[a.status]||0)+1;
   const sst=$('#scene-status');
   if(sst) sst.innerHTML = Object.keys(STATUSES).map(k=>{
     const s=STATUSES[k];
@@ -1048,7 +1041,7 @@ function renderBld(){
     const row = el('div','bfloor');
     const units = el('div','bunits');
     for (const a of f.apts){
-      if (a.kind==='penthouse') units.appendChild(el('div','terr','מרפסת<br>50 מ״ר'));
+      if (a.kind==='penthouse') units.appendChild(el('div','terr','מרפסת<br>30 מ״ר'));   // צד ימין — לכיוון זרובבל
       const s = STATUSES[a.status] || STATUSES.marketing;
       const u = el('div','bunit');
       u.style.setProperty('--acc', s.color);
@@ -1065,7 +1058,7 @@ function renderBld(){
       u.addEventListener('click', e=>{ e.stopPropagation(); showPop(a,u); popPinned=true; });
       u.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); showPop(a,u); popPinned=true; } });
       units.appendChild(u);
-      if (a.kind==='penthouse') units.appendChild(el('div','terr','מרפסת<br>50 מ״ר'));
+      if (a.kind==='penthouse') units.appendChild(el('div','terr','מרפסת<br>20 מ״ר'));   // צד שמאל — לכיוון אהרונסון
       if (a.kind==='garden') units.appendChild(el('div','garden','גינה<br>46 מ״ר'));
     }
     row.appendChild(units);
