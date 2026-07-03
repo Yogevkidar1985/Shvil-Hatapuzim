@@ -76,23 +76,15 @@
   }
   .addr-chip i{width:6px;height:6px;border-radius:50%;background:var(--tan);display:inline-block}
   .head-actions{margin-inline-start:auto; display:flex; gap:8px; align-items:center}
-  /* small delicate share button, sits next to the address, right side */
+  /* small, delicate share button */
   .btn-share{
-    display:inline-flex; align-items:center; gap:6px;
-    border:1px solid rgba(208,168,140,.5); background:transparent; color:var(--tan);
-    padding:6px 14px; border-radius:999px; font-size:12.5px; font-weight:700; cursor:pointer;
-    transition:background .16s, color .16s;
+    display:inline-flex; align-items:center; gap:5px;
+    border:1px solid rgba(208,168,140,.35); background:transparent; color:rgba(224,196,175,.9);
+    padding:4px 11px; border-radius:999px; font-size:11.5px; font-weight:600; cursor:pointer;
+    letter-spacing:.01em; transition:background .16s, color .16s, border-color .16s;
   }
-  .btn-share:hover{background:var(--tan); color:var(--navy-deep)}
-  .btn-share svg{width:13px;height:13px}
-  .sync-ind{
-    display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700;
-    color:rgba(240,238,255,.55); padding:4px 8px; border-radius:999px;
-    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
-  }
-  .sync-ind::before{content:""; width:6px; height:6px; border-radius:50%; background:currentColor}
-  .sync-ind.cloud{color:#8FD3A6}
-  .sync-ind.saving{color:var(--tan)}
+  .btn-share:hover{background:var(--tan); border-color:var(--tan); color:var(--navy-deep)}
+  .btn-share svg{width:11px;height:11px}
   .btn-edit{
     width:26px; height:26px; padding:0; border-radius:7px; cursor:pointer; font-size:12px;
     border:1px solid rgba(255,255,255,.14); background:transparent; color:rgba(240,238,255,.4);
@@ -102,23 +94,44 @@
   .btn-edit.on{opacity:1; background:var(--tan); border-color:var(--tan); color:var(--navy-deep); width:auto; padding:0 12px}
   [contenteditable="true"]{border-bottom:1.5px dashed var(--tan); cursor:text}
 
-  /* ================= KPI STRIP ================= */
-  .kpis{max-width:1320px; margin:-44px auto 0; padding:0 26px; position:relative; z-index:2}
+  /* ================= KPI STRIP — הבר הלבן ================= */
+  .kpis{max-width:1320px; margin:-48px auto 0; padding:0 26px; position:relative; z-index:2}
   .kpi-card{
     display:grid; grid-template-columns:repeat(5,1fr); text-align:center; overflow:hidden;
     background:var(--paper);
     border:1px solid var(--line); border-radius:var(--r-md);
-    box-shadow:var(--shadow-2); color:var(--navy);
+    box-shadow:0 18px 50px rgba(16,21,62,.16), 0 2px 8px rgba(16,21,62,.06);
+    color:var(--navy);
   }
-  .kpi{padding:15px 8px 13px; border-inline-start:1px solid var(--line); position:relative}
+  .kpi{
+    padding:21px 10px 17px; border-inline-start:1px solid var(--line); position:relative;
+    transition:background .2s ease;
+  }
   .kpi:first-child{border-inline-start:none}
-  .kpi.total{background:linear-gradient(180deg, rgba(208,168,140,.10), rgba(208,168,140,.03))}
-  .kpi.total::after{content:""; position:absolute; inset-inline:0; top:0; height:2.5px; background:linear-gradient(90deg,var(--tan),var(--tan-deep))}
-  .kpi b{display:block; font-size:28px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1.12; letter-spacing:-.02em; color:var(--navy)}
-  .kpi.total b{font-size:34px; color:var(--navy-deep)}
-  .kpi span{font-size:12px; color:var(--muted); font-weight:700}
+  /* פס צבע עליון בגוון הסטטוס — נחשף בריחוף */
+  .kpi::after{
+    content:""; position:absolute; inset-inline:0; top:0; height:3px;
+    background:var(--kc, var(--line)); opacity:0; transform:scaleX(.4);
+    transition:opacity .22s ease, transform .22s ease;
+  }
+  .kpi:hover::after{opacity:1; transform:scaleX(1)}
+  .kpi:hover{background:var(--kbg, rgba(27,36,103,.03))}
+  .kpi b{
+    display:block; font-size:32px; font-weight:800; font-variant-numeric:tabular-nums;
+    line-height:1.1; letter-spacing:-.02em; color:var(--navy);
+    transition:transform .22s cubic-bezier(.22,.61,.36,1), color .22s ease;
+  }
+  .kpi:hover b{transform:translateY(-2px); color:var(--kc, var(--navy-deep))}
+  .kpi.total{background:linear-gradient(180deg, rgba(208,168,140,.12), rgba(208,168,140,.03))}
+  .kpi.total::after{background:linear-gradient(90deg,var(--tan),var(--tan-deep)); opacity:1; transform:none}
+  .kpi.total b{font-size:38px; color:var(--navy-deep)}
+  .kpi.total:hover b{color:var(--navy-deep)}
+  .kpi span{font-size:12px; color:var(--muted); font-weight:700; letter-spacing:.02em}
   .kpi em{display:block; font-style:normal; font-size:10.5px; color:var(--tan-deep); font-weight:800; margin-top:1px; letter-spacing:.03em}
-  .kpi .dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-inline-end:6px; vertical-align:1px}
+  .kpi .dot{
+    display:inline-block; width:8px; height:8px; border-radius:50%; margin-inline-end:6px; vertical-align:1px;
+    box-shadow:0 0 0 3px var(--kbg, transparent); transition:box-shadow .2s ease;
+  }
 
   /* ================= LAYOUT ================= */
   main{max-width:1320px; margin:34px auto 46px; padding:0 26px; display:grid;
@@ -466,12 +479,32 @@
   .foot-sep{color:var(--tan); opacity:.7}
 
   /* ================= MOBILE — נמצא בסוף כדי לגבור על כללי הבסיס ================= */
+  @media (max-width:700px){
+    /* הלוגו וכל הכותרות ממורכזים במובייל */
+    header.site{padding-top:30px}
+    .site-inner{flex-direction:column; gap:20px}
+    .head-brand{width:100%}
+    .head-txt{width:100%; min-width:0; align-items:center; text-align:center}
+    .site h1{text-align:center}
+    .site .sub{text-align:center}
+    .head-meta{justify-content:center; margin-top:14px}
+    /* ההילה החמה עוברת למרכז, מאחורי הלוגו */
+    header.site::after{right:50%; transform:translateX(50%); width:88%}
+  }
   @media (max-width:560px){
     .plan-thumb{width:150px; height:100px}
     .apt-bot{gap:10px}
     /* מרחיבים את הכרטיסיה הכחולה לצדדים ומצמצמים מרווחים מיותרים */
     main{padding:0 12px}
     .kpis{padding:0 12px}
+    /* הבר הלבן במובייל: סה״כ הדירות בשורה מלאה מעל, 4 הסטטוסים מתחתיו */
+    .kpi-card{grid-template-columns:repeat(4,1fr)}
+    .kpi{padding:14px 4px 12px}
+    .kpi b{font-size:23px}
+    .kpi span{font-size:10.5px; letter-spacing:0}
+    .kpi.total{grid-column:1/-1; border-bottom:1px solid var(--line); padding:16px 8px 13px}
+    .kpi.total b{font-size:34px}
+    .kpi.total + .kpi{border-inline-start:none}
     .panel{padding:13px 10px}
     .bld-scene{padding:16px 8px 0}
     .scene-body{padding-top:14px}
@@ -505,7 +538,7 @@
   <div class="site-inner">
     <div class="head-brand">
       <img class="logo-img" src="__LOGO__" alt="לוגו זרובבל 15">
-      <p class="brand-tag">היהלום בין הכרם לים</p>
+      <p class="brand-tag" id="m-tagline">היהלום בין הכרם לים</p>
     </div>
     <div class="head-txt">
       <h1 id="m-title">זרובבל 15</h1>
@@ -515,7 +548,6 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
           שיתוף הפרויקט
         </button>
-        <span class="sync-ind" id="sync-ind" title="הנתונים נשמרים בתוך קישור השיתוף — אפשר לפתוח בכל מכשיר">שמור בקישור</span>
         <button class="btn-edit" id="btn-edit" title="מצב עריכה — לניהול הסטטוסים והפרטים" aria-label="מצב עריכה">✎</button>
       </div>
     </div>
@@ -556,7 +588,7 @@
         </div>
         <div class="scene-status" id="scene-status"></div>
         <div class="scene-body">
-          <div class="scene-tagline"><b>בוטיק בלב העיר</b><span id="scene-meta">7 קומות · 11 דירות</span> · דקות מהים · מעטפת פרטית לכל דירה</div>
+          <div class="scene-tagline"><b>בוטיק בלב העיר</b><span id="scene-meta">7 קומות · 11 דירות</span> · 100 מטר מהים · מעטפת פרטית לכל דירה</div>
           <div id="bld" class="bld"></div>
         </div>
       </div>
@@ -608,7 +640,7 @@ const apt = (id,name,rooms,size,outdoor,facing,kind,plan)=>(
   {id,name,rooms,size,outdoor,facing,kind,plan,status:'marketing',note:''});
 
 const DEFAULT_STATE = {
-  meta:{title:'זרובבל 15', subtitle:'פסיעה אחת מקו החוף של תל אביב', address:'זרובבל 15, תל אביב'},
+  meta:{title:'זרובבל 15', subtitle:'פסיעה אחת מקו החוף של תל אביב', address:'זרובבל 15, תל אביב', tagline:'היהלום בין הכרם לים'},
   floors:[
     {id:'f7',num:7,label:'קומה 7',apts:[apt('a12','פנטהאוז','','70','2 מרפסות · 50 מ״ר','חזית לרחוב זרובבל ורחוב אהרונסון','penthouse','roof')]},
     {id:'f6',num:6,label:'קומה 6',apts:[
@@ -766,8 +798,11 @@ function renderKpis(){
     `<b>${regular}</b><span>דירות בפרויקט</span>`));
   for (const key of ['marketing','negotiation','reserved','sold']){
     const s=STATUSES[key];
-    k.appendChild(el('div','kpi',
-      `<b>${counts[key]||0}</b><span><i class="dot" style="background:${s.color}"></i>${esc(s.label)}</span>`));
+    const tile = el('div','kpi',
+      `<b>${counts[key]||0}</b><span><i class="dot" style="background:${s.color}"></i>${esc(s.label)}</span>`);
+    tile.style.setProperty('--kc', s.color);          // פס עליון וצבע המספר בריחוף
+    tile.style.setProperty('--kbg', tint(s.color,.06)); // רקע עדין בגוון הסטטוס בריחוף
+    k.appendChild(tile);
   }
   const lg = $('#legend'); lg.innerHTML='';
   for (const key of Object.keys(STATUSES)) lg.appendChild(makePillEl(key,false));
@@ -1096,9 +1131,10 @@ function renderFloors(){
 
 /* ---------- meta ---------- */
 function renderMeta(){
-  const t=$('#m-title'), s=$('#m-subtitle'), ad=$('#m-address');
+  const t=$('#m-title'), s=$('#m-subtitle'), ad=$('#m-address'), tg=$('#m-tagline');
   t.textContent = state.meta.title; s.textContent = state.meta.subtitle; ad.textContent = state.meta.address;
-  for (const [node,key] of [[t,'title'],[s,'subtitle'],[ad,'address']]){
+  tg.textContent = state.meta.tagline || 'היהלום בין הכרם לים';   // תאימות למצב שמור ישן ללא tagline
+  for (const [node,key] of [[t,'title'],[s,'subtitle'],[ad,'address'],[tg,'tagline']]){
     node.contentEditable = editMode ? 'true' : 'false';
     node.onblur = editMode ? ()=>{ state.meta[key]=node.textContent.trim(); saveState(true); toast('נשמר ✓'); } : null;
   }
