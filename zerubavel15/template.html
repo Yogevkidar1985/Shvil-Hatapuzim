@@ -697,7 +697,7 @@ const STATUSES = {
   sold:        {label:'נמכרה',      color:'#B23F38',
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3M17 6l2.5 2.5M14.5 8.5 17 11"/></svg>'},
 };
-const LS_KEY = 'zrubavel15-status-v9';   // הקפצת גרסה — מצב ישן שנשמר בדפדפן לא ידרוס עוד את העדכונים
+const LS_KEY = 'zrubavel15-status-v10';   // הקפצת גרסה — מצב ישן שנשמר בדפדפן לא ידרוס עוד את העדכונים
 
 /* floor plans extracted from the permit sheet (תכנית הגשה) — high-res */
 const PLANS = {
@@ -715,7 +715,7 @@ const DEFAULT_STATE = {
   meta:{title:'זרובבל 15', subtitle:'פסיעה אחת מקו החוף של תל אביב', address:'זרובבל 15, תל אביב', tagline:'היהלום בין הכרם לים',
         foot1:'הזדמנות אחרונה להצטרף לנבחרת מנצחת', foot2:'בפריים לוקיישן בין הכרם לים'},
   floors:[
-    {id:'f7',num:7,label:'קומה 7',apts:[apt('a12','פנטהאוז','','70','2 מרפסות · 50 מ״ר','חזית לרחוב זרובבל ורחוב אהרונסון','penthouse','roof')]},
+    {id:'f7',num:7,label:'קומה 7',apts:[apt('a12','פנטהאוז','','70','2 מרפסות · 50 מ״ר','חזית לרחוב זרובבל ורחוב אהרונסון','penthouse','roof','reserved')]},
     {id:'f6',num:6,label:'קומה 6',apts:[
       apt('a11','דירה 11','3 חדרים','70','מרפסת 12 מ״ר','חזית לרחוב זרובבל','big','floor6'),
       apt('a10','דירה 10','2 חדרים','46','מרפסת 12 מ״ר','חזית לרחוב אהרונסון','small','floor6')]},
@@ -884,7 +884,11 @@ function makeStatusPill(a){
 function renderKpis(){
   const counts = {marketing:0,negotiation:0,reserved:0,sold:0}; let regular=0;
   for(const f of state.floors) for(const a of f.apts){
-    if (a.kind==='penthouse') continue;   // הפנטהאוז אינו נספר במונים — 11 דירות בשיווק
+    if (a.kind==='penthouse'){
+      // הפנטהאוז לא מנפח את "בשיווק" (נשאר 11), אבל כן נספר כשהוא שמור/במו״מ/נמכר
+      if (a.status !== 'marketing') counts[a.status]=(counts[a.status]||0)+1;
+      continue;
+    }
     regular++;
     counts[a.status]=(counts[a.status]||0)+1;
   }
@@ -1029,9 +1033,12 @@ function renderBld(){
   const metaTxt = `${state.floors.length} קומות · ${regularUnits} דירות`;
   const ss=$('#scene-sub'), sm=$('#scene-meta');
   if(ss) ss.textContent=metaTxt; if(sm) sm.textContent=metaTxt;
-  // סיכום סטטוס חי בתוך תצוגת הארכיטקטורה — הפנטהאוז אינו נספר (11 דירות)
+  // סיכום סטטוס חי בחתך — אותו חוק כמו בבאנר: הפנטהאוז נספר רק כשאינו בשיווק
   const ssum={marketing:0,negotiation:0,reserved:0,sold:0};
-  for(const f of state.floors) for(const a of f.apts){ if(a.kind==='penthouse') continue; ssum[a.status]=(ssum[a.status]||0)+1; }
+  for(const f of state.floors) for(const a of f.apts){
+    if (a.kind==='penthouse'){ if (a.status!=='marketing') ssum[a.status]=(ssum[a.status]||0)+1; continue; }
+    ssum[a.status]=(ssum[a.status]||0)+1;
+  }
   const sst=$('#scene-status');
   if(sst) sst.innerHTML = Object.keys(STATUSES).map(k=>{
     const s=STATUSES[k];
