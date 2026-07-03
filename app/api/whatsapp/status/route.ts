@@ -9,11 +9,11 @@ export async function GET() {
   if (!isAuthenticated()) {
     return NextResponse.json({ error: "לא מורשה" }, { status: 401 });
   }
-  if (!isGreenApiConfigured()) {
+  if (!(await isGreenApiConfigured())) {
     return NextResponse.json({ configured: false, state: null });
   }
   try {
-    const cfg = getGreenApiConfig();
+    const cfg = await getGreenApiConfig();
     const state = await getStateInstance(cfg);
     return NextResponse.json({ configured: true, state: state.stateInstance });
   } catch {

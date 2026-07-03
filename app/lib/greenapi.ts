@@ -1,5 +1,7 @@
-// קליינט GreenAPI — נקרא אך ורק מצד שרת (API routes). הסודות נשמרים ב-env בלבד.
+// קליינט GreenAPI — נקרא אך ורק מצד שרת (API routes).
+// הסודות נשמרים בהגדרות המערכת (בענן, טבלת AppConfig) עם נפילה ל-env.
 import { normalizeIsraeliPhone } from "./phone";
+import { getAllConfig, CONFIG_KEYS } from "./settings";
 
 export interface GreenApiConfig {
   idInstance: string;
@@ -17,26 +19,30 @@ export class GreenApiError extends Error {
   }
 }
 
-/** טוען את תצורת GreenAPI מ-env. זורק אם חסרים ערכים. */
-export function getGreenApiConfig(): GreenApiConfig {
-  const idInstance = process.env.GREENAPI_ID_INSTANCE;
-  const apiToken = process.env.GREENAPI_API_TOKEN;
+/** טוען את תצורת GreenAPI — קודם מהגדרות הענן, ואז מ-env. זורק אם חסרים ערכים. */
+export async function getGreenApiConfig(): Promise<GreenApiConfig> {
+  const cfg = await getAllConfig();
+  const idInstance = cfg[CONFIG_KEYS.greenIdInstance] || process.env.GREENAPI_ID_INSTANCE;
+  const apiToken = cfg[CONFIG_KEYS.greenApiToken] || process.env.GREENAPI_API_TOKEN;
   if (!idInstance || !apiToken) {
     throw new GreenApiError(
-      "GreenAPI אינו מוגדר. הגדירו GREENAPI_ID_INSTANCE ו-GREENAPI_API_TOKEN בקובץ .env.local"
+      "WhatsApp (GreenAPI) עדיין לא מחובר. היכנסו להגדרות והזינו idInstance ו-apiToken."
     );
   }
   return {
     idInstance,
     apiToken,
-    apiUrl: process.env.GREENAPI_API_URL || "https://api.green-api.com",
-    mediaUrl: process.env.GREENAPI_MEDIA_URL || "https://media.green-api.com",
+    apiUrl: cfg[CONFIG_KEYS.greenApiUrl] || process.env.GREENAPI_API_URL || "https://api.green-api.com",
+    mediaUrl: cfg[CONFIG_KEYS.greenMediaUrl] || process.env.GREENAPI_MEDIA_URL || "https://media.green-api.com",
   };
 }
 
-/** האם GreenAPI מוגדר (לבדיקת UI ללא חשיפת הסודות) */
-export function isGreenApiConfigured(): boolean {
-  return Boolean(process.env.GREENAPI_ID_INSTANCE && process.env.GREENAPI_API_TOKEN);
+/** האם GreenAPI מוגדר (מהגדרות הענן או env) — ללא חשיפת הסודות */
+export async function isGreenApiConfigured(): Promise<boolean> {
+  const cfg = await getAllConfig();
+  const idInstance = cfg[CONFIG_KEYS.greenIdInstance] || process.env.GREENAPI_ID_INSTANCE;
+  const apiToken = cfg[CONFIG_KEYS.greenApiToken] || process.env.GREENAPI_API_TOKEN;
+  return Boolean(idInstance && apiToken);
 }
 
 async function call<T>(

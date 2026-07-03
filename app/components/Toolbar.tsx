@@ -27,6 +27,7 @@ interface Props {
   onCheckPhones: () => void;
   onSigners: () => void;
   onSync: () => void;
+  onSettings: () => void;
   onLogout: () => void;
 }
 
@@ -59,17 +60,21 @@ export default function Toolbar(p: Props) {
         <div className="flex items-center gap-2 flex-wrap">
           <IdChip label="תכנית" value={PROJECT.plan} />
           <IdChip label="גוש" value={PROJECT.block} />
-          <span
+          <button
+            onClick={p.onSettings}
             className={clsx(
-              "text-xs px-2.5 py-1 rounded-full font-semibold flex items-center gap-1.5",
-              waOk ? "bg-brand-500/30 text-white" : "bg-white/10 text-white/70"
+              "text-xs px-2.5 py-1 rounded-full font-semibold flex items-center gap-1.5 transition-colors",
+              waOk ? "bg-brand-500/30 text-white hover:bg-brand-500/40" : "bg-white/10 text-white/80 hover:bg-white/20"
             )}
-            title="מצב חיבור WhatsApp (GreenAPI)"
+            title="מצב חיבור WhatsApp — לחצו להגדרות"
           >
             <span className={clsx("w-2 h-2 rounded-full", waOk ? "bg-green-400" : "bg-amber-400")} />
             WhatsApp {p.waState?.configured ? p.waState.state ?? "?" : "לא מחובר"}
-          </span>
+          </button>
           <SaveIndicator state={p.saveState} />
+          <button onClick={p.onSettings} className="text-sm text-white/70 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10" title="הגדרות">
+            ⚙️
+          </button>
           <button onClick={p.onLogout} className="text-sm text-white/70 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10">
             יציאה ←
           </button>
