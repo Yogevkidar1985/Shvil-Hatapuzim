@@ -177,12 +177,23 @@
   }
   .pbadge{
     position:absolute; width:28px; height:28px; border-radius:8px; transform:translate(-50%,-50%);
-    background:rgba(16,21,62,.5); backdrop-filter:blur(3px); color:#fff;
-    display:grid; place-items:center; font-weight:700; font-size:12.5px; cursor:pointer;
-    border:1px solid rgba(255,255,255,.5);
-    font-variant-numeric:tabular-nums; transition:background .15s, transform .15s;
+    background:rgba(16,21,62,.55); backdrop-filter:blur(3px); color:#fff;
+    display:grid; place-items:center; font-weight:800; font-size:12.5px; cursor:pointer;
+    border:1px solid rgba(255,255,255,.55); text-shadow:0 1px 3px rgba(0,0,0,.45);
+    font-variant-numeric:tabular-nums; transition:filter .15s, transform .15s, border-color .15s;
   }
-  .pbadge:hover{background:var(--tan); color:var(--navy-deep); border-color:var(--tan); transform:translate(-50%,-50%) scale(1.12)}
+  .pbadge:hover{border-color:#fff; filter:brightness(1.18); transform:translate(-50%,-50%) scale(1.14)}
+  /* מקרא מיני על התמונה — זהב=נמכר, כחול=זמין */
+  .photo-legend{
+    position:absolute; top:10px; inset-inline-start:10px; z-index:2;
+    display:flex; gap:11px; padding:6px 12px; border-radius:999px;
+    background:rgba(16,21,62,.55); backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.25); color:#fff; font-size:11px; font-weight:700;
+  }
+  .photo-legend span{display:inline-flex; align-items:center; gap:5px}
+  .photo-legend i{width:9px; height:9px; border-radius:3px; display:inline-block; border:1px solid rgba(255,255,255,.5)}
+  .photo-legend .lg-sold{background:#C79A73}
+  .photo-legend .lg-avail{background:rgba(27,36,103,.9)}
 
   .gallery{display:none; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:10px}
   .gallery button{
@@ -627,6 +638,7 @@
       <div class="photo-wrap" id="photo">
         <img src="__PH1__" alt="הדמיית הבניין — זרובבל 15" id="mainphoto">
         <div class="photo-cap" id="photo-cap"></div>
+        <div class="photo-legend" id="photo-legend"><span><i class="lg-sold"></i>נמכרה</span><span><i class="lg-avail"></i>זמינה</span></div>
         <div id="pbadges"></div>
       </div>
       <div class="gallery" id="gallery" role="group" aria-label="בחירת תמונה"></div>
@@ -786,6 +798,18 @@ async function cloudInit(){
     if (s && s.floors){ state = s; setSync('cloud'); renderAll(); }
   }catch(e){ setSync('local'); }
 }
+/* משיכת עדכונים מהענן ברקע — צופה בדף רואה כל שינוי בלי לרענן */
+setInterval(async ()=>{
+  if (!cloudId || editMode) return;   // לא דורסים עריכה פעילה
+  try{
+    const r = await fetch(`${CLOUD_BASE}/${cloudId}/state`, {cache:'no-store'});
+    if (!r.ok) return;
+    const s = await r.json();
+    if (s && s.floors && (s.meta && s.meta.updatedAt || 0) > (state.meta.updatedAt || 0)){
+      state = s; setSync('cloud'); renderAll();
+    }
+  }catch(e){}
+}, 45000);
 
 /* ---------- helpers ---------- */
 const $ = s=>document.querySelector(s);
@@ -1040,7 +1064,11 @@ function renderBld(){
   wrap.appendChild(el('div','bld-ground'));
   wrap.appendChild(el('div','bld-street','<span>רחוב זרובבל ←</span><span>→ רחוב אהרונסון</span>'));
 
-  // photo badges — spread along the facade, exact position via positionBadges()
+  // photo badges — מפת מכירות חיה על גבי תמונת הבניין:
+  // כל ריבוע = קומה. חצי ימני = חזית זרובבל, חצי שמאלי = עורף אהרונסון.
+  // זהב (מהפאלטה) = נמכרה · כחול = זמינה. קומה עם דירה אחת — הריבוע כולו.
+  const SOLD_C  = '#C79A73';            // זהב הפאלטה — נמכר
+  const AVAIL_C = 'rgba(16,21,62,.55)'; // כחול זכוכיתי — זמין
   const pb = $('#pbadges'); pb.innerHTML='';
   const n = floors.length;
   // מיקומי הקומות מכוילים לחזית שבתמונה (7 קומות) — מסודר וטבעי לעין
@@ -1049,7 +1077,19 @@ function renderBld(){
     const b = el('button','pbadge', String(f.num));
     b.dataset.y = (n === 7) ? YMAP7[i]
                             : (14 + 70 * i / (n - 1)) + (i === n - 1 ? 5 : 0);
-    b.setAttribute('aria-label','מעבר ל'+f.label);
+    const apts = f.apts;
+    if (apts.length >= 2){
+      // apts[0] = הדירה הפונה לזרובבל (חזית, ימין) · apts[1] = אהרונסון (עורף, שמאל)
+      // קו לבן דק במרכז מבהיר שהקומה מחולקת לשתי דירות
+      const fc = apts[0].status==='sold' ? SOLD_C : AVAIL_C;
+      const bc = apts[1].status==='sold' ? SOLD_C : AVAIL_C;
+      b.style.background = `linear-gradient(to left, ${fc} 0 calc(50% - .5px), rgba(255,255,255,.75) calc(50% - .5px) calc(50% + .5px), ${bc} calc(50% + .5px) 100%)`;
+    } else if (apts.length === 1){
+      b.style.background = apts[0].status==='sold' ? SOLD_C : AVAIL_C;
+    }
+    const line = a=>`${a.name} — ${(STATUSES[a.status]||STATUSES.marketing).label}`;
+    b.title = f.label + (apts.length ? ': ' + apts.map(line).join(' · ') : '');
+    b.setAttribute('aria-label', b.title + '. מעבר ל' + f.label);
     b.addEventListener('click',()=>focusFloor(f.id));
     pb.appendChild(b);
   });
@@ -1308,6 +1348,7 @@ function renderGallery(){
       document.getElementById('mainphoto').src = p.src;
       document.getElementById('photo-cap').textContent = p.label;
       document.getElementById('pbadges').style.display = p.badges ? 'block' : 'none';
+      document.getElementById('photo-legend').style.display = p.badges ? 'flex' : 'none';   // המקרא רק על תמונת הבניין
       renderGallery();
       positionBadges();
     });
