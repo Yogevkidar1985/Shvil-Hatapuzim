@@ -25,24 +25,30 @@
   --gold-600: #9c7a3c;
 
   /* ניטרלים */
-  --ink: #0f172a;
-  --ink-soft: #475569;
-  --ink-faint: #94a3b8;
-  --line: #e9edf3;
+  --ink: #101828;
+  --ink-soft: #475467;
+  --ink-faint: #98a2b3;
+  --line: #eaecf0;
+  --line-soft: #f2f4f7;
   --surface: #ffffff;
-  --canvas: #f6f7fb;
+  --canvas: #f7f8fa;
 
   /* סטטוסים */
   --green: #16a34a;
   --red: #dc2626;
   --amber: #d97706;
 
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 12px 40px rgba(15, 23, 42, 0.14);
-  --shadow-brand: 0 8px 24px rgba(234, 88, 12, 0.28);
+  /* צללים רב-שכבתיים בסגנון SaaS מודרני */
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-md: 0 4px 8px -2px rgba(16, 24, 40, 0.08), 0 2px 4px -2px rgba(16, 24, 40, 0.05);
+  --shadow-lg: 0 12px 20px -6px rgba(16, 24, 40, 0.12), 0 4px 8px -4px rgba(16, 24, 40, 0.06);
+  --shadow-xl: 0 24px 48px -12px rgba(16, 24, 40, 0.18);
+  --shadow-brand: 0 6px 16px rgba(12, 59, 45, 0.24);
+  --shadow-pop: var(--shadow-xl);
 
   --radius: 14px;
+  --ring: 0 0 0 4px rgba(31, 120, 91, 0.12);
 }
 
 * {
@@ -63,8 +69,8 @@ body {
 /* רקע עדין למסך הראשי */
 .app-canvas {
   background:
-    radial-gradient(1200px 500px at 100% -10%, #eef5f0 0%, rgba(238, 245, 240, 0) 55%),
-    radial-gradient(900px 500px at -10% 0%, #faf5e9 0%, rgba(250, 245, 233, 0) 50%),
+    radial-gradient(900px 420px at 100% -12%, #eef6f1 0%, rgba(238, 246, 241, 0) 60%),
+    radial-gradient(760px 400px at -8% -4%, #faf6ec 0%, rgba(250, 246, 236, 0) 56%),
     var(--canvas);
 }
 
@@ -151,25 +157,26 @@ body {
 .ag-theme-quartz {
   --ag-font-family: "Heebo", sans-serif;
   --ag-font-size: 14px;
-  --ag-foreground-color: #1e293b;
-  --ag-header-background-color: #ffffff;
-  --ag-header-foreground-color: #64748b;
+  --ag-foreground-color: #101828;
+  --ag-header-background-color: #fcfcfd;
+  --ag-header-foreground-color: #667085;
   --ag-header-column-separator-display: none;
-  --ag-row-hover-color: #f2f8f4;
-  --ag-selected-row-background-color: #e9f4ee;
-  --ag-border-color: #eef1f5;
-  --ag-row-border-color: #f1f4f8;
-  --ag-cell-horizontal-border: solid #f4f6f9;
+  --ag-row-hover-color: #f6faf8;
+  --ag-selected-row-background-color: #eef7f2;
+  --ag-border-color: #eaecf0;
+  --ag-row-border-color: #f2f4f7;
+  --ag-cell-horizontal-border: none;
   --ag-borders: none;
-  --ag-border-radius: 14px;
+  --ag-border-radius: 12px;
   --ag-wrapper-border-radius: 16px;
-  --ag-header-height: 46px;
-  --ag-row-height: 48px;
-  --ag-cell-horizontal-padding: 14px;
+  --ag-header-height: 44px;
+  --ag-row-height: 52px;
+  --ag-cell-horizontal-padding: 16px;
   --ag-input-focus-border-color: var(--brand-400);
   --ag-range-selection-border-color: var(--brand-400);
   --ag-checkbox-checked-color: var(--brand-600);
   --ag-checkbox-background-color: #fff;
+  --ag-checkbox-border-radius: 5px;
 }
 .ag-theme-quartz .ag-root-wrapper {
   border: 1px solid var(--line);
@@ -180,10 +187,11 @@ body {
   border-bottom: 1px solid var(--line);
 }
 .ag-theme-quartz .ag-header-cell-text {
-  font-weight: 700;
-  font-size: 12.5px;
-  letter-spacing: 0.01em;
-  color: #64748b;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: #667085;
 }
 .ag-theme-quartz .ag-header-cell--first .ag-header-cell-text {
   color: var(--brand-700);

@@ -23,6 +23,7 @@ interface Props {
   onAddColumn: () => void;
   onBulkSend: () => void;
   onGroup: () => void;
+  onTemplates: () => void;
   onCheckPhones: () => void;
   onSigners: () => void;
   onSync: () => void;
@@ -114,6 +115,7 @@ export default function Toolbar(p: Props) {
         <Button variant="secondary" size="sm" icon="＋" onClick={p.onAddColumn}>עמודה</Button>
         <Button variant="secondary" size="sm" icon="⬆️" onClick={p.onImport}>ייבוא</Button>
         <Button variant="secondary" size="sm" icon="⬇️" onClick={p.onExport}>ייצוא</Button>
+        <Button variant="secondary" size="sm" icon="📝" onClick={p.onTemplates} title="ניהול תבניות הודעה">תבניות</Button>
         <Button variant="secondary" size="sm" icon="✅" onClick={p.onSigners}>חתומים</Button>
         <Button variant="secondary" size="sm" icon="🔄" onClick={p.onSync} title="משיכת הודעות נכנסות">סנכרון</Button>
         <Button variant="secondary" size="sm" icon="✔" onClick={p.onCheckPhones} title="בדיקה מול WhatsApp אילו מספרים תקינים">

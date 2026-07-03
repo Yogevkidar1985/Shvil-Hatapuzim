@@ -6,7 +6,8 @@ import Modal from "./Modal";
 import Button from "../ui/Button";
 import { Avatar } from "../ui/atoms";
 import { api, type DuplicateCheck } from "@/app/lib/api-client";
-import { renderTemplate, DEFAULT_TEMPLATES } from "@/app/lib/template";
+import { renderTemplate } from "@/app/lib/template";
+import { useTemplates } from "@/app/lib/useTemplates";
 import { isValidIsraeliPhone } from "@/app/lib/phone";
 import type { HolderDTO } from "@/app/lib/types";
 
@@ -31,7 +32,8 @@ interface Recipient {
 const THROTTLE_MS = 3000;
 
 export default function BulkSendDialog({ holders, onClose, onDone }: Props) {
-  const [template, setTemplate] = useState(DEFAULT_TEMPLATES[0].text);
+  const { templates } = useTemplates();
+  const [template, setTemplate] = useState("");
   const [running, setRunning] = useState(false);
   const [finished, setFinished] = useState(false);
   const [recipients, setRecipients] = useState<Recipient[]>(() =>
@@ -72,6 +74,12 @@ export default function BulkSendDialog({ holders, onClose, onDone }: Props) {
     },
     [holders]
   );
+
+  // אתחול תוכן ההודעה מהתבנית הראשונה כשהתבניות נטענות
+  useEffect(() => {
+    if (!template && templates.length > 0) setTemplate(templates[0].body);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [templates]);
 
   useEffect(() => {
     refreshDuplicates(template);
@@ -145,17 +153,20 @@ export default function BulkSendDialog({ holders, onClose, onDone }: Props) {
       <div className="space-y-4">
         {!running && !finished && (
           <>
-            <div className="flex gap-1.5 flex-wrap">
-              {DEFAULT_TEMPLATES.map((t) => (
-                <button
-                  key={t.name}
-                  onClick={() => setTemplate(t.text)}
-                  className="text-xs bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full hover:bg-brand-100 font-medium"
-                >
-                  {t.name}
-                </button>
-              ))}
-            </div>
+            {templates.length > 0 && (
+              <div className="flex gap-1.5 flex-wrap items-center">
+                <span className="text-xs text-slate-400">תבניות:</span>
+                {templates.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTemplate(t.body)}
+                    className="text-xs bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full hover:bg-brand-100 font-medium"
+                  >
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                 תוכן ההודעה <span className="text-slate-400 font-normal">— משתנים: {"{שם}"} {"{מצב}"} {"{טלפון}"}</span>

@@ -1,5 +1,5 @@
 // עטיפות fetch לצד לקוח. כל הקריאות מחזירות JSON וזורקות שגיאה ידידותית בעברית.
-import type { HolderDTO, ColumnDefDTO, MessageDTO, GroupDTO } from "./types";
+import type { HolderDTO, ColumnDefDTO, MessageDTO, GroupDTO, TemplateDTO } from "./types";
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -55,6 +55,21 @@ export const api = {
     }),
   syncMessages: () =>
     request<{ ok: boolean; processed: number; saved: number }>("/api/whatsapp/sync", { method: "POST" }),
+
+  // ===== תבניות הודעה =====
+  listTemplates: () => request<{ templates: TemplateDTO[] }>("/api/templates"),
+  createTemplate: (name: string, body: string) =>
+    request<{ template: TemplateDTO }>("/api/templates", {
+      method: "POST",
+      body: JSON.stringify({ name, body }),
+    }),
+  updateTemplate: (id: string, data: { name?: string; body?: string }) =>
+    request<{ template: TemplateDTO }>(`/api/templates/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  deleteTemplate: (id: string) =>
+    request<{ ok: boolean }>(`/api/templates/${id}`, { method: "DELETE" }),
 
   // ===== מניעת כפילויות =====
   checkDuplicates: (holderIds: string[], template: string) =>

@@ -10,6 +10,7 @@ import AddColumnDialog from "./dialogs/AddColumnDialog";
 import ImportDialog from "./dialogs/ImportDialog";
 import BulkSendDialog from "./dialogs/BulkSendDialog";
 import GroupDialog from "./dialogs/GroupDialog";
+import TemplatesDialog from "./dialogs/TemplatesDialog";
 import SignersMatchDialog from "./dialogs/SignersMatchDialog";
 import { ToastProvider, useToast } from "./ui/Toast";
 import { EmptyState } from "./ui/atoms";
@@ -53,6 +54,7 @@ function CrmContent() {
   const [showImport, setShowImport] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [showGroup, setShowGroup] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [showSigners, setShowSigners] = useState(false);
   const [checkingPhones, setCheckingPhones] = useState(false);
 
@@ -110,6 +112,34 @@ function CrmContent() {
     reload();
     api.whatsappStatus().then(setWaState).catch(() => setWaState({ configured: false, state: null }));
   }, [reload]);
+
+  // ===== סנכרון חברות קבוצה אוטומטי =====
+  // כל עוד המערכת פתוחה ו-WhatsApp מחובר, בודקים ברקע מי נכנס/עזב את הקבוצות
+  // ומעדכנים את הסטטוסים אוטומטית — בלי שהמשתמש יצטרך ללחוץ.
+  useEffect(() => {
+    if (!waState?.configured || waState.state !== "authorized") return;
+    let stop = false;
+    const tick = async () => {
+      try {
+        const { groups } = await api.listGroups();
+        if (stop || groups.length === 0) return;
+        const r = await api.syncGroups();
+        if (stop) return;
+        if (r.joined > 0 || r.left > 0) {
+          reload();
+          if (r.joined > 0) toast(`${r.joined} בעלים הצטרפו לקבוצה`, "success");
+        }
+      } catch {
+        /* שקט — סנכרון רקע */
+      }
+    };
+    const id = setInterval(tick, 60_000); // כל דקה
+    tick(); // גם מיד עם הטעינה
+    return () => {
+      stop = true;
+      clearInterval(id);
+    };
+  }, [waState, reload, toast]);
 
   const persistCell = useCallback((id: string, key: string, value: string, isCustom: boolean) => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -317,6 +347,7 @@ function CrmContent() {
         onAddColumn={() => setShowAddColumn(true)}
         onBulkSend={() => setShowBulk(true)}
         onGroup={() => setShowGroup(true)}
+        onTemplates={() => setShowTemplates(true)}
         onCheckPhones={handleCheckPhones}
         onSigners={() => setShowSigners(true)}
         onSync={handleSync}
@@ -399,6 +430,7 @@ function CrmContent() {
       {showImport && <ImportDialog onClose={() => setShowImport(false)} onImported={reload} />}
       {showBulk && <BulkSendDialog holders={selectedHolders} onClose={() => setShowBulk(false)} onDone={reload} />}
       {showGroup && <GroupDialog holders={selectedHolders} onClose={() => setShowGroup(false)} onDone={reload} />}
+      {showTemplates && <TemplatesDialog onClose={() => setShowTemplates(false)} onChange={() => {}} />}
       {showSigners && <SignersMatchDialog onClose={() => setShowSigners(false)} onApplied={reload} />}
     </div>
   );
