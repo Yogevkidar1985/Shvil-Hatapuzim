@@ -1,0 +1,1211 @@
+<title>זרובבל 15 — סטטוס דירות</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  @font-face{
+    font-family:'Assistant';font-style:normal;font-weight:200 800;font-display:swap;
+    src:url(__FONT_HEB__) format('woff2');unicode-range:__UR_HEB__;
+  }
+  @font-face{
+    font-family:'Assistant';font-style:normal;font-weight:200 800;font-display:swap;
+    src:url(__FONT_LAT__) format('woff2');unicode-range:__UR_LAT__;
+  }
+  :root{
+    --navy:#1B2467; --navy-deep:#10153E; --navy-soft:#2A357E; --ink:#20244A;
+    --cream:#F6EDE2; --paper:#FFFDF9; --tan:#D0A88C; --tan-deep:#B98D6E; --tan-soft:rgba(208,168,140,.16);
+    --line:#EADDCE; --muted:#787490;
+    --st-marketing:#2E7D4E; --st-negotiation:#3D4A9E; --st-reserved:#7A7264; --st-sold:#B23F38;
+    --r-lg:20px; --r-md:14px; --r-sm:10px;
+    --shadow-1:none;
+    --shadow-2:0 8px 30px rgba(27,36,103,.09);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth; -webkit-text-size-adjust:100%}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none!important;animation:none!important} }
+  body{
+    margin:0; color:var(--ink);
+    background:var(--cream);
+    background-image:radial-gradient(90% 40% at 50% 0%, rgba(208,168,140,.14), transparent 70%);
+    background-repeat:no-repeat;
+    font-family:"Almoni ML v5 AAA","Almoni Neue","Almoni","almoni-dl-aaa","Assistant",-apple-system,"Segoe UI",Arial,sans-serif;
+    direction:rtl; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:clip;                      /* מונע גלילה אופקית בלי ליצור מיכל-גלילה שמפריע לגלילה האנכית */
+  }
+  /* קפיצות עוגן נוחתות עם אוויר מלמעלה */
+  .floor, .viz-panel{scroll-margin-top:18px}
+  button{font-family:inherit}
+  button:focus-visible,[contenteditable]:focus-visible,input:focus-visible{
+    outline:3px solid var(--tan); outline-offset:2px; border-radius:8px;
+  }
+  ::selection{background:var(--tan);color:var(--navy-deep)}
+
+  /* ================= HERO ================= */
+  header.site{
+    position:relative; color:#fff; padding:34px 26px 68px; overflow:hidden;
+    background:linear-gradient(180deg, #1D2670 0%, var(--navy) 62%, #191F55 100%);
+  }
+  header.site::before{ /* faint blueprint grid */
+    content:""; position:absolute; inset:0; pointer-events:none; opacity:.45;
+    background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+    background-size:38px 38px;
+    mask-image:radial-gradient(85% 120% at 78% 0%, #000 30%, transparent 100%);
+    -webkit-mask-image:radial-gradient(85% 120% at 78% 0%, #000 30%, transparent 100%);
+  }
+  header.site::after{ /* warm halo behind the logo */
+    content:""; position:absolute; top:-45%; right:-6%; width:56%; height:190%; pointer-events:none;
+    background:radial-gradient(closest-side, rgba(208,168,140,.16), transparent 72%);
+  }
+  .site-inner{position:relative; max-width:1320px; margin:0 auto; display:flex; align-items:center; gap:30px; flex-wrap:wrap}
+  .head-brand{display:flex; flex-direction:column; align-items:center; gap:11px}
+  .logo-img{width:140px;height:auto;display:block}
+  .brand-tag{
+    margin:0; color:var(--tan); font-weight:700; font-size:13.5px; letter-spacing:.14em; text-align:center; white-space:nowrap;
+  }
+  .head-txt{min-width:240px; display:flex; flex-direction:column; align-items:flex-start}
+  .site h1{
+    margin:0; font-size:clamp(34px,4.2vw,50px); font-weight:800; letter-spacing:-.015em; line-height:1.06;
+    text-wrap:balance;
+  }
+  .site .sub{margin:7px 0 0; color:rgba(240,238,255,.8); font-weight:400; font-size:17px}
+  .head-meta{display:flex; align-items:center; gap:9px; margin-top:16px; flex-wrap:wrap}
+  .addr-chip{
+    display:inline-flex; align-items:center; gap:7px;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14);
+    padding:6px 13px; border-radius:999px; font-size:13px; color:rgba(240,238,255,.88); font-weight:600;
+  }
+  .addr-chip i{width:6px;height:6px;border-radius:50%;background:var(--tan);display:inline-block}
+  .head-actions{margin-inline-start:auto; display:flex; gap:8px; align-items:center}
+  /* small delicate share button, sits next to the address, right side */
+  .btn-share{
+    display:inline-flex; align-items:center; gap:6px;
+    border:1px solid rgba(208,168,140,.5); background:transparent; color:var(--tan);
+    padding:6px 14px; border-radius:999px; font-size:12.5px; font-weight:700; cursor:pointer;
+    transition:background .16s, color .16s;
+  }
+  .btn-share:hover{background:var(--tan); color:var(--navy-deep)}
+  .btn-share svg{width:13px;height:13px}
+  .sync-ind{
+    display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700;
+    color:rgba(240,238,255,.55); padding:4px 8px; border-radius:999px;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+  }
+  .sync-ind::before{content:""; width:6px; height:6px; border-radius:50%; background:currentColor}
+  .sync-ind.cloud{color:#8FD3A6}
+  .sync-ind.saving{color:var(--tan)}
+  .btn-edit{
+    width:26px; height:26px; padding:0; border-radius:7px; cursor:pointer; font-size:12px;
+    border:1px solid rgba(255,255,255,.14); background:transparent; color:rgba(240,238,255,.4);
+    transition:color .15s, border-color .15s; opacity:.7;
+  }
+  .btn-edit:hover{opacity:1; color:#fff; border-color:rgba(255,255,255,.4)}
+  .btn-edit.on{opacity:1; background:var(--tan); border-color:var(--tan); color:var(--navy-deep); width:auto; padding:0 12px}
+  [contenteditable="true"]{border-bottom:1.5px dashed var(--tan); cursor:text}
+
+  /* ================= KPI STRIP ================= */
+  .kpis{max-width:1320px; margin:-44px auto 0; padding:0 26px; position:relative; z-index:2}
+  .kpi-card{
+    display:grid; grid-template-columns:repeat(5,1fr); text-align:center; overflow:hidden;
+    background:var(--paper);
+    border:1px solid var(--line); border-radius:var(--r-md);
+    box-shadow:var(--shadow-2); color:var(--navy);
+  }
+  .kpi{padding:15px 8px 13px; border-inline-start:1px solid var(--line); position:relative}
+  .kpi:first-child{border-inline-start:none}
+  .kpi.total{background:linear-gradient(180deg, rgba(208,168,140,.10), rgba(208,168,140,.03))}
+  .kpi.total::after{content:""; position:absolute; inset-inline:0; top:0; height:2.5px; background:linear-gradient(90deg,var(--tan),var(--tan-deep))}
+  .kpi b{display:block; font-size:28px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1.12; letter-spacing:-.02em; color:var(--navy)}
+  .kpi.total b{font-size:34px; color:var(--navy-deep)}
+  .kpi span{font-size:12px; color:var(--muted); font-weight:700}
+  .kpi em{display:block; font-style:normal; font-size:10.5px; color:var(--tan-deep); font-weight:800; margin-top:1px; letter-spacing:.03em}
+  .kpi .dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-inline-end:6px; vertical-align:1px}
+
+  /* ================= LAYOUT ================= */
+  main{max-width:1320px; margin:34px auto 46px; padding:0 26px; display:grid;
+       grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:28px}
+  @media (max-width:960px){
+    main{grid-template-columns:1fr}
+    .viz-panel{order:-1}
+    .photo-wrap{flex:none; aspect-ratio:1/1; min-height:0}
+    header.site{padding:34px 20px 72px}
+  }
+
+  .floors-col{display:flex; flex-direction:column; gap:16px; min-width:0}
+  .col-head{display:flex; align-items:flex-end; justify-content:space-between; gap:10px; padding-bottom:4px}
+  .col-title{margin:0; font-size:30px; font-weight:800; color:var(--navy); letter-spacing:-.02em; line-height:1.12}
+  .col-title::after{content:""; display:block; width:66px; height:5px; border-radius:3px; margin-top:10px;
+    background:linear-gradient(90deg,var(--tan),var(--tan-deep))}
+  .col-upd{font-size:12.5px; color:var(--muted); font-weight:600; padding-bottom:6px}
+
+  /* ================= VIZ PANEL ================= */
+  .viz-panel{display:flex; min-width:0}
+  .panel{
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--r-lg);
+    box-shadow:var(--shadow-1); padding:20px; display:flex; flex-direction:column; flex:1; min-width:0;
+  }
+  .panel-head{display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:14px}
+  .panel h2{margin:0; font-size:19px; font-weight:800; color:var(--navy); letter-spacing:-.01em}
+  .panel .hint{margin:0; font-size:12px; color:var(--muted); font-weight:600}
+
+  .seg{display:flex; background:rgba(27,36,103,.07); border-radius:13px; padding:4px; gap:4px; margin-bottom:16px}
+  .seg button{
+    flex:1; padding:10px 8px; border-radius:10px; border:none; background:transparent;
+    color:var(--navy); font-weight:700; font-size:13.5px; cursor:pointer; transition:background .18s, box-shadow .18s;
+  }
+  .seg button.act{background:#fff; box-shadow:0 1px 3px rgba(27,36,103,.10); color:var(--navy-deep)}
+
+  /* ---------- premium photo ---------- */
+  .photo-wrap{position:relative; border-radius:var(--r-md); overflow:hidden; display:none; aspect-ratio:1/1;
+    box-shadow:inset 0 0 0 1px rgba(27,36,103,.08)}
+  .photo-wrap img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block}
+  .photo-cap{
+    position:absolute; inset-inline:0; bottom:0; padding:44px 18px 14px; color:#fff; font-weight:700; font-size:14px;
+    background:linear-gradient(180deg, transparent, rgba(16,21,62,.78)); pointer-events:none; text-shadow:0 1px 8px rgba(0,0,0,.4);
+  }
+  .pbadge{
+    position:absolute; width:28px; height:28px; border-radius:8px; transform:translate(-50%,-50%);
+    background:rgba(16,21,62,.5); backdrop-filter:blur(3px); color:#fff;
+    display:grid; place-items:center; font-weight:700; font-size:12.5px; cursor:pointer;
+    border:1px solid rgba(255,255,255,.5);
+    font-variant-numeric:tabular-nums; transition:background .15s, transform .15s;
+  }
+  .pbadge:hover{background:var(--tan); color:var(--navy-deep); border-color:var(--tan); transform:translate(-50%,-50%) scale(1.12)}
+
+  .gallery{display:none; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:10px}
+  .gallery button{
+    padding:0; border:none; border-radius:var(--r-sm); overflow:hidden; cursor:pointer; background:none; line-height:0;
+    outline-offset:2px; position:relative; transition:transform .18s;
+  }
+  .gallery button::after{content:""; position:absolute; inset:0; border-radius:var(--r-sm);
+    box-shadow:inset 0 0 0 1px rgba(27,36,103,.14); transition:box-shadow .18s}
+  .gallery button.act::after{box-shadow:inset 0 0 0 3px var(--navy)}
+  .gallery button:hover{transform:translateY(-2px)}
+  .gallery img{width:100%; height:58px; object-fit:cover; display:block}
+
+  /* ---------- architectural night section ---------- */
+  .bld-scene{
+    display:none; flex:1; border-radius:var(--r-md); padding:22px 20px 0; position:relative; overflow:hidden;
+    background:linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 90%);
+    flex-direction:column;
+  }
+  .scene-body{position:relative; flex:1; display:flex; flex-direction:column; justify-content:flex-end;
+    padding-top:150px}
+  .scene-body::after{ /* soft ground shadow under the building */
+    content:""; position:absolute; inset-inline:6%; bottom:-2px; height:34px; border-radius:50%;
+    background:radial-gradient(ellipse at center, rgba(0,0,0,.35), transparent 70%);
+  }
+  .scene-moon{position:absolute; top:16px; inset-inline-start:12%; width:58px; height:58px; border-radius:50%;
+    background:radial-gradient(circle at 38% 38%, #FBF3E9, #E9D3BE 60%, #D0A88C);
+    box-shadow:0 0 46px 12px rgba(246,233,225,.26); opacity:.9}
+  .scene-tagline{position:absolute; top:78px; inset-inline-end:2px; max-width:58%; text-align:right;
+    color:rgba(240,238,255,.5); font-size:12px; font-weight:600; line-height:1.7; letter-spacing:.02em}
+  .scene-tagline b{display:block; color:var(--tan); font-size:15px; font-weight:800; margin-bottom:4px; letter-spacing:.04em}
+  .bld-scene::before{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+    background-size:30px 30px;
+  }
+  .bld-scene::after{
+    content:""; position:absolute; width:420px; height:420px; right:-120px; top:-160px; pointer-events:none;
+    background:radial-gradient(circle, rgba(208,168,140,.16), transparent 65%);
+  }
+  .scene-top{position:relative; display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:16px}
+  .scene-title{color:#fff; font-weight:800; font-size:15px; letter-spacing:.01em}
+  .scene-sub{color:var(--tan); font-weight:700; font-size:12px; letter-spacing:.06em}
+  .scene-status{position:relative; display:flex; gap:7px; flex-wrap:wrap; margin-bottom:2px}
+  .scene-status .sc{display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:#EDEBF5;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); padding:4px 11px; border-radius:999px}
+  .scene-status .sc i{width:9px; height:9px; border-radius:50%; flex:0 0 auto}
+  .scene-status .sc b{color:#fff; font-weight:800; font-variant-numeric:tabular-nums}
+  .bld{position:relative; display:flex; flex-direction:column; gap:11px; padding-bottom:0; max-width:440px; margin:0 auto; width:100%}
+  .bld-roof{
+    height:14px; border-radius:8px 8px 0 0; margin:0 38px;
+    background:repeating-linear-gradient(90deg, var(--tan) 0 8px, transparent 8px 16px);
+    opacity:.75;
+  }
+  .bfloor{display:flex; gap:8px; align-items:stretch}
+  .bfloor::before{content:""; flex:0 0 30px}   /* מרווח מאוזן מימין לסרגל המספרים שמשמאל — הבניין ממורכז */
+  .frail{flex:0 0 30px; position:relative; display:grid; place-items:center}
+  .frail::before{content:""; position:absolute; top:-8px; bottom:-8px; right:50%; width:1px;
+    background:rgba(255,255,255,.14)}
+  .fbadge{
+    position:relative; width:30px; height:30px; display:grid; place-items:center; border-radius:50%;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.28); color:#EDE9E0;
+    font-size:13.5px; font-weight:800; font-variant-numeric:tabular-nums; cursor:pointer;
+    transition:background .15s, color .15s;
+  }
+  .fbadge:hover{background:var(--tan); color:var(--navy-deep); border-color:var(--tan)}
+  .bunits{flex:1; display:flex; gap:9px; min-height:54px}
+  .bunit{
+    flex:1; border-radius:10px; display:flex; flex-direction:column; justify-content:center; gap:4px;
+    padding:9px 13px; cursor:pointer; text-align:right; min-width:0; position:relative;
+    border:1px solid; box-shadow:inset 7px 0 0 var(--acc,#2E7D4E);
+    transition:transform .16s, filter .16s;
+  }
+  .bunit:hover, .bunit:focus-visible{transform:translateY(-2px); filter:brightness(1.02)}
+  .bunit b{font-size:13px; font-weight:800; color:var(--navy); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .bunit small{font-size:10.5px; color:#6E6A82; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .bunit .brow{display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:2px}
+  /* תגית סטטוס מלאה בצבע — בולטת מאוד */
+  .bunit .st{display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:800;
+    color:#fff; background:var(--acc); padding:3px 10px; border-radius:999px; box-shadow:0 1px 3px rgba(0,0,0,.18)}
+  .bunit .st svg{width:13px; height:13px; flex:0 0 auto}
+  .bunit .planchip{
+    display:inline-flex; align-items:center; gap:3px; font-size:9px; font-weight:800; color:var(--tan-deep);
+    background:var(--tan-soft); border-radius:5px; padding:2px 6px; white-space:nowrap;
+  }
+  .terr{
+    flex:0 0 54px; border:1.5px dashed rgba(208,168,140,.55); border-radius:11px;
+    background:rgba(208,168,140,.09);
+    display:grid; place-items:center; font-size:10px; font-weight:700; color:var(--tan); text-align:center; line-height:1.3;
+  }
+  .garden{
+    flex:0 0 88px; border:1.5px solid rgba(140,190,110,.45); border-radius:11px; color:#CDE7BE;
+    background:linear-gradient(135deg, rgba(92,138,70,.28), rgba(92,138,70,.5));
+    display:grid; place-items:center; font-size:11px; font-weight:800; text-align:center; line-height:1.35;
+  }
+  .bld-ground{
+    height:13px; margin:10px 0 0; position:relative; border-radius:3px;
+    background:linear-gradient(90deg, var(--tan-deep), var(--tan) 55%, var(--tan-deep));
+  }
+  .bld-street{
+    position:relative; display:flex; justify-content:space-between; margin:6px 2px 0;
+    padding:2px 6px; font-size:11px; letter-spacing:.1em; color:rgba(240,238,255,.6); font-weight:700;
+  }
+
+  /* ---------- apartment popover ---------- */
+  .unit-pop{
+    position:fixed; z-index:70; width:288px; padding:18px 18px 16px;
+    background:rgba(255,253,249,.9); backdrop-filter:blur(16px) saturate(1.3);
+    border:1px solid rgba(208,168,140,.55); border-radius:18px;
+    box-shadow:0 24px 60px rgba(10,14,40,.4);
+    animation:popIn .18s ease;
+  }
+  @keyframes popIn{from{opacity:0; transform:translateY(6px) scale(.97)}to{opacity:1; transform:none}}
+  .pop-head{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px}
+  .pop-head b{font-size:17px; font-weight:800; color:var(--navy)}
+  .pop-rows{display:flex; flex-direction:column}
+  .pop-row{display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-top:1px solid rgba(208,168,140,.28); font-size:13px}
+  .pop-row span{color:var(--muted); font-weight:600}
+  .pop-row b{color:var(--ink); font-weight:700; text-align:left; font-variant-numeric:tabular-nums}
+  .pop-cta{
+    width:100%; margin-top:13px; padding:10px; border:none; border-radius:11px; cursor:pointer;
+    background:var(--navy); color:#fff; font-weight:700; font-size:13.5px; transition:background .15s;
+  }
+  .pop-cta:hover{background:var(--navy-soft)}
+
+  /* ---------- floor plans ---------- */
+  .pop-plan{
+    height:150px; background:#fff; border:1px solid var(--line); border-radius:12px;
+    margin-bottom:13px; overflow:hidden; cursor:zoom-in; display:grid; place-items:center; padding:6px;
+  }
+  .pop-plan img{max-width:100%; max-height:100%; object-fit:contain}
+  /* frameless plan preview — גדול, נקי, ללא קופסה/מסגרת מאחור */
+  .plan-thumb{
+    flex:0 0 auto; width:200px; height:134px; background:none; border:none; border-radius:6px;
+    overflow:hidden; cursor:zoom-in; padding:0; display:block; position:relative;
+    transition:transform .16s;
+  }
+  .plan-thumb img{width:100%; height:100%; object-fit:contain; object-position:center; display:block; mix-blend-mode:multiply}
+  .plan-thumb::after{
+    content:"⤢"; position:absolute; top:4px; inset-inline-start:4px; width:19px; height:19px; border-radius:6px;
+    display:grid; place-items:center; font-size:11px; color:var(--navy);
+    background:rgba(255,255,255,.85); opacity:0; transition:opacity .16s;
+  }
+  .plan-thumb:hover{transform:scale(1.04)}
+  .plan-thumb:hover::after{opacity:1}
+  .lightbox{
+    position:fixed; inset:0; z-index:120; background:rgba(12,16,44,.88); backdrop-filter:blur(10px);
+    display:grid; place-items:center; padding:28px; cursor:zoom-out; animation:popIn .18s ease;
+  }
+  .lightbox figure{margin:0; display:flex; flex-direction:column; align-items:center; gap:14px; max-width:min(94vw,1040px)}
+  .lightbox img{max-width:100%; max-height:78vh; background:#fff; border-radius:16px; padding:12px; box-shadow:0 30px 80px rgba(0,0,0,.5)}
+  .lightbox figcaption{color:#fff; font-weight:700; font-size:15px; text-shadow:0 1px 6px rgba(0,0,0,.5)}
+  .lightbox .lb-close{
+    position:absolute; top:18px; inset-inline-start:18px; width:42px; height:42px; border-radius:50%;
+    border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.1); color:#fff;
+    font-size:19px; cursor:pointer; backdrop-filter:blur(6px); z-index:2;
+  }
+  .lightbox .lb-nav{
+    position:absolute; top:50%; transform:translateY(-50%); width:52px; height:52px; border-radius:50%;
+    border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.12); color:#fff;
+    font-size:30px; line-height:1; cursor:pointer; backdrop-filter:blur(6px); display:grid; place-items:center;
+    transition:background .15s;
+  }
+  .lightbox .lb-nav:hover{background:var(--tan); color:var(--navy-deep)}
+  .lightbox .lb-prev{inset-inline-end:20px}
+  .lightbox .lb-next{inset-inline-start:20px}
+  .lightbox .lb-count{direction:ltr; color:rgba(255,255,255,.7); font-weight:700; font-size:13px; letter-spacing:.1em; font-variant-numeric:tabular-nums}
+  .lightbox .lb-strip{display:flex; gap:8px; margin-top:4px}
+  .lightbox .lb-strip button{
+    width:64px; height:48px; padding:2px; border-radius:8px; overflow:hidden; cursor:pointer; background:#fff;
+    border:2px solid transparent; line-height:0; transition:border-color .15s, transform .15s;
+  }
+  .lightbox .lb-strip button.act{border-color:var(--tan)}
+  .lightbox .lb-strip button:hover{transform:translateY(-2px)}
+  .lightbox .lb-strip img{width:100%; height:100%; object-fit:contain}
+  .plans-cta{
+    display:flex; align-items:center; justify-content:center; gap:8px; width:100%; margin-top:12px;
+    padding:11px; border-radius:11px; cursor:pointer; font-weight:700; font-size:13.5px;
+    color:var(--navy); border:1px solid var(--line); background:transparent;
+    transition:background .16s, border-color .16s;
+  }
+  .plans-cta:hover{background:var(--tan-soft); border-color:var(--tan-deep)}
+  .plans-cta svg{opacity:.7}
+
+  /* ================= STATUS INDICATOR ================= */
+  .pill{
+    display:inline-flex; align-items:center; gap:7px; padding:8px 15px 8px 13px; border-radius:11px;
+    font-size:13px; font-weight:800; border:none; cursor:pointer; white-space:nowrap;
+    transition:filter .15s;
+  }
+  .pill:not(.static):hover{filter:brightness(.97)}
+  .pill svg{width:16px; height:16px; flex:0 0 auto}
+  .pill i{width:7px; height:7px; border-radius:50%; display:inline-block; background:currentColor}
+  .pill.static{cursor:default}
+  /* status pill inside a card — ringed for prominence */
+  .apt-top .pill{box-shadow:inset 0 0 0 1px currentColor}
+  .smenu{
+    position:absolute; z-index:80; background:rgba(255,253,249,.94); backdrop-filter:blur(14px);
+    border:1px solid var(--line); border-radius:16px;
+    box-shadow:0 18px 48px rgba(10,14,40,.28); padding:9px; display:flex; flex-direction:column; gap:6px;
+    animation:popIn .16s ease;
+  }
+  .smenu .pill{justify-content:flex-start}
+
+  /* ================= FLOOR CARDS ================= */
+  .floors{display:flex; flex-direction:column; gap:14px}
+  .floor{
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--r-md);
+    overflow:hidden; transition:border-color .2s, box-shadow .25s, transform .25s;
+  }
+  .floor:hover{border-color:#DEC9B1; box-shadow:0 10px 34px rgba(27,36,103,.08); transform:translateY(-2px)}
+  /* scroll-reveal — עדין וחלק */
+  .reveal{opacity:0; transform:translateY(14px); will-change:opacity, transform}
+  .reveal.in{opacity:1; transform:none; transition:opacity .5s cubic-bezier(.22,.61,.36,1), transform .5s cubic-bezier(.22,.61,.36,1)}
+  .reveal.in{will-change:auto}
+  @media (prefers-reduced-motion: reduce){ .reveal{opacity:1; transform:none} }
+  .floor-head{display:flex; align-items:center; gap:12px; padding:12px 18px}
+  .floor-chip{
+    background:var(--navy); color:#fff; font-weight:800; font-size:13px; padding:5px 15px; border-radius:999px;
+    letter-spacing:.02em;
+  }
+  .floor-head .cnt{font-size:12px; color:var(--muted); font-weight:700; letter-spacing:.06em}
+  .floor-head .head-status{margin-inline-start:auto}   /* דוחף את הסטטוס לצד שמאל בשורת הקומה */
+  .floor-head .tools{margin-inline-start:auto; display:flex; gap:6px}
+  .mini-btn{
+    border:1.5px solid var(--line); background:#fff; color:var(--navy); border-radius:9px;
+    font-size:12px; font-weight:700; padding:5px 12px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .mini-btn:hover{border-color:var(--tan-deep); background:var(--tan-soft)}
+  .mini-btn.danger{color:var(--st-sold)}
+  .apt{
+    display:flex; flex-direction:column; gap:13px; padding:6px 18px 16px;
+    transition:background .18s;
+  }
+  .apt + .apt{padding-top:16px}   /* מרווח בין דירות באותה קומה — ללא קו מיותר */
+  .apt:hover{background:rgba(208,168,140,.05)}
+  .apt.flash{animation:flash 1.8s ease-out}
+  @keyframes flash{0%,55%{background:rgba(208,168,140,.3)}100%{background:transparent}}
+  /* header row: name (right) + status (left) — הסטטוס מעל הקו המפריד, התכנית מתחתיו */
+  .apt-top{display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding-bottom:11px; border-bottom:1px solid var(--line)}
+  .apt-top .name{font-size:17.5px; font-weight:800; color:var(--navy); letter-spacing:-.01em}
+  .apt-top .name .rooms{color:var(--tan-deep); font-weight:800}
+  .apt-top .name .nm-sep{color:var(--tan); margin:0 6px}
+  .apt-bot{display:flex; align-items:center; justify-content:space-between; gap:14px}
+  .chips{display:flex; flex-wrap:wrap; gap:7px}
+  .chip{
+    display:inline-flex; align-items:center; gap:6px; background:var(--paper);
+    border:1px solid var(--line); border-radius:9px; padding:5px 11px; font-size:12.5px; color:#5a5670; font-weight:600;
+  }
+  .chip svg{flex:0 0 auto; color:var(--tan-deep); opacity:.95}
+  .chip b{color:var(--navy); font-weight:800; font-variant-numeric:tabular-nums}
+  .apt .note{font-size:12.5px; color:var(--tan-deep); font-weight:600}
+  .apt .info{flex:1; min-width:0; display:flex; flex-direction:column; gap:10px}
+
+  /* edit fields */
+  .efield{display:flex; flex-direction:column; gap:4px; font-size:11.5px; color:var(--muted); font-weight:700}
+  .efield input{
+    border:1.5px solid var(--line); border-radius:10px; padding:8px 11px; font-size:13.5px;
+    font-family:inherit; color:var(--ink); background:#fff; width:100%; transition:border-color .15s;
+  }
+  .efield input:focus{border-color:var(--tan-deep)}
+  .egrid{display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:4px}
+  .status-picker{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px}
+  .status-picker button{
+    padding:6px 13px; border-radius:999px; font-size:12px; font-weight:800; cursor:pointer;
+    background:#fff; border:1.5px solid var(--line); color:var(--muted); transition:all .15s;
+  }
+  .add-floor{align-self:center}
+
+  /* legend */
+  .legend{margin-top:16px; padding-top:14px; border-top:1px solid var(--line)}
+  .legend h3{margin:0 0 10px; font-size:12px; font-weight:800; color:var(--muted); letter-spacing:.1em}
+  .legend .row{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  .legend .row .pill{justify-content:flex-start; box-shadow:inset 0 0 0 1px currentColor}
+
+  /* toast */
+  .toast{
+    position:fixed; bottom:24px; inset-inline-start:24px; z-index:99; pointer-events:none;
+    background:rgba(16,21,62,.92); backdrop-filter:blur(10px); color:#fff;
+    padding:12px 22px; border-radius:999px; font-weight:700; font-size:14px;
+    border:1px solid rgba(255,255,255,.16); box-shadow:0 12px 32px rgba(0,0,0,.3);
+    opacity:0; transform:translateY(10px); transition:opacity .22s, transform .22s;
+  }
+  .toast.show{opacity:1; transform:none}
+
+  footer.site{
+    background:linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%); color:rgba(240,238,255,.7); margin-top:10px;
+    padding:34px 22px; text-align:center; font-size:13.5px;
+  }
+  footer.site b{color:var(--tan); font-weight:800}
+  .foot-logo{width:98px; height:auto; display:block; margin:0 auto 14px; opacity:.96}
+  .foot-line{display:inline-flex; align-items:center; gap:9px; flex-wrap:wrap; justify-content:center}
+  .foot-sep{color:var(--tan); opacity:.7}
+
+  /* ================= MOBILE — נמצא בסוף כדי לגבור על כללי הבסיס ================= */
+  @media (max-width:560px){
+    .plan-thumb{width:150px; height:100px}
+    .apt-bot{gap:10px}
+    /* מרחיבים את הכרטיסיה הכחולה לצדדים ומצמצמים מרווחים מיותרים */
+    main{padding:0 12px}
+    .kpis{padding:0 12px}
+    .panel{padding:13px 10px}
+    .bld-scene{padding:16px 8px 0}
+    .scene-body{padding-top:14px}
+    .scene-top{margin-bottom:12px}
+    /* שורת הסטטוסים — רשת 2×2 מסודרת */
+    .scene-status{display:grid; grid-template-columns:1fr 1fr; gap:7px}
+    .scene-status .sc{justify-content:center}
+    /* הטקסט השיווקי הופך לזרימה רגילה וממורכז — בלי חלל ריק ענק */
+    .scene-tagline{position:static; max-width:none; text-align:center; margin:2px 0 14px;
+      inset-inline-end:auto; top:auto; font-size:11.5px}
+    .scene-tagline b{font-size:14px}
+    /* מצמצמים את סרגל המספרים והמרווחים כדי שהחתך ייכנס במלואו וימורכז */
+    .bfloor{gap:5px}
+    .bfloor::before{flex:0 0 20px}
+    .frail{flex:0 0 20px}
+    .fbadge{width:26px; height:26px; font-size:12.5px}
+    .bunits{gap:5px}
+    .bunit{padding:8px 9px}
+    .bunit .planchip{display:none}   /* מוסתר במובייל — נפתח בלחיצה על הקובייה */
+    .bunit .brow{margin-top:3px}
+    .bunit .st{padding:3px 9px; font-size:10.5px}
+    .bunit b{font-size:12px}
+    .bunit small{font-size:9.5px}
+    .terr{flex:0 0 42px; font-size:9px; padding:0 2px}
+    .garden{flex:0 0 70px; font-size:9.5px}
+    .bld-roof{margin:0 24px}
+  }
+</style>
+
+<header class="site">
+  <div class="site-inner">
+    <div class="head-brand">
+      <img class="logo-img" src="__LOGO__" alt="לוגו זרובבל 15">
+      <p class="brand-tag">היהלום בין הכרם לים</p>
+    </div>
+    <div class="head-txt">
+      <h1 id="m-title">זרובבל 15</h1>
+      <p class="sub" id="m-subtitle">פסיעה אחת מקו החוף של תל אביב</p>
+      <div class="head-meta">
+        <button class="btn-share" id="btn-share">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
+          שיתוף הפרויקט
+        </button>
+        <span class="sync-ind" id="sync-ind" title="הנתונים נשמרים בתוך קישור השיתוף — אפשר לפתוח בכל מכשיר">שמור בקישור</span>
+        <button class="btn-edit" id="btn-edit" title="מצב עריכה — לניהול הסטטוסים והפרטים" aria-label="מצב עריכה">✎</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="kpis"><div class="kpi-card" id="kpis"></div></div>
+
+<main>
+  <div class="floors-col">
+    <div class="col-head">
+      <h2 class="col-title">סטטוס הדירות בפרויקט</h2>
+      <span class="col-upd" id="col-upd"></span>
+    </div>
+    <section class="floors" id="floors"></section>
+  </div>
+
+  <aside class="viz-panel">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>הדמיית הבניין</h2>
+        <p class="hint">ריחוף או לחיצה על דירה — לכל הפרטים</p>
+      </div>
+      <div class="seg" role="tablist">
+        <button id="tab-photo" role="tab">תמונת הפרויקט</button>
+        <button id="tab-schema" role="tab">חתך אינטרקטיבי</button>
+      </div>
+
+      <div class="photo-wrap" id="photo">
+        <img src="__PH1__" alt="הדמיית הבניין — זרובבל 15" id="mainphoto">
+        <div class="photo-cap" id="photo-cap"></div>
+        <div id="pbadges"></div>
+      </div>
+      <div class="gallery" id="gallery" role="group" aria-label="בחירת תמונה"></div>
+
+      <div class="bld-scene" id="scene">
+        <div class="scene-top">
+          <span class="scene-title">חתך הבניין · זרובבל 15</span>
+          <span class="scene-sub" id="scene-sub">7 קומות · 11 דירות</span>
+        </div>
+        <div class="scene-status" id="scene-status"></div>
+        <div class="scene-body">
+          <div class="scene-tagline"><b>בוטיק בלב העיר</b><span id="scene-meta">7 קומות · 11 דירות</span> · דקות מהים · מעטפת פרטית לכל דירה</div>
+          <div id="bld" class="bld"></div>
+        </div>
+      </div>
+      <button class="plans-cta" id="all-plans">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        צפייה בכל תכניות הדירות
+      </button>
+
+      <div class="legend">
+        <h3>מקרא</h3>
+        <div class="row" id="legend"></div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<footer class="site">
+  <img class="foot-logo" src="__LOGO__" alt="זרובבל 15">
+  <div class="foot-line"><b id="m-address">זרובבל 15, תל אביב</b><span class="foot-sep">·</span>פרויקט מגורים יוקרתי בלב העיר</div>
+</footer>
+
+<div class="toast" id="toast">נשמר ✓</div>
+
+<script>
+'use strict';
+/* ---------- config ---------- */
+const STATUSES = {
+  marketing:   {label:'בשיווק',     color:'#2E7D4E',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8" opacity=".65"/></svg>'},
+  negotiation: {label:'במשא ומתן', color:'#B7862F',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-11.9 7.6L3 21l1.9-6.1A8.4 8.4 0 1 1 21 11.5Z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/></svg>'},
+  reserved:    {label:'שמור',       color:'#7A7264',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12a1 1 0 0 1 1 1v15l-7-4-7 4V5a1 1 0 0 1 1-1Z"/></svg>'},
+  sold:        {label:'נמכרה',      color:'#B23F38',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3M17 6l2.5 2.5M14.5 8.5 17 11"/></svg>'},
+};
+const LS_KEY = 'zrubavel15-status-v8';
+
+/* floor plans extracted from the permit sheet (תכנית הגשה) — high-res */
+const PLANS = {
+  ground:  {src:'__PLAN_G__',  label:'תכנית קומת הקרקע — דירת הגן והחצר'},
+  typical: {src:'__PLAN_T__',  label:'תכנית קומה טיפוסית — קומות 2–5'},
+  floor6:  {src:'__PLAN_F5__', label:'תכנית קומה 6 — הדירה עם מרפסת הפרגולה'},
+  roof:    {src:'__PLAN_R__',  label:'תכנית הפנטהאוז — קומה 7 עם מרפסות גג'},
+};
+const PLAN_ORDER = ['ground','typical','floor6','roof'];
+
+const apt = (id,name,rooms,size,outdoor,facing,kind,plan)=>(
+  {id,name,rooms,size,outdoor,facing,kind,plan,status:'marketing',note:''});
+
+const DEFAULT_STATE = {
+  meta:{title:'זרובבל 15', subtitle:'פסיעה אחת מקו החוף של תל אביב', address:'זרובבל 15, תל אביב'},
+  floors:[
+    {id:'f7',num:7,label:'קומה 7',apts:[apt('a12','פנטהאוז','','70','2 מרפסות · 50 מ״ר','חזית לרחוב זרובבל ורחוב אהרונסון','penthouse','roof')]},
+    {id:'f6',num:6,label:'קומה 6',apts:[
+      apt('a11','דירה 11','3 חדרים','70','מרפסת 12 מ״ר','חזית לרחוב זרובבל','big','floor6'),
+      apt('a10','דירה 10','2 חדרים','46','מרפסת 12 מ״ר','חזית לרחוב אהרונסון','small','floor6')]},
+    {id:'f5',num:5,label:'קומה 5',apts:[
+      apt('a9','דירה 9','3 חדרים','70','מרפסת 12 מ״ר','חזית לרחוב זרובבל','big','typical'),
+      apt('a8','דירה 8','2 חדרים','46','מרפסת 12 מ״ר','חזית לרחוב אהרונסון','small','typical')]},
+    {id:'f4',num:4,label:'קומה 4',apts:[
+      apt('a7','דירה 7','3 חדרים','70','מרפסת 12 מ״ר','חזית לרחוב זרובבל','big','typical'),
+      apt('a6','דירה 6','2 חדרים','46','מרפסת 12 מ״ר','חזית לרחוב אהרונסון','small','typical')]},
+    {id:'f3',num:3,label:'קומה 3',apts:[
+      apt('a5','דירה 5','3 חדרים','70','מרפסת 12 מ״ר','חזית לרחוב זרובבל','big','typical'),
+      apt('a4','דירה 4','2 חדרים','46','מרפסת 12 מ״ר','חזית לרחוב אהרונסון','small','typical')]},
+    {id:'f2',num:2,label:'קומה 2',apts:[
+      apt('a3','דירה 3','3 חדרים','70','מרפסת 12 מ״ר','חזית לרחוב זרובבל','big','typical'),
+      apt('a2','דירה 2','2 חדרים','46','מרפסת 12 מ״ר','חזית לרחוב אהרונסון','small','typical')]},
+    {id:'f1',num:1,label:'קומה 1',apts:[apt('a1','דירת גן · דירה 1','','50','גינה 46 מ״ר','כניסה פרטית','garden','ground')]},
+  ],
+};
+
+/* ---------- state ---------- */
+let editMode = false;
+let state = loadState();
+
+function loadState(){
+  if (location.hash.startsWith('#d=')){
+    try{
+      const s = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(3)))));
+      if (s && s.floors) return s;
+    }catch(e){}
+  }
+  try{
+    const s = JSON.parse(localStorage.getItem(LS_KEY));
+    if (s && s.floors) return s;
+  }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_STATE));
+}
+function saveState(silent){
+  state.meta.updatedAt = Date.now();
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
+  try{
+    history.replaceState(null,'', location.pathname + location.search +
+      '#d='+btoa(unescape(encodeURIComponent(JSON.stringify(state)))));
+  }catch(e){}
+  if(!silent) toast('נשמר ✓');
+  cloudSaveDebounced();
+  renderAll();
+}
+
+/* ---------- cloud sync (works when self-hosted; falls back to the shareable link) ---------- */
+const CLOUD_BASE = 'https://kvdb.io';
+let cloudId = (new URLSearchParams(location.search)).get('c') || null;
+let cloudSaveT = null;
+function setSync(mode){
+  const el = document.getElementById('sync-ind'); if(!el) return;
+  el.classList.remove('cloud','saving');
+  if (mode==='cloud'){ el.classList.add('cloud'); el.textContent='מסונכרן בענן'; }
+  else if (mode==='saving'){ el.classList.add('saving'); el.textContent='שומר…'; }
+  else { el.textContent='שמור בקישור'; }
+}
+async function cloudSave(){
+  try{
+    setSync('saving');
+    if (!cloudId){
+      const r = await fetch(CLOUD_BASE+'/', {method:'POST'});
+      if(!r.ok) throw 0;
+      cloudId = (await r.text()).trim();
+      const u = new URL(location.href); u.searchParams.set('c', cloudId);
+      history.replaceState(null,'', u.pathname + u.search + u.hash);
+    }
+    const r2 = await fetch(`${CLOUD_BASE}/${cloudId}/state`, {method:'PUT', body: JSON.stringify(state)});
+    if(!r2.ok) throw 0;
+    setSync('cloud');
+  }catch(e){ setSync('local'); }   // חסום/לא זמין → נשמר בקישור המקומי
+}
+function cloudSaveDebounced(){ clearTimeout(cloudSaveT); cloudSaveT = setTimeout(cloudSave, 700); }
+async function cloudInit(){
+  if (!cloudId) return;
+  try{
+    const r = await fetch(`${CLOUD_BASE}/${cloudId}/state`, {cache:'no-store'});
+    if(!r.ok) throw 0;
+    const s = await r.json();
+    if (s && s.floors){ state = s; setSync('cloud'); renderAll(); }
+  }catch(e){ setSync('local'); }
+}
+
+/* ---------- helpers ---------- */
+const $ = s=>document.querySelector(s);
+const el = (tag, cls, html)=>{const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e;};
+const esc = s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tint = (hex,a)=>{const n=parseInt(hex.slice(1),16);return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`;};
+const mixWhite = (hex,w)=>{const n=parseInt(hex.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;
+  return `rgb(${Math.round(r+(255-r)*w)},${Math.round(g+(255-g)*w)},${Math.round(b+(255-b)*w)})`;};
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1900); }
+function uid(){ return 'x'+Math.random().toString(36).slice(2,9); }
+const IC = {
+  area:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 15h16M15 4v16" opacity=".45"/></svg>',
+  out:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12h18M6 12v7m12-7v7M9 12V7a3 3 0 0 1 6 0v5"/></svg>',
+  face:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V5h10v4M3 9h18M4 9v10M20 9v10M8 9v10M12 9v10M16 9v10M3 19h18"/></svg>',
+};
+
+/* ---------- status pills ---------- */
+function makePillEl(statusKey, interactive){
+  const s = STATUSES[statusKey] || STATUSES.marketing;
+  const b = el(interactive?'button':'span','pill'+(interactive?'':' static'), `${s.icon}${esc(s.label)}`);
+  b.style.color = s.color;
+  b.style.background = tint(s.color,.11);
+  return b;
+}
+let openMenu = null;
+function closeMenu(){ if(openMenu){openMenu.remove();openMenu=null;} }
+document.addEventListener('click', e=>{ if(openMenu && !openMenu.contains(e.target)) closeMenu(); }, true);
+
+function makeStatusPill(a){
+  const b = makePillEl(a.status, true);
+  b.title = 'לחיצה לשינוי סטטוס';
+  b.setAttribute('aria-label', `סטטוס: ${STATUSES[a.status]?.label} — לחיצה לשינוי`);
+  b.addEventListener('click', ev=>{
+    ev.stopPropagation(); closeMenu();
+    const m = el('div','smenu');
+    for (const k of Object.keys(STATUSES)){
+      const o = makePillEl(k, true);
+      if (k===a.status) o.innerHTML += ' ✓';
+      o.addEventListener('click', ()=>{ a.status=k; closeMenu(); saveState(true); toast(`עודכן: ${STATUSES[k].label}`); });
+      m.appendChild(o);
+    }
+    document.body.appendChild(m);
+    const r = b.getBoundingClientRect();
+    m.style.top = (r.bottom + window.scrollY + 8)+'px';
+    let x = r.left + window.scrollX; if (x + 175 > document.documentElement.clientWidth) x = r.right + window.scrollX - 175;
+    m.style.left = Math.max(8,x)+'px';
+    openMenu = m;
+  });
+  return b;
+}
+
+/* ---------- KPIs + legend ---------- */
+function renderKpis(){
+  const counts = {marketing:0,negotiation:0,reserved:0,sold:0}; let regular=0;
+  for(const f of state.floors) for(const a of f.apts){
+    if (a.kind==='penthouse') continue;   // הפנטהאוז אינו נספר במונים — 11 דירות בשיווק
+    regular++;
+    counts[a.status]=(counts[a.status]||0)+1;
+  }
+  const k = $('#kpis'); k.innerHTML='';
+  k.appendChild(el('div','kpi total',
+    `<b>${regular}</b><span>דירות בפרויקט</span>`));
+  for (const key of ['marketing','negotiation','reserved','sold']){
+    const s=STATUSES[key];
+    k.appendChild(el('div','kpi',
+      `<b>${counts[key]||0}</b><span><i class="dot" style="background:${s.color}"></i>${esc(s.label)}</span>`));
+  }
+  const lg = $('#legend'); lg.innerHTML='';
+  for (const key of Object.keys(STATUSES)) lg.appendChild(makePillEl(key,false));
+  const upd = $('#col-upd');
+  upd.textContent = state.meta.updatedAt
+    ? 'עודכן: ' + new Date(state.meta.updatedAt).toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'})
+    : '';
+}
+
+/* ---------- apartment popover ---------- */
+let pop=null, popPinned=false, hideT=null, popAnchor=null;
+function hidePop(){ if(pop){pop.remove(); pop=null; popPinned=false; popAnchor=null;} }
+function placePop(){
+  if (!pop || !popAnchor) return;
+  const r = popAnchor.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+  if (r.bottom < 0 || r.top > window.innerHeight){ hidePop(); return; }
+  let x = r.left - pw - 14;
+  if (x < 8) x = Math.min(window.innerWidth - pw - 8, r.right + 14);
+  let y = r.top + r.height/2 - ph/2;
+  y = Math.max(10, Math.min(window.innerHeight - ph - 10, y));
+  pop.style.left = x+'px'; pop.style.top = y+'px';
+}
+function scheduleHidePop(){ if(popPinned) return; clearTimeout(hideT); hideT=setTimeout(hidePop, 220); }
+function showPop(a, anchor){
+  clearTimeout(hideT);
+  if (pop) { pop.remove(); pop=null; }
+  const s = STATUSES[a.status] || STATUSES.marketing;
+  const rows = [];
+  if (a.rooms) rows.push(['חדרים', a.rooms]);
+  rows.push(['שטח', a.size + ' מ״ר']);
+  if (a.outdoor) rows.push(['מרפסת / גינה', a.outdoor]);
+  if (a.facing) rows.push(['חזית', a.facing]);
+  if (a.note) rows.push(['הערה', a.note]);
+  const plan = PLANS[a.plan];
+  pop = el('div','unit-pop');
+  pop.setAttribute('role','dialog'); pop.setAttribute('aria-label', a.name);
+  pop.innerHTML = `
+    <div class="pop-head"><b>${esc(a.name)}</b>
+      <span class="pill static" style="color:${s.color};background:${tint(s.color,.11)}">${s.icon}${esc(s.label)}</span>
+    </div>
+    ${plan?`<div class="pop-plan" title="להגדלת התשריט"><img src="${plan.src}" alt="${esc(plan.label)}"></div>`:''}
+    <div class="pop-rows">${rows.map(r=>`<div class="pop-row"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join('')}</div>
+    <button class="pop-cta">לכרטיס הדירה המלא</button>`;
+  pop.querySelector('.pop-cta').addEventListener('click', ()=>{ hidePop(); focusApt(a.id); });
+  if (plan) pop.querySelector('.pop-plan').addEventListener('click', ()=>openLightbox(aptPlan(a)));
+  pop.addEventListener('mouseenter', ()=>clearTimeout(hideT));
+  pop.addEventListener('mouseleave', scheduleHidePop);
+  document.body.appendChild(pop);
+  popAnchor = anchor;
+  placePop();
+}
+document.addEventListener('click', e=>{
+  if (pop && !pop.contains(e.target) && !e.target.closest('.bunit')) hidePop();
+}, true);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ hidePop(); closeMenu(); closeLightbox(); } });
+
+/* ---------- floor-plan lightbox (gallery) ---------- */
+let lbEl = null, lbList = [], lbIdx = 0;
+function closeLightbox(){ if(lbEl){ lbEl.remove(); lbEl=null; lbList=[]; } }
+function lbRender(){
+  if (!lbEl) return;
+  const p = lbList[lbIdx];
+  lbEl.querySelector('.lb-img').src = p.src;
+  lbEl.querySelector('.lb-img').alt = p.label;
+  lbEl.querySelector('.lb-cap').textContent = p.label;
+  lbEl.querySelector('.lb-count').textContent = lbList.length>1 ? `${lbIdx+1} / ${lbList.length}` : '';
+  const nav = lbEl.querySelectorAll('.lb-nav');
+  nav.forEach(n=>n.style.display = lbList.length>1 ? 'grid' : 'none');
+  const strip = lbEl.querySelector('.lb-strip');
+  strip.style.display = lbList.length>1 ? 'flex' : 'none';
+  strip.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('act', i===lbIdx));
+}
+function lbGo(d){ lbIdx = (lbIdx + d + lbList.length) % lbList.length; lbRender(); }
+/* כיתוב תכנית התואם למאפייני הדירה עצמה — ולא טקסט כללי */
+function aptPlan(a){
+  const p = PLANS[a.plan];
+  if (!p) return null;
+  const parts = [a.name];
+  if (a.rooms) parts.push(a.rooms);
+  parts.push(a.size + ' מ״ר');
+  if (a.outdoor) parts.push(a.outdoor);
+  if (a.facing) parts.push(a.facing);
+  return {src:p.src, label: parts.join(' · ')};
+}
+function openLightbox(planOrList, startIdx){
+  closeLightbox();
+  lbList = Array.isArray(planOrList) ? planOrList : [planOrList];
+  lbIdx = startIdx || 0;
+  lbEl = el('div','lightbox');
+  lbEl.setAttribute('role','dialog'); lbEl.setAttribute('aria-label','תכניות הדירות');
+  lbEl.innerHTML = `
+    <button class="lb-close" aria-label="סגירה">✕</button>
+    <button class="lb-nav lb-prev" aria-label="הקודם">‹</button>
+    <button class="lb-nav lb-next" aria-label="הבא">›</button>
+    <figure>
+      <span class="lb-count"></span>
+      <img class="lb-img" src="" alt="">
+      <figcaption class="lb-cap"></figcaption>
+      <div class="lb-strip">${lbList.map((p,i)=>`<button data-i="${i}" title="${esc(p.label)}"><img src="${p.src}" alt="${esc(p.label)}"></button>`).join('')}</div>
+    </figure>`;
+  lbEl.addEventListener('click', e=>{
+    if (e.target === lbEl || e.target.classList.contains('lb-close')) return closeLightbox();
+    if (e.target.closest('.lb-prev')) return lbGo(-1);
+    if (e.target.closest('.lb-next')) return lbGo(1);
+    const t = e.target.closest('.lb-strip button'); if (t){ lbIdx = +t.dataset.i; lbRender(); }
+  });
+  document.body.appendChild(lbEl);
+  lbRender();
+}
+function openAllPlans(){
+  openLightbox(PLAN_ORDER.map(k=>PLANS[k]), 0);
+}
+document.addEventListener('keydown', e=>{
+  if (!lbEl) return;
+  if (e.key==='ArrowRight') lbGo(1);      // RTL: right = next-visually-left; keep intuitive
+  if (e.key==='ArrowLeft') lbGo(-1);
+});
+window.addEventListener('scroll', placePop, {passive:true});
+window.addEventListener('resize', placePop);
+
+/* ---------- building schematic ---------- */
+function renderBld(){
+  const wrap = $('#bld'); wrap.innerHTML='';
+  wrap.appendChild(el('div','bld-roof'));
+  const floors = [...state.floors].sort((x,y)=>y.num-x.num);
+  // עדכון מוני הקומות/דירות בחתך כך שתמיד יהיו עקביים
+  const regularUnits = state.floors.reduce((n,f)=>n+f.apts.filter(a=>a.kind!=='penthouse').length,0);
+  const metaTxt = `${state.floors.length} קומות · ${regularUnits} דירות`;
+  const ss=$('#scene-sub'), sm=$('#scene-meta');
+  if(ss) ss.textContent=metaTxt; if(sm) sm.textContent=metaTxt;
+  // סיכום סטטוס חי בתוך תצוגת הארכיטקטורה — הפנטהאוז אינו נספר (11 דירות)
+  const ssum={marketing:0,negotiation:0,reserved:0,sold:0};
+  for(const f of state.floors) for(const a of f.apts){ if(a.kind==='penthouse') continue; ssum[a.status]=(ssum[a.status]||0)+1; }
+  const sst=$('#scene-status');
+  if(sst) sst.innerHTML = Object.keys(STATUSES).map(k=>{
+    const s=STATUSES[k];
+    return `<span class="sc"><i style="background:${s.color}"></i><b>${ssum[k]||0}</b> ${esc(s.label)}</span>`;
+  }).join('');
+  for (const f of floors){
+    const row = el('div','bfloor');
+    const units = el('div','bunits');
+    for (const a of f.apts){
+      if (a.kind==='penthouse') units.appendChild(el('div','terr','מרפסת<br>50 מ״ר'));
+      const s = STATUSES[a.status] || STATUSES.marketing;
+      const u = el('div','bunit');
+      u.style.setProperty('--acc', s.color);
+      u.style.background = mixWhite(s.color, .82);   // הקובייה נצבעת חזק יותר בגוון הסטטוס — ברור מאוד
+      u.style.borderColor = mixWhite(s.color, .38);
+      u.style.flexGrow = Math.max(1, (parseFloat(a.size)||50)/50);
+      u.innerHTML = `<b>${esc(a.name)}</b><small>${esc(a.size)} מ״ר${a.rooms?' · '+esc(a.rooms):''}</small>`+
+        `<div class="brow"><span class="st">${s.icon}${esc(s.label)}</span>`+
+        (PLANS[a.plan]?`<span class="planchip">▦ תכנית</span>`:'')+`</div>`;
+      u.setAttribute('role','button'); u.tabIndex=0;
+      u.setAttribute('aria-label', `${a.name} — ${s.label}. פתיחת פרטים`);
+      u.addEventListener('mouseenter', ()=>{ if(!popPinned) showPop(a,u); });
+      u.addEventListener('mouseleave', scheduleHidePop);
+      u.addEventListener('click', e=>{ e.stopPropagation(); showPop(a,u); popPinned=true; });
+      u.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); showPop(a,u); popPinned=true; } });
+      units.appendChild(u);
+      if (a.kind==='penthouse') units.appendChild(el('div','terr','מרפסת<br>50 מ״ר'));
+      if (a.kind==='garden') units.appendChild(el('div','garden','גינה<br>46 מ״ר'));
+    }
+    row.appendChild(units);
+    const rail = el('div','frail');
+    const badge = el('button','fbadge', String(f.num));
+    badge.title = f.label; badge.setAttribute('aria-label','מעבר ל'+f.label);
+    badge.addEventListener('click',()=>focusFloor(f.id));
+    rail.appendChild(badge);
+    row.appendChild(rail);
+    wrap.appendChild(row);
+  }
+  wrap.appendChild(el('div','bld-ground'));
+  wrap.appendChild(el('div','bld-street','<span>רחוב זרובבל ←</span><span>→ רחוב אהרונסון</span>'));
+
+  // photo badges — spread along the facade, exact position via positionBadges()
+  const pb = $('#pbadges'); pb.innerHTML='';
+  const n = floors.length;
+  // מיקומי הקומות מכוילים לחזית שבתמונה (7 קומות) — מסודר וטבעי לעין
+  const YMAP7 = [14, 27, 39.5, 51.5, 63, 74, 86];   // קומה 7 → 1 (מלמעלה למטה) — 2-7 מעט למעלה
+  floors.forEach((f, i)=>{
+    const b = el('button','pbadge', String(f.num));
+    b.dataset.y = (n === 7) ? YMAP7[i]
+                            : (14 + 70 * i / (n - 1)) + (i === n - 1 ? 5 : 0);
+    b.setAttribute('aria-label','מעבר ל'+f.label);
+    b.addEventListener('click',()=>focusFloor(f.id));
+    pb.appendChild(b);
+  });
+  positionBadges();
+}
+
+/* the facade photo is square and cover-cropped; map image coords to the container */
+function positionBadges(){
+  const wrapEl = $('#photo'), pb = $('#pbadges');
+  const W = wrapEl.clientWidth, H = wrapEl.clientHeight;
+  if (!W || !H || !pb.children.length) return;
+  const s = Math.max(W, H);
+  const offX = (s - W) / 2, offY = (s - H) / 2;
+  const left = (0.25 * s - offX) / W * 100;
+  for (const b of pb.children){
+    const fy = parseFloat(b.dataset.y) / 100;
+    b.style.left = left + '%';
+    b.style.top = ((fy * s - offY) / H * 100) + '%';
+  }
+}
+window.addEventListener('resize', positionBadges);
+
+const smoothOK = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+function focusApt(id){
+  const c = document.getElementById('apt-'+id);
+  if(!c) return;
+  c.scrollIntoView({block:'center', behavior: smoothOK?'smooth':'auto'});
+  c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash');
+}
+function focusFloor(id){
+  const c = document.getElementById('floor-'+id);
+  if(c) c.scrollIntoView({block:'start', behavior: smoothOK?'smooth':'auto'});
+}
+
+/* ---------- floor cards ---------- */
+function chipsHTML(a){
+  const bits = [`<span class="chip">${IC.area}<b>${esc(a.size)}</b>&nbsp;מ״ר</span>`];
+  if (a.outdoor) bits.push(`<span class="chip">${IC.out}${esc(a.outdoor)}</span>`);
+  if (a.facing) bits.push(`<span class="chip">${IC.face}${esc(a.facing)}</span>`);
+  return `<div class="chips">${bits.join('')}</div>`;
+}
+function renderFloors(){
+  const wrap = $('#floors'); wrap.innerHTML='';
+  const floors = [...state.floors].sort((x,y)=>y.num-x.num);
+  floors.forEach((f, fi)=>{
+    const card = el('section','floor'); card.id = 'floor-'+f.id;
+    if (!editMode) card.classList.add('reveal');
+    const head = el('div','floor-head');
+    head.appendChild(el('span','floor-chip',esc(f.label)));
+    head.appendChild(el('span','cnt', f.apts.length===1?'דירה אחת':f.apts.length+' דירות'));
+    if (editMode){
+      const tools = el('div','tools');
+      const add = el('button','mini-btn','+ הוספת דירה');
+      add.addEventListener('click',()=>{
+        f.apts.push(apt(uid(),'דירה חדשה','3 חדרים','70','מרפסת 12 מ״ר','חזית לרחוב זרובבל','big','typical'));
+        saveState();
+      });
+      tools.appendChild(add);
+      if (f.apts.length===0){
+        const del = el('button','mini-btn danger','מחיקת קומה');
+        del.addEventListener('click',()=>{ state.floors = state.floors.filter(x=>x!==f); saveState(); });
+        tools.appendChild(del);
+      }
+      head.appendChild(tools);
+    }
+    card.appendChild(head);
+
+    for (const a of f.apts){
+      const row = el('div','apt'); row.id = 'apt-'+a.id;
+      if (editMode){
+        const info = el('div','info');
+        info.innerHTML = `<div class="egrid">
+          <label class="efield">שם הדירה<input data-k="name" value="${esc(a.name)}"></label>
+          <label class="efield">חדרים<input data-k="rooms" value="${esc(a.rooms)}" placeholder="למשל: 3 חדרים"></label>
+          <label class="efield">שטח (מ״ר)<input data-k="size" value="${esc(a.size)}" inputmode="numeric"></label>
+          <label class="efield">מרפסת / גינה<input data-k="outdoor" value="${esc(a.outdoor)}"></label>
+          <label class="efield">חזית / כיוון<input data-k="facing" value="${esc(a.facing)}"></label>
+          <label class="efield">הערה (יוצג לקונים)<input data-k="note" value="${esc(a.note)}" placeholder="למשל: מחיר, מועד מסירה"></label>
+        </div>`;
+        info.querySelectorAll('input').forEach(inp=>{
+          inp.addEventListener('change',()=>{ a[inp.dataset.k]=inp.value; saveState(true); toast('נשמר ✓'); });
+        });
+        const sp = el('div','status-picker');
+        for (const k of Object.keys(STATUSES)){
+          const s=STATUSES[k];
+          const b = el('button',null,s.label);
+          if (k===a.status){ b.style.background=s.color; b.style.borderColor=s.color; b.style.color='#fff'; }
+          b.addEventListener('click',()=>{ a.status=k; saveState(); });
+          sp.appendChild(b);
+        }
+        info.appendChild(sp);
+        const del = el('button','mini-btn danger','מחיקת דירה');
+        del.style.alignSelf='flex-start';
+        del.addEventListener('click',()=>{
+          if (confirm(`למחוק את "${a.name}"?`)){ f.apts = f.apts.filter(x=>x!==a); saveState(); }
+        });
+        info.appendChild(del);
+        row.appendChild(info);
+      } else {
+        const plan = PLANS[a.plan];
+        // TOP LINE: name (right) · status (left)
+        const top = el('div','apt-top');
+        const nm = a.rooms
+          ? `${esc(a.name)}<span class="nm-sep">·</span><span class="rooms">${esc(a.rooms)}</span>`
+          : esc(a.name);
+        top.appendChild(el('div','name', nm));
+        top.appendChild(makeStatusPill(a));   // הסטטוס תמיד בשורה העליונה, מעל הקו המפריד
+        row.appendChild(top);
+        // BOTTOM LINE: spec chips (right) · frameless plan preview (left)
+        const bot = el('div','apt-bot');
+        const chips = el('div',null, chipsHTML(a)); // wrapper so chips sit on the right
+        bot.appendChild(chips.firstElementChild);
+        if (plan){
+          const th = el('button','plan-thumb', `<img src="${plan.src}" alt="${esc(plan.label)}">`);
+          th.title = a.name + ' — להגדלת התכנית';
+          th.setAttribute('aria-label', a.name + ' — הגדלת התכנית');
+          th.addEventListener('click', ()=>openLightbox(aptPlan(a)));
+          bot.appendChild(th);
+        }
+        row.appendChild(bot);
+        if (a.note) row.appendChild(el('div','note', esc(a.note)));
+      }
+      card.appendChild(row);
+    }
+    wrap.appendChild(card);
+  });
+  if (editMode){
+    const addF = el('button','btn tan add-floor','+ הוספת קומה');
+    addF.style.color = 'var(--navy-deep)';
+    addF.addEventListener('click',()=>{
+      const num = Math.max(0,...state.floors.map(f=>f.num))+1;
+      state.floors.unshift({id:uid(),num,label:'קומה '+num,apts:[]});
+      saveState();
+    });
+    wrap.appendChild(addF);
+    const reset = el('button','mini-btn','↺ איפוס לנתוני ברירת המחדל');
+    reset.style.alignSelf='center';
+    reset.addEventListener('click',()=>{
+      if(confirm('לאפס את כל הנתונים לברירת המחדל? פעולה זו תמחק את כל השינויים.')){
+        state = JSON.parse(JSON.stringify(DEFAULT_STATE)); saveState();
+      }
+    });
+    wrap.appendChild(reset);
+  }
+}
+
+/* ---------- meta ---------- */
+function renderMeta(){
+  const t=$('#m-title'), s=$('#m-subtitle'), ad=$('#m-address');
+  t.textContent = state.meta.title; s.textContent = state.meta.subtitle; ad.textContent = state.meta.address;
+  for (const [node,key] of [[t,'title'],[s,'subtitle'],[ad,'address']]){
+    node.contentEditable = editMode ? 'true' : 'false';
+    node.onblur = editMode ? ()=>{ state.meta[key]=node.textContent.trim(); saveState(true); toast('נשמר ✓'); } : null;
+  }
+}
+
+let revealObserver = null, revealFailsafe = null;
+function setupReveals(){
+  const els = [...document.querySelectorAll('.reveal:not(.in)')];
+  if (!els.length) return;
+  if (!('IntersectionObserver' in window)) { els.forEach(e=>e.classList.add('in')); return; }
+  if (!revealObserver){
+    revealObserver = new IntersectionObserver((entries)=>{
+      entries.forEach(en=>{ if (en.isIntersecting){ en.target.classList.add('in'); revealObserver.unobserve(en.target); } });
+    }, {rootMargin:'0px 0px 90px 0px', threshold:0});   // נחשף מעט לפני הכניסה למסך — חלק יותר
+  }
+  els.forEach(e=>revealObserver.observe(e));
+  // בטיחות: תוכן לעולם לא נשאר מוסתר, גם אם אין גלילה
+  clearTimeout(revealFailsafe);
+  revealFailsafe = setTimeout(()=>document.querySelectorAll('.reveal:not(.in)').forEach(e=>e.classList.add('in')), 1500);
+}
+function renderAll(){ hidePop(); renderMeta(); renderKpis(); renderBld(); renderFloors(); setupReveals(); }
+
+/* ---------- header actions ---------- */
+$('#btn-edit').addEventListener('click',()=>{
+  editMode = !editMode;
+  $('#btn-edit').classList.toggle('on',editMode);
+  $('#btn-edit').textContent = editMode ? '✓ סיום עריכה' : '✎';
+  renderAll();
+  toast(editMode?'מצב עריכה פעיל — כל שדה ניתן לשינוי':'מצב תצוגה');
+});
+$('#btn-share').addEventListener('click',async ()=>{
+  saveState(true);
+  const url = location.href;
+  const shareData = {
+    title: state.meta.title || 'זרובבל 15',
+    text: `סטטוס הדירות בפרויקט ${state.meta.title || 'זרובבל 15'} — ${state.meta.address||''}`.trim(),
+    url,
+  };
+  // בטלפונים: פותח את גיליון השיתוף המובנה (וואטסאפ / מייל / הודעות)
+  if (navigator.share){
+    try{ await navigator.share(shareData); return; }
+    catch(e){ if (e && e.name === 'AbortError') return; }
+  }
+  // במחשב: העתקה ללוח
+  try{ await navigator.clipboard.writeText(url); toast('הקישור הועתק — אפשר לשלוח לקונים'); }
+  catch(e){ prompt('העתיקו את הקישור:', url); }
+});
+
+/* ---------- tabs ---------- */
+function setTab(which){
+  const photo = which==='photo';
+  $('#tab-photo').classList.toggle('act',photo);
+  $('#tab-schema').classList.toggle('act',!photo);
+  $('#photo').style.display = photo?'block':'none';
+  $('#gallery').style.display = photo?'grid':'none';
+  $('#scene').style.display = photo?'none':'flex';
+  updateStickiness();
+  if (photo) positionBadges();
+}
+/* הפאנל דביק רק כשהוא נכנס במלואו במסך — אחרת גלילה רגילה, בלי היתקעות */
+function updateStickiness(){
+  const vp = document.querySelector('.viz-panel');
+  const panel = vp && vp.firstElementChild;
+  if (!panel) return;
+  vp.style.alignSelf = 'start';
+  const fits = panel.getBoundingClientRect().height <= (window.innerHeight - 24);
+  vp.style.position = fits ? 'sticky' : 'static';
+  vp.style.top = fits ? '16px' : '';
+}
+let stickT=null;
+window.addEventListener('resize', ()=>{ clearTimeout(stickT); stickT=setTimeout(()=>{ updateStickiness(); positionBadges(); },120); });
+$('#tab-photo').addEventListener('click',()=>setTab('photo'));
+$('#tab-schema').addEventListener('click',()=>setTab('schema'));
+$('#all-plans').addEventListener('click', openAllPlans);
+
+/* ---------- photo gallery ---------- */
+const PHOTOS = [
+  {src: document.getElementById('mainphoto').src, label: 'חזית הבניין — רחוב זרובבל', badges: true},
+  {src: '__PH2__', label: 'סלון הדירה — הדמיית פנים', badges: false},
+  {src: '__PH3__', label: 'מרפסת עם נוף לים — הדמיה', badges: false},
+  {src: '__PH4__', label: 'חוף הבננה ביץ׳ — כמאה מטרים מהבניין', badges: false},
+  {src: '__PH5__', label: 'הרחוב נשפך אל הים', badges: false},
+];
+let photoIdx = 0;
+function renderGallery(){
+  const g = document.getElementById('gallery'); g.innerHTML = '';
+  PHOTOS.forEach((p, i) => {
+    const b = el('button', i === photoIdx ? 'act' : null, `<img src="${p.src}" alt="${esc(p.label)}">`);
+    b.title = p.label; b.setAttribute('aria-label', p.label);
+    b.addEventListener('click', () => {
+      photoIdx = i;
+      document.getElementById('mainphoto').src = p.src;
+      document.getElementById('photo-cap').textContent = p.label;
+      document.getElementById('pbadges').style.display = p.badges ? 'block' : 'none';
+      renderGallery();
+      positionBadges();
+    });
+    g.appendChild(b);
+  });
+  document.getElementById('photo-cap').textContent = PHOTOS[photoIdx].label;
+}
+
+renderAll();
+renderGallery();
+setTab('photo');
+cloudInit();
+// לאחר טעינת התמונות/גופנים — לחשב מחדש גובה הפאנל והדביקות
+window.addEventListener('load', ()=>{ updateStickiness(); positionBadges(); });
+document.querySelector('#mainphoto').addEventListener('load', updateStickiness, {once:true});
+if (window.ResizeObserver) new ResizeObserver(positionBadges).observe(document.getElementById('photo'));
+</script>
