@@ -34,7 +34,7 @@ export default function ViewControls({ zoom, pad, font, onZoom, onPad, onFont, o
   const canReset = zoom !== ZOOM_DEFAULT || pad !== PAD_DEFAULT || font !== FONT_DEFAULT;
 
   return (
-    <div className="flex items-center gap-2 text-sm select-none">
+    <div className="flex items-center gap-2 text-sm select-none flex-wrap">
       {/* גודל פונט — הגדלה/הקטנה של הטקסט לקריאות */}
       <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-1.5 py-1 shadow-soft">
         <span className="text-xs text-slate-400 px-1">פונט</span>
