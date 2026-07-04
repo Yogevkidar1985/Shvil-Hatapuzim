@@ -70,8 +70,9 @@ export default function Toolbar(p: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // במובייל הכותרת נגללת עם הדף (משחררת מקום לטבלה); בדסקטופ נשארת דבוקה
   return (
-    <header className="sticky top-0 z-20">
+    <header className="z-20 md:sticky md:top-0">
       {/* באנר עליון — ירוק כהה עם זהב */}
       <div className="bg-gradient-to-l from-brand-800 to-brand-700 text-white px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">

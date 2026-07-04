@@ -349,8 +349,9 @@ function CrmContent() {
     router.refresh();
   }
 
+  // מובייל: הדף גולל טבעית (dvh — מתחשב בסרגל הכתובת של iOS); דסקטופ: מסך נעול והטבלה ממלאת
   return (
-    <div className="app-canvas h-screen flex flex-col">
+    <div className="app-canvas flex flex-col min-h-[100dvh] md:h-screen md:min-h-0 overflow-x-clip">
       <Toolbar
         holders={holders}
         search={search}
@@ -388,10 +389,10 @@ function CrmContent() {
         </div>
       )}
 
-      <div className="flex-1 px-4 pb-4 pt-2 overflow-hidden flex flex-col">
+      <div className="flex-1 px-4 pb-4 pt-2 md:overflow-hidden flex flex-col">
         {/* בקרת תצוגה — זום ורווח עמודות */}
         {!loading && holders.length > 0 && (
-          <div className="flex items-center justify-between pb-2">
+          <div className="flex items-center justify-between pb-2 flex-wrap gap-2">
             <ViewControls
               zoom={gridZoom}
               pad={gridPad}
@@ -420,7 +421,8 @@ function CrmContent() {
             </span>
           </div>
         )}
-        <div className="flex-1 min-h-0">
+        {/* מובייל: גובה קבוע לטבלה (הגלילה הפנימית של AG Grid); דסקטופ: ממלאת את שארית המסך */}
+        <div className="max-md:h-[68dvh] max-md:flex-none flex-1 min-h-0">
         {loading ? (
           <GridSkeleton />
         ) : holders.length === 0 ? (
