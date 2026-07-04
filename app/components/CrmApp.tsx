@@ -46,6 +46,7 @@ function CrmContent() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [phoneFilter, setPhoneFilter] = useState(""); // "" | "has" | "missing"
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [waState, setWaState] = useState<{ configured: boolean; state: string | null } | null>(null);
@@ -329,9 +330,12 @@ function CrmContent() {
   }, [holders, columns, statusFilter, toast]);
 
   const filteredHolders = useMemo(() => {
-    if (!statusFilter) return holders;
-    return holders.filter((h) => h.status === statusFilter);
-  }, [holders, statusFilter]);
+    let result = holders;
+    if (statusFilter) result = result.filter((h) => h.status === statusFilter);
+    if (phoneFilter === "missing") result = result.filter((h) => h.phone.trim() === "");
+    if (phoneFilter === "has") result = result.filter((h) => h.phone.trim() !== "");
+    return result;
+  }, [holders, statusFilter, phoneFilter]);
 
   const selectedHolders = useMemo(() => holders.filter((h) => selectedIds.includes(h.id)), [holders, selectedIds]);
 
@@ -352,6 +356,8 @@ function CrmContent() {
         waState={waState}
         statusFilter={statusFilter}
         onStatusFilter={setStatusFilter}
+        phoneFilter={phoneFilter}
+        onPhoneFilter={setPhoneFilter}
         onImport={() => setShowImport(true)}
         onExport={handleExport}
         onAddRow={handleAddRow}
