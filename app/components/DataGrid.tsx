@@ -163,11 +163,31 @@ export default function DataGrid({
       },
     ];
 
+    // רוחב לפי תוכן העמודה — טקסט ארוך נמתח, מספרים וסטטוסים קומפקטיים
+    const WIDTH_HINTS: Record<string, { minWidth?: number; width?: number; flex?: number }> = {
+      name: { minWidth: 190, flex: 1.6 },
+      "חלקות ושטחים": { minWidth: 210, flex: 1.5 },
+      "שטח כ״ס (מ״ר)": { width: 125 },
+      phone: { width: 155 },
+      status: { width: 115 },
+      "מקור": { width: 115 },
+      notes: { minWidth: 180, flex: 1.3 },
+      "הערות נסח טאבו": { minWidth: 180, flex: 1.3 },
+      "שווי מצב יוצא": { width: 135 },
+      "מגרש תמורה": { width: 120 },
+      "אימייל": { minWidth: 180, flex: 1 },
+      relativeValue: { width: 125 },
+      state: { minWidth: 140, flex: 1 },
+      balancePay: { width: 140 },
+      balanceReceive: { width: 140 },
+    };
+
     for (const col of visibleCols) {
       const isStatus = col.type === "status";
       const isFirst = col.key === "name";
       const isNumber = col.type === "number";
       const isPhone = col.type === "phone";
+      const hint = WIDTH_HINTS[col.key] ?? { minWidth: 120, flex: 1 };
       const def: ColDef<HolderDTO> = {
         headerName: col.label,
         field: col.isCustom ? (`extra.${col.key}` as never) : (col.key as never),
@@ -175,8 +195,7 @@ export default function DataGrid({
         sortable: true,
         filter: isNumber ? "agNumberColumnFilter" : "agTextColumnFilter",
         resizable: true,
-        minWidth: isFirst ? 180 : 110,
-        flex: isFirst ? 1.6 : 1,
+        ...hint,
         pinned: isFirst ? "right" : undefined,
         colId: col.key,
         headerClass: isFirst ? "ag-header-cell--first" : undefined,
@@ -358,7 +377,7 @@ export default function DataGrid({
         stopEditingWhenCellsLoseFocus={true}
         rowHeight={Math.round(52 * zoom)}
         headerHeight={Math.round(46 * zoom)}
-        defaultColDef={{ filter: true, floatingFilter: false }}
+        defaultColDef={{ filter: true, floatingFilter: false, wrapHeaderText: true, autoHeaderHeight: true }}
         overlayNoRowsTemplate={'<span style="color:#94a3b8;padding:24px">אין תוצאות מתאימות לחיפוש או לסינון הנוכחי</span>'}
       />
     </div>

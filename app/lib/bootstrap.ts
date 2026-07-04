@@ -142,6 +142,87 @@ export async function ensureInitialHolders(): Promise<void> {
   }
   // אחרי השלמת 116 הבסיסיים — ייבוא כל העריכות מהמערכת הישנה (השלמת חוסרים)
   await importLegacyOwners();
+  // ולבסוף — יישור עמודות ושורות לסדר המסמך המקורי (חד-פעמי)
+  await ensureCanonicalLayout();
+}
+
+/**
+ * סדר העמודות הקנוני — לפי המסמך המקורי (מערכת המקור של גוש 6446):
+ * שם, חלקות ושטחים, שטח, טלפון, סטטוס, מקור, עדכון/הערות, נסח טאבו,
+ * שווי מצב יוצא, מגרש תמורה, ואז שדות הניהול של המערכת החדשה.
+ */
+const CANONICAL_COLUMN_ORDER = [
+  "name",
+  "חלקות ושטחים",
+  "שטח כ״ס (מ״ר)",
+  "phone",
+  "status",
+  "מקור",
+  "notes",
+  "הערות נסח טאבו",
+  "שווי מצב יוצא",
+  "מגרש תמורה",
+  "אימייל",
+  "relativeValue",
+  "state",
+  "balancePay",
+  "balanceReceive",
+];
+
+const LAYOUT_MIGRATION_KEY = "layoutMigration";
+const LAYOUT_MIGRATION_VER = "v2";
+let ensuredLayout = false;
+
+/**
+ * מיגרציה חד-פעמית: מסדרת את העמודות ואת השורות לפי המסמך המקורי.
+ * רצה פעם אחת (דגל ב-AppConfig) — גרירות עמודות עתידיות של המשתמש נשמרות.
+ */
+export async function ensureCanonicalLayout(): Promise<void> {
+  if (ensuredLayout) return;
+  try {
+    const flag = await prisma.appConfig.findUnique({ where: { key: LAYOUT_MIGRATION_KEY } });
+    if (flag?.value === LAYOUT_MIGRATION_VER) {
+      ensuredLayout = true;
+      return;
+    }
+
+    // --- עמודות: סדר קנוני; עמודות לא מוכרות נשארות אחרי, בסדר הקיים ---
+    const cols = await prisma.columnDef.findMany({ orderBy: { order: "asc" } });
+    const rank = new Map(CANONICAL_COLUMN_ORDER.map((k, i) => [k, i]));
+    let extraRank = CANONICAL_COLUMN_ORDER.length;
+    for (const c of cols) {
+      const r = rank.has(c.key) ? (rank.get(c.key) as number) : extraRank++;
+      if (c.order !== r) {
+        await prisma.columnDef.update({ where: { id: c.id }, data: { order: r } });
+      }
+    }
+
+    // --- שורות: לפי סדר המסמך המקורי (התאמה מדויקת בשם); חדשים/יורשים בסוף ---
+    const owners = initialOwners as InitialOwner[];
+    const docRank = new Map<string, number>();
+    owners.forEach((o, i) => {
+      const k = collapsedKey(o.name);
+      if (k && !docRank.has(k)) docRank.set(k, i);
+    });
+    const holders = await prisma.rightsHolder.findMany({ orderBy: { rowOrder: "asc" } });
+    let tail = owners.length;
+    for (const h of holders) {
+      const r = docRank.get(collapsedKey(h.name));
+      const next = r !== undefined ? r : tail++;
+      if (h.rowOrder !== next) {
+        await prisma.rightsHolder.update({ where: { id: h.id }, data: { rowOrder: next } });
+      }
+    }
+
+    await prisma.appConfig.upsert({
+      where: { key: LAYOUT_MIGRATION_KEY },
+      update: { value: LAYOUT_MIGRATION_VER },
+      create: { key: LAYOUT_MIGRATION_KEY, value: LAYOUT_MIGRATION_VER },
+    });
+    ensuredLayout = true;
+  } catch {
+    /* טבלאות עדיין לא קיימות — מתעלמים */
+  }
 }
 
 /** מוודא שתבניות ברירת המחדל קיימות (פעם ראשונה בלבד) */
