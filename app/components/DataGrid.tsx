@@ -150,11 +150,13 @@ export default function DataGrid({
     const cols: ColDef<HolderDTO>[] = [
       {
         headerName: "",
+        colId: "_select",
         checkboxSelection: true,
         headerCheckboxSelection: true,
         width: 46,
         pinned: "right",
-        lockPosition: true,
+        lockPosition: "right", // תמיד העמודה הימנית ביותר — לפני שם בעל הזכויות
+        lockPinned: true,
         suppressMovable: true,
         sortable: false,
         filter: false,
@@ -279,7 +281,8 @@ export default function DataGrid({
       filter: false,
       editable: false,
       resizable: false,
-      lockPosition: true,
+      lockPosition: "left", // תמיד בקצה השמאלי
+      lockPinned: true,
       suppressMovable: true,
       cellRenderer: (p: ICellRendererParams<HolderDTO>) => {
         const data = p.data;
