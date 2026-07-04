@@ -79,6 +79,16 @@ export interface TemplateDTO {
   order: number;
 }
 
+/**
+ * המסמך המקורי מכיל שני חלקים: 92 בעלים נוכחיים (2026) + 24 מהרישום המקורי של 2015.
+ * ערך עמודת "מקור" שמסמן רשומת ארכיון; כל השאר (כולל רשומות חדשות ללא מקור) נחשבים נוכחיים.
+ */
+export const LEGACY_SOURCE_2015 = "מקורי 2015";
+
+export function isCurrentOwner(h: { extra: Record<string, string> }): boolean {
+  return (h.extra?.["מקור"] ?? "") !== LEGACY_SOURCE_2015;
+}
+
 export const GROUP_STATUS_LABELS: Record<GroupStatus, string> = {
   none: "לא בקבוצה",
   added: "בקבוצה",

@@ -8,6 +8,7 @@ import Logo from "./ui/Logo";
 import { Chip } from "./ui/atoms";
 import { PROJECT } from "@/app/lib/project";
 import type { HolderDTO } from "@/app/lib/types";
+import { isCurrentOwner } from "@/app/lib/types";
 
 interface Props {
   holders: HolderDTO[];
@@ -20,6 +21,8 @@ interface Props {
   onStatusFilter: (v: string) => void;
   phoneFilter: string;
   onPhoneFilter: (v: string) => void;
+  sourceFilter: string;
+  onSourceFilter: (v: string) => void;
   onImport: () => void;
   onExport: () => void;
   onAddRow: () => void;
@@ -35,14 +38,18 @@ interface Props {
 }
 
 export default function Toolbar(p: Props) {
+  // כל מספרי הדשבורד מחושבים על הבעלים הנוכחיים (92) בלבד —
+  // רשומות "מקורי 2015" הן ארכיון ואינן חלק ממעקב ההחתמה.
+  const current = p.holders.filter(isCurrentOwner);
   const counts = {
-    total: p.holders.length,
-    signed: p.holders.filter((h) => h.status === "signed").length,
-    pending: p.holders.filter((h) => h.status === "pending").length,
-    objected: p.holders.filter((h) => h.status === "objected").length,
-    messagesSent: p.holders.reduce((sum, h) => sum + (h.msgStats?.out ?? 0), 0),
-    inGroup: p.holders.filter((h) => h.groupStatus === "added").length,
-    withPhone: p.holders.filter((h) => h.phone.trim() !== "").length,
+    total: current.length,
+    archived: p.holders.length - current.length,
+    signed: current.filter((h) => h.status === "signed").length,
+    pending: current.filter((h) => h.status === "pending").length,
+    objected: current.filter((h) => h.status === "objected").length,
+    messagesSent: current.reduce((sum, h) => sum + (h.msgStats?.out ?? 0), 0),
+    inGroup: current.filter((h) => h.groupStatus === "added").length,
+    withPhone: current.filter((h) => h.phone.trim() !== "").length,
   };
 
   const waOk = p.waState?.configured && p.waState.state === "authorized";
@@ -87,8 +94,9 @@ export default function Toolbar(p: Props) {
       <div className="glass-header border-b border-slate-200/70 pt-3">
       {/* כרטיסי KPI */}
       <div className="px-5 pb-3 flex gap-2.5 flex-wrap">
-        <StatCard label="סה״כ בעלי זכויות" value={counts.total} icon="👥" tone="gold"
-          active={p.statusFilter === ""} onClick={() => p.onStatusFilter("")} />
+        <StatCard label="בעלי זכויות · נוכחי 2026" value={counts.total} icon="👥" tone="gold"
+          active={p.sourceFilter === "current" && p.statusFilter === ""}
+          onClick={() => { p.onSourceFilter("current"); p.onStatusFilter(""); }} />
         <StatCard label="חתמו" value={counts.signed} icon="✅" tone="green"
           active={p.statusFilter === "signed"} onClick={() => p.onStatusFilter("signed")} />
         <StatCard label="ממתינים" value={counts.pending} icon="⏳" tone="slate"
@@ -97,6 +105,9 @@ export default function Toolbar(p: Props) {
           active={p.statusFilter === "objected"} onClick={() => p.onStatusFilter("objected")} />
         <StatCard label="הודעות שנשלחו" value={counts.messagesSent} icon="💬" tone="brand" />
         <StatCard label="בקבוצת WhatsApp" value={counts.inGroup} icon="👥" tone="gold" />
+        <StatCard label="ארכיון · מקורי 2015" value={counts.archived} icon="🗂️" tone="slate"
+          active={p.sourceFilter === "2015"}
+          onClick={() => p.onSourceFilter(p.sourceFilter === "2015" ? "current" : "2015")} />
       </div>
 
       {/* לוח התקדמות — תמונת מצב קבועה: חתימות + איסוף טלפונים */}
@@ -123,6 +134,20 @@ export default function Toolbar(p: Props) {
             className="focus-ring bg-white border border-slate-200 rounded-xl pr-9 pl-3 py-2 text-sm w-64 shadow-soft outline-none"
           />
         </div>
+
+        <div className="flex items-center gap-1.5">
+          <Chip active={p.sourceFilter === "current"} onClick={() => p.onSourceFilter("current")} color="green">
+            נוכחי 2026
+          </Chip>
+          <Chip active={p.sourceFilter === "2015"} onClick={() => p.onSourceFilter("2015")} color="slate">
+            🗂️ מקורי 2015
+          </Chip>
+          <Chip active={p.sourceFilter === "all"} onClick={() => p.onSourceFilter("all")} color="slate">
+            הכול ({p.holders.length})
+          </Chip>
+        </div>
+
+        <div className="w-px h-6 bg-slate-200 mx-1" />
 
         <div className="flex items-center gap-1.5">
           <Chip active={p.statusFilter === ""} onClick={() => p.onStatusFilter("")} color="slate">הכול</Chip>
