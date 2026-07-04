@@ -3,6 +3,7 @@
 import { clsx } from "clsx";
 import Button from "./ui/Button";
 import StatCard from "./ui/StatCard";
+import ProgressBoard from "./ui/ProgressBoard";
 import Logo from "./ui/Logo";
 import { Chip } from "./ui/atoms";
 import { PROJECT } from "@/app/lib/project";
@@ -17,6 +18,8 @@ interface Props {
   waState: { configured: boolean; state: string | null } | null;
   statusFilter: string;
   onStatusFilter: (v: string) => void;
+  phoneFilter: string;
+  onPhoneFilter: (v: string) => void;
   onImport: () => void;
   onExport: () => void;
   onAddRow: () => void;
@@ -39,6 +42,7 @@ export default function Toolbar(p: Props) {
     objected: p.holders.filter((h) => h.status === "objected").length,
     messagesSent: p.holders.reduce((sum, h) => sum + (h.msgStats?.out ?? 0), 0),
     inGroup: p.holders.filter((h) => h.groupStatus === "added").length,
+    withPhone: p.holders.filter((h) => h.phone.trim() !== "").length,
   };
 
   const waOk = p.waState?.configured && p.waState.state === "authorized";
@@ -95,6 +99,19 @@ export default function Toolbar(p: Props) {
         <StatCard label="בקבוצת WhatsApp" value={counts.inGroup} icon="👥" tone="gold" />
       </div>
 
+      {/* לוח התקדמות — תמונת מצב קבועה: חתימות + איסוף טלפונים */}
+      <div className="px-5 pb-3">
+        <ProgressBoard
+          total={counts.total}
+          signed={counts.signed}
+          withPhone={counts.withPhone}
+          statusFilter={p.statusFilter}
+          phoneFilter={p.phoneFilter}
+          onStatusFilter={p.onStatusFilter}
+          onPhoneFilter={p.onPhoneFilter}
+        />
+      </div>
+
       {/* סרגל פעולות */}
       <div className="px-5 pb-3 flex items-center gap-2 flex-wrap">
         <div className="relative">
@@ -112,6 +129,12 @@ export default function Toolbar(p: Props) {
           <Chip active={p.statusFilter === "signed"} onClick={() => p.onStatusFilter("signed")} color="green">חתמו</Chip>
           <Chip active={p.statusFilter === "pending"} onClick={() => p.onStatusFilter("pending")} color="slate">ממתינים</Chip>
           <Chip active={p.statusFilter === "objected"} onClick={() => p.onStatusFilter("objected")} color="red">התנגדו</Chip>
+          <Chip active={p.phoneFilter === "missing"} onClick={() => p.onPhoneFilter(p.phoneFilter === "missing" ? "" : "missing")} color="red">
+            📞 חסרי טלפון
+          </Chip>
+          <Chip active={p.phoneFilter === "has"} onClick={() => p.onPhoneFilter(p.phoneFilter === "has" ? "" : "has")} color="green">
+            📞 עם טלפון
+          </Chip>
         </div>
 
         <div className="w-px h-6 bg-slate-200 mx-1" />
