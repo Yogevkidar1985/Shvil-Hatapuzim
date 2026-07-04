@@ -3,9 +3,11 @@
 import { prisma } from "./db";
 import { DEFAULT_COLUMNS } from "./types";
 import { DEFAULT_TEMPLATES } from "./template";
+import initialOwners from "@/prisma/initial-owners.json";
 
 let ensured = false;
 let ensuredTpl = false;
+let ensuredHolders = false;
 
 export async function ensureDefaultColumns(): Promise<void> {
   if (ensured) return;
@@ -31,6 +33,62 @@ export async function ensureDefaultColumns(): Promise<void> {
     ensured = true;
   } catch {
     // אם הטבלאות עדיין לא קיימות (db push לא רץ) — לא מפילים את הבקשה
+  }
+}
+
+interface InitialOwner {
+  name: string;
+  phone: string;
+  status: string;
+  notes: string;
+  rowOrder: number;
+  extra: Record<string, string>;
+}
+
+/**
+ * טעינה אוטומטית של כל אנשי הקשר (116 בעלי הזכויות מגוש 6446) בכניסה הראשונה.
+ * רץ רק כשטבלת בעלי הזכויות ריקה לחלוטין — לעולם לא דורס נתונים קיימים.
+ */
+export async function ensureInitialHolders(): Promise<void> {
+  if (ensuredHolders) return;
+  try {
+    const count = await prisma.rightsHolder.count();
+    if (count === 0) {
+      const owners = initialOwners as InitialOwner[];
+
+      // עמודות דינמיות עבור שדות ההקצאה (חלקות, שטח, מגרש, שווי וכו')
+      const customKeys: string[] = [];
+      for (const o of owners) {
+        for (const k of Object.keys(o.extra ?? {})) {
+          if (!customKeys.includes(k)) customKeys.push(k);
+        }
+      }
+      const existingCols = await prisma.columnDef.findMany();
+      const existingKeys = new Set(existingCols.map((c) => c.key));
+      let order = existingCols.reduce((m, c) => Math.max(m, c.order), 0);
+      for (const key of customKeys) {
+        if (!existingKeys.has(key)) {
+          order++;
+          await prisma.columnDef.create({
+            data: { key, label: key, type: "text", order, visible: true, isCustom: true, options: "[]" },
+          });
+        }
+      }
+
+      await prisma.rightsHolder.createMany({
+        data: owners.map((o) => ({
+          name: o.name,
+          phone: o.phone,
+          status: ["pending", "signed", "objected"].includes(o.status) ? o.status : "pending",
+          notes: o.notes,
+          rowOrder: o.rowOrder,
+          extra: JSON.stringify(o.extra ?? {}),
+        })),
+      });
+    }
+    ensuredHolders = true;
+  } catch {
+    /* טבלה עדיין לא קיימת — מתעלמים */
   }
 }
 
