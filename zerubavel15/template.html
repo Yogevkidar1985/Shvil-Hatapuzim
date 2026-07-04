@@ -89,6 +89,16 @@
   }
   .btn-share:hover{background:var(--tan); border-color:var(--tan); color:var(--navy-deep)}
   .btn-share svg{width:11px;height:11px}
+  /* מחוון שמירה — גלוי רק במצב עריכה, כדי שהבעלים יראה שהעריכות נשמרות */
+  .sync-ind{
+    display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700;
+    color:rgba(240,238,255,.6); padding:4px 9px; border-radius:999px;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12);
+  }
+  .sync-ind[hidden]{display:none}
+  .sync-ind::before{content:""; width:6px; height:6px; border-radius:50%; background:currentColor}
+  .sync-ind.cloud{color:#8FD3A6}
+  .sync-ind.saving{color:var(--tan)}
   .btn-edit{
     width:26px; height:26px; padding:0; border-radius:7px; cursor:pointer; font-size:12px;
     border:1px solid rgba(255,255,255,.14); background:transparent; color:rgba(240,238,255,.4);
@@ -642,6 +652,7 @@
           שיתוף הפרויקט
         </button>
         <button class="btn-edit" id="btn-edit" title="מצב עריכה — לניהול הסטטוסים והפרטים" aria-label="מצב עריכה">✎</button>
+        <span class="sync-ind" id="sync-ind" hidden title="מצב השמירה של העריכות">שומר…</span>
       </div>
     </div>
   </div>
@@ -855,15 +866,18 @@ let cloudSaveT = null;
 function setSync(mode){
   const el = document.getElementById('sync-ind'); if(!el) return;
   el.classList.remove('cloud','saving');
-  if (mode==='cloud'){ el.classList.add('cloud'); el.textContent='מסונכרן בענן'; }
+  if (mode==='cloud'){ el.classList.add('cloud'); el.textContent='מסונכרן בענן ✓'; }
   else if (mode==='saving'){ el.classList.add('saving'); el.textContent='שומר…'; }
-  else { el.textContent='שמור בקישור'; }
+  else { el.textContent='נשמר במכשיר זה'; }
 }
 async function cloudSave(){
   try{
     setSync('saving');
     if (!cloudId){
-      const r = await fetch(CLOUD_BASE+'/', {method:'POST'});
+      // kvdb.io דורש אימייל ביצירת דלי — בלעדיו היצירה נכשלת בשקט והשמירה נשארת מקומית בלבד
+      const r = await fetch(CLOUD_BASE+'/', {method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:'email=kidaryogev%40gmail.com'});
       if(!r.ok) throw 0;
       rememberCloud((await r.text()).trim());
     }
@@ -1372,9 +1386,10 @@ $('#btn-edit').addEventListener('click',()=>{
   $('#btn-edit').classList.toggle('on',editMode);
   $('#btn-edit').textContent = editMode ? '✓ סיום עריכה' : '✎';
   renderAll();
-  // עם כניסה למצב עריכה — מנסים לקבע דלי בענן כדי שהקישור יהיה "חי" מיד
+  // מחוון השמירה גלוי רק במצב עריכה; עם הכניסה מקבעים דלי בענן
+  const si = $('#sync-ind'); if (si) si.hidden = !editMode;
   if (editMode) cloudSave();
-  toast(editMode?'מצב עריכה פעיל — השינויים נשמרים בענן':'מצב תצוגה');
+  toast(editMode?'מצב עריכה פעיל — השינויים נשמרים':'מצב תצוגה');
 });
 $('#btn-share').addEventListener('click',async ()=>{
   saveState(true);
