@@ -34,6 +34,7 @@ const THROTTLE_MS = 3000;
 export default function BulkSendDialog({ holders, onClose, onDone }: Props) {
   const { templates } = useTemplates();
   const [template, setTemplate] = useState("");
+  const [templateName, setTemplateName] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [finished, setFinished] = useState(false);
   const [recipients, setRecipients] = useState<Recipient[]>(() =>
@@ -77,7 +78,10 @@ export default function BulkSendDialog({ holders, onClose, onDone }: Props) {
 
   // אתחול תוכן ההודעה מהתבנית הראשונה כשהתבניות נטענות
   useEffect(() => {
-    if (!template && templates.length > 0) setTemplate(templates[0].body);
+    if (!template && templates.length > 0) {
+      setTemplate(templates[0].body);
+      setTemplateName(templates[0].name);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [templates]);
 
@@ -120,7 +124,7 @@ export default function BulkSendDialog({ holders, onClose, onDone }: Props) {
       setRecipients((prev) => prev.map((x, i) => (i === idx ? { ...x, status: "sending" } : x)));
       try {
         const message = renderTemplate(template, r.holder);
-        const res = await api.sendMessage(r.holder.id, message);
+        const res = await api.sendMessage(r.holder.id, message, templateName);
         setRecipients((prev) =>
           prev.map((x, i) =>
             i === idx
@@ -159,8 +163,16 @@ export default function BulkSendDialog({ holders, onClose, onDone }: Props) {
                 {templates.map((t) => (
                   <button
                     key={t.id}
-                    onClick={() => setTemplate(t.body)}
-                    className="text-xs bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full hover:bg-brand-100 font-medium"
+                    onClick={() => {
+                      setTemplate(t.body);
+                      setTemplateName(t.name);
+                    }}
+                    className={clsx(
+                      "text-xs px-2.5 py-1 rounded-full font-medium",
+                      templateName === t.name
+                        ? "bg-brand-600 text-white"
+                        : "bg-brand-50 text-brand-700 hover:bg-brand-100"
+                    )}
                   >
                     {t.name}
                   </button>
@@ -173,7 +185,10 @@ export default function BulkSendDialog({ holders, onClose, onDone }: Props) {
               </label>
               <textarea
                 value={template}
-                onChange={(e) => setTemplate(e.target.value)}
+                onChange={(e) => {
+                  setTemplate(e.target.value);
+                  setTemplateName(null);
+                }}
                 rows={4}
                 className="focus-ring w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-none"
               />

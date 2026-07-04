@@ -15,7 +15,7 @@ import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import type { HolderDTO, ColumnDefDTO } from "@/app/lib/types";
 import { STATUS_LABELS, GROUP_STATUS_LABELS } from "@/app/lib/types";
-import { formatNumber, formatPhone, formatDateTime } from "@/app/lib/format";
+import { formatNumber, formatPhone, formatDateTime, formatDate } from "@/app/lib/format";
 
 // חבילת ag-grid-community רושמת אוטומטית את כל המודולים — אין צורך ב-ModuleRegistry ידני.
 
@@ -27,6 +27,8 @@ interface Props {
   zoom?: number;
   /** רווח אופקי בין עמודות בפיקסלים */
   cellPad?: number;
+  /** מכפיל גודל פונט (1 = ברירת מחדל) — בלתי תלוי בזום */
+  fontScale?: number;
   /** שורות שנבחרו — משוחזרות אחרי שינוי זום (שמרכיב מחדש את הטבלה) */
   selectedIds?: string[];
   onCellChange: (id: string, key: string, value: string, isCustom: boolean) => void;
@@ -126,6 +128,7 @@ export default function DataGrid({
   quickFilter,
   zoom = 1,
   cellPad = 14,
+  fontScale = 1,
   selectedIds,
   onCellChange,
   onSelectionChange,
@@ -227,6 +230,27 @@ export default function DataGrid({
       cellRenderer: GroupRenderer,
     });
 
+    // ===== תאריך קבלת הטלפון — מתי הושג/הוזן המספר =====
+    cols.push({
+      headerName: "תאריך קבלת טלפון",
+      colId: "_phoneAddedAt",
+      width: 150,
+      sortable: true,
+      filter: false,
+      editable: false,
+      suppressMovable: true,
+      valueGetter: (p) => p.data?.phoneAddedAt ?? "",
+      cellRenderer: (p: ICellRendererParams<HolderDTO>) => {
+        const iso = p.data?.phoneAddedAt ?? null;
+        if (!iso) return <span className="text-slate-300 text-xs">—</span>;
+        return (
+          <span className="inline-flex items-center gap-1 text-xs text-slate-600 tabular-nums" title="מתי הוזן/הושג מספר הטלפון">
+            📅 {formatDate(iso)}
+          </span>
+        );
+      },
+    });
+
     cols.push({
       headerName: "פעולות",
       colId: "_actions",
@@ -310,7 +334,7 @@ export default function DataGrid({
 
   // זום: טקסט ורווחים דרך משתני CSS (חי); גובה שורות מחייב הרכבה מחדש — לכן key לפי זום
   const gridStyle = {
-    "--ag-font-size": `${Math.round(14 * zoom)}px`,
+    "--ag-font-size": `${Math.round(14 * zoom * fontScale)}px`,
     "--ag-cell-horizontal-padding": `${cellPad}px`,
   } as React.CSSProperties;
 

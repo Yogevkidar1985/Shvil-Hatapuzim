@@ -8,7 +8,7 @@ import { EMPTY_MSG_STATS } from "./types";
 // טיפוסים גמישים לרשומות Prisma (נמנעים מתלות בייבוא טיפוסי @prisma/client לפני generate)
 type HolderRecord = {
   id: string; name: string; relativeValue: string; state: string;
-  balancePay: string; balanceReceive: string; phone: string; status: string;
+  balancePay: string; balanceReceive: string; phone: string; phoneAddedAt: Date | null; status: string;
   notes: string; extra: string; rowOrder: number;
   lastMessageAt: Date | null;
   groupId: string | null; groupStatus: string; groupAddedAt: Date | null; waCheck: string;
@@ -20,7 +20,7 @@ type GroupRecord = {
 };
 
 type MessageRecord = {
-  id: string; holderId: string; direction: string; body: string; type: string;
+  id: string; holderId: string; direction: string; body: string; templateName: string | null; type: string;
   mediaUrl: string | null; status: string; greenApiId: string | null;
   errorText: string | null; timestamp: Date;
 };
@@ -50,6 +50,7 @@ export function serializeHolder(h: HolderRecord, msgStats?: MsgStats): HolderDTO
     balancePay: h.balancePay,
     balanceReceive: h.balanceReceive,
     phone: h.phone,
+    phoneAddedAt: h.phoneAddedAt ? h.phoneAddedAt.toISOString() : null,
     status: (["pending", "signed", "objected"].includes(h.status) ? h.status : "pending") as HolderStatus,
     notes: h.notes,
     extra: parseJson<Record<string, string>>(h.extra, {}),
@@ -82,6 +83,7 @@ export function serializeMessage(m: MessageRecord): MessageDTO {
     holderId: m.holderId,
     direction: m.direction === "in" ? "in" : "out",
     body: m.body,
+    templateName: m.templateName ?? null,
     type: m.type,
     mediaUrl: m.mediaUrl,
     status: m.status,

@@ -48,10 +48,10 @@ export const api = {
   whatsappStatus: () => request<{ configured: boolean; state: string | null }>("/api/whatsapp/status"),
   getMessages: (holderId: string) =>
     request<{ messages: MessageDTO[] }>(`/api/whatsapp/messages/${holderId}`),
-  sendMessage: (holderId: string, message: string) =>
+  sendMessage: (holderId: string, message: string, templateName?: string | null) =>
     request<{ ok: boolean; message: MessageDTO; error?: string }>("/api/whatsapp/send", {
       method: "POST",
-      body: JSON.stringify({ holderId, message }),
+      body: JSON.stringify({ holderId, message, templateName: templateName ?? null }),
     }),
   syncMessages: () =>
     request<{ ok: boolean; processed: number; saved: number }>("/api/whatsapp/sync", { method: "POST" }),
