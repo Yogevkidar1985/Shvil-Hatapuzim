@@ -735,7 +735,10 @@ const apt = (id,name,rooms,size,outdoor,facing,kind,plan,status)=>(
   {id,name,rooms,size,outdoor,facing,kind,plan,status:status||'marketing',note:''});
 
 const DEFAULT_STATE = {
-  meta:{title:'זרובבל 15', subtitle:'פסיעה אחת מקו החוף של תל אביב', address:'זרובבל 15, תל אביב', tagline:'היהלום בין הכרם לים',
+  // dataRev עולה רק כשנדחף לדף עדכון תוכן; הסטטוסים והעריכות של המשתמש
+  // שורדים תמיד דרך hydrate() — הנתונים לא מתאפסים יותר לעולם
+  meta:{dataRev:12,
+        title:'זרובבל 15', subtitle:'פסיעה אחת מקו החוף של תל אביב', address:'זרובבל 15, תל אביב', tagline:'היהלום בין הכרם לים',
         foot1:'הזדמנות אחרונה להצטרף לנבחרת מנצחת', foot2:'בפריים לוקיישן בין הכרם לים'},
   floors:[
     {id:'f7',num:7,label:'קומה 7',apts:[apt('a12','פנטהאוז · דירה 12','','70','מרפסות 50 מ״ר','חזית לרחוב זרובבל ורחוב אהרונסון','penthouse','roof','reserved')]},
@@ -762,21 +765,70 @@ const DEFAULT_STATE = {
 let editMode = false;
 let state = loadState();
 
+/* מיזוג מצב שמור עם עדכוני תוכן: הסטטוסים, ההערות והשדות שהמשתמש ערך
+   נשמרים תמיד; תוכן שנדחף לדף (שמות, שטחים, טקסטים) מתעדכן כשה-dataRev עולה.
+   כך עדכון של הדף לא מוחק יותר לעולם את הנתונים של המשתמש. */
+function hydrate(saved){
+  if (!saved || !saved.floors) return null;
+  const savedRev = (saved.meta && saved.meta.dataRev) || 0;
+  if (savedRev >= DEFAULT_STATE.meta.dataRev) return saved;   // המצב השמור עדכני — כמו שהוא
+  const base = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  // אינדקס הדירות השמורות לפי מזהה
+  const savedApts = {};
+  for (const f of saved.floors) for (const a of (f.apts||[])) savedApts[a.id] = a;
+  for (const f of base.floors) for (const a of f.apts){
+    const s = savedApts[a.id];
+    if (!s) continue;
+    a.status = s.status || a.status;          // הסטטוס של המשתמש תמיד גובר
+    if (s.note) a.note = s.note;
+    for (const k of (s._ed||[])) if (s[k]!=null) a[k]=s[k];   // שדות שהמשתמש ערך ידנית
+    if (s._ed) a._ed = s._ed;
+    delete savedApts[a.id];
+  }
+  // קומות/דירות שהמשתמש הוסיף בעצמו — נשמרות
+  for (const f of saved.floors){
+    const extra = (f.apts||[]).filter(a=>savedApts[a.id]);
+    if (!extra.length) continue;
+    const bf = base.floors.find(x=>x.id===f.id);
+    if (bf) bf.apts.push(...extra); else base.floors.push({...f, apts:extra});
+  }
+  // טקסטים שהמשתמש ערך (כותרת, סלוגן, פוטר...) — נשמרים; השאר מהגרסה החדשה
+  if (saved.meta){
+    base.meta.updatedAt = saved.meta.updatedAt;
+    base.meta._edited = saved.meta._edited || [];
+    for (const k of base.meta._edited) if (saved.meta[k]!=null) base.meta[k]=saved.meta[k];
+  }
+  return base;
+}
 function loadState(){
   if (location.hash.startsWith('#d=')){
     try{
-      const s = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(3)))));
-      if (s && s.floors) return s;
+      const h = hydrate(JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(3))))));
+      if (h) return h;
     }catch(e){}
   }
   try{
-    const s = JSON.parse(localStorage.getItem(LS_KEY));
-    if (s && s.floors) return s;
+    const h = hydrate(JSON.parse(localStorage.getItem(LS_KEY)));
+    if (h) return h;
   }catch(e){}
+  // שחזור חד-פעמי: עריכות שנשמרו תחת גרסאות אחסון קודמות — לא הולכות לאיבוד
+  for (const oldKey of ['zrubavel15-status-v10','zrubavel15-status-v9','zrubavel15-status-v8']){
+    try{
+      const h = hydrate(JSON.parse(localStorage.getItem(oldKey)));
+      if (h){
+        // עדכונים שהוכתבו מאוחר יותר במפורש — גוברים על המצב הישן
+        const all = h.floors.flatMap(f=>f.apts);
+        const a1 = all.find(a=>a.id==='a1');  if (a1)  a1.status='sold';      // דירת הגן — נמכרה
+        const a12= all.find(a=>a.id==='a12'); if (a12) a12.status='reserved'; // הפנטהאוז — שמור
+        return h;
+      }
+    }catch(e){}
+  }
   return JSON.parse(JSON.stringify(DEFAULT_STATE));
 }
 function saveState(silent){
   state.meta.updatedAt = Date.now();
+  state.meta.dataRev = DEFAULT_STATE.meta.dataRev;
   try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
   try{
     history.replaceState(null,'', location.pathname + location.search +
@@ -826,8 +878,8 @@ async function cloudInit(){
   try{
     const r = await fetch(`${CLOUD_BASE}/${cloudId}/state`, {cache:'no-store'});
     if(!r.ok) throw 0;
-    const s = await r.json();
-    if (s && s.floors){ state = s; setSync('cloud'); renderAll(); }
+    const h = hydrate(await r.json());
+    if (h){ state = h; setSync('cloud'); renderAll(); }
   }catch(e){ setSync('local'); }
 }
 /* משיכת עדכונים מהענן ברקע — צופה בדף רואה כל שינוי בלי לרענן */
@@ -838,7 +890,8 @@ setInterval(async ()=>{
     if (!r.ok) return;
     const s = await r.json();
     if (s && s.floors && (s.meta && s.meta.updatedAt || 0) > (state.meta.updatedAt || 0)){
-      state = s; setSync('cloud'); renderAll();
+      const h = hydrate(s);
+      if (h){ state = h; setSync('cloud'); renderAll(); }
     }
   }catch(e){}
 }, 45000);
@@ -1206,7 +1259,12 @@ function renderFloors(){
           <label class="efield">הערה (יוצג לקונים)<input data-k="note" value="${esc(a.note)}" placeholder="למשל: מחיר, מועד מסירה"></label>
         </div>`;
         info.querySelectorAll('input').forEach(inp=>{
-          inp.addEventListener('change',()=>{ a[inp.dataset.k]=inp.value; saveState(true); toast('נשמר ✓'); });
+          inp.addEventListener('change',()=>{
+            a[inp.dataset.k]=inp.value;
+            const ed = a._ed || (a._ed=[]);   // שדה שנערך ידנית — יישמר גם בעדכוני תוכן
+            if (!ed.includes(inp.dataset.k)) ed.push(inp.dataset.k);
+            saveState(true); toast('נשמר ✓');
+          });
         });
         const sp = el('div','status-picker');
         for (const k of Object.keys(STATUSES)){
@@ -1282,7 +1340,12 @@ function renderMeta(){
   f2.textContent = state.meta.foot2 || 'בפריים לוקיישן בין הכרם לים';
   for (const [node,key] of [[t,'title'],[s,'subtitle'],[tg,'tagline'],[f1,'foot1'],[f2,'foot2']]){
     node.contentEditable = editMode ? 'true' : 'false';
-    node.onblur = editMode ? ()=>{ state.meta[key]=node.textContent.trim(); saveState(true); toast('נשמר ✓'); } : null;
+    node.onblur = editMode ? ()=>{
+      state.meta[key]=node.textContent.trim();
+      const ed = state.meta._edited || (state.meta._edited=[]);   // שדה שנערך ידנית — יישמר גם בעדכוני תוכן
+      if (!ed.includes(key)) ed.push(key);
+      saveState(true); toast('נשמר ✓');
+    } : null;
   }
 }
 
