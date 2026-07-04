@@ -33,10 +33,12 @@ export async function POST(req: NextRequest) {
   }
   const body = await req.json().catch(() => ({}));
   const max = await prisma.rightsHolder.aggregate({ _max: { rowOrder: true } });
+  const phone = String(body?.phone ?? "").trim();
   const holder = await prisma.rightsHolder.create({
     data: {
       name: String(body?.name ?? ""),
-      phone: String(body?.phone ?? ""),
+      phone,
+      phoneAddedAt: phone ? new Date() : null,
       rowOrder: (max._max.rowOrder ?? 0) + 1,
       extra: "{}",
     },

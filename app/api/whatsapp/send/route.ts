@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const holderId = String(body?.holderId ?? "");
   const message = String(body?.message ?? "").trim();
+  const templateName = body?.templateName ? String(body.templateName).slice(0, 120) : null;
 
   if (!holderId || !message) {
     return NextResponse.json({ error: "חסר מזהה נמען או תוכן הודעה" }, { status: 400 });
@@ -46,6 +47,7 @@ export async function POST(req: NextRequest) {
         holderId,
         direction: "out",
         body: message,
+        templateName,
         type: "text",
         status: "sent",
         greenApiId: result.idMessage,
@@ -65,6 +67,7 @@ export async function POST(req: NextRequest) {
         holderId,
         direction: "out",
         body: message,
+        templateName,
         type: "text",
         status: "failed",
         errorText: errMsg,

@@ -24,6 +24,7 @@ model RightsHolder {
   balancePay    String   @default("") // תשלומי איזון — משלם
   balanceReceive String  @default("") // תשלומי איזון — מקבל
   phone         String   @default("") // טלפון נייד
+  phoneAddedAt  DateTime? // מתי הוזן/עודכן מספר הטלפון (לדעת מתי הושג)
   status        String   @default("pending") // pending | signed | objected
   notes         String   @default("") // הערות
   extra         String   @default("{}") // ערכי עמודות דינמיות (JSON)
@@ -90,6 +91,7 @@ model Message {
   holderId    String
   direction   String   // "out" (נשלח מהמערכת) | "in" (התקבל מהלקוח)
   body        String   @default("")
+  templateName String? // שם התבנית שממנה נשלחה ההודעה (אם נשלחה מתבנית)
   type        String   @default("text") // text | image | document | audio | video
   mediaUrl    String?  // קישור למדיה (להודעות נכנסות עם קבצים)
   status      String   @default("sent") // sent | delivered | read | failed | received

@@ -16,7 +16,7 @@ import SignersMatchDialog from "./dialogs/SignersMatchDialog";
 import { ToastProvider, useToast } from "./ui/Toast";
 import { EmptyState } from "./ui/atoms";
 import Button from "./ui/Button";
-import ViewControls, { ZOOM_DEFAULT, PAD_DEFAULT } from "./ui/ViewControls";
+import ViewControls, { ZOOM_DEFAULT, PAD_DEFAULT, FONT_DEFAULT } from "./ui/ViewControls";
 import { api } from "@/app/lib/api-client";
 import { exportToExcel } from "@/app/lib/export-client";
 import type { HolderDTO, ColumnDefDTO } from "@/app/lib/types";
@@ -63,13 +63,16 @@ function CrmContent() {
   // ===== העדפות תצוגת טבלה (זום + רווח עמודות) — נשמרות ב-localStorage =====
   const [gridZoom, setGridZoom] = useState(ZOOM_DEFAULT);
   const [gridPad, setGridPad] = useState(PAD_DEFAULT);
+  const [gridFont, setGridFont] = useState(FONT_DEFAULT);
 
   useEffect(() => {
     try {
       const z = parseFloat(localStorage.getItem("gridZoom") ?? "");
       const p = parseInt(localStorage.getItem("gridPad") ?? "", 10);
+      const f = parseFloat(localStorage.getItem("gridFont") ?? "");
       if (Number.isFinite(z) && z >= 0.7 && z <= 1.5) setGridZoom(z);
       if (Number.isFinite(p) && p >= 4 && p <= 26) setGridPad(p);
+      if (Number.isFinite(f) && f >= 0.8 && f <= 1.6) setGridFont(f);
     } catch {
       /* localStorage לא זמין */
     }
@@ -83,12 +86,18 @@ function CrmContent() {
     setGridPad(p);
     try { localStorage.setItem("gridPad", String(p)); } catch {}
   }, []);
+  const handleFont = useCallback((f: number) => {
+    setGridFont(f);
+    try { localStorage.setItem("gridFont", String(f)); } catch {}
+  }, []);
   const handleViewReset = useCallback(() => {
     setGridZoom(ZOOM_DEFAULT);
     setGridPad(PAD_DEFAULT);
+    setGridFont(FONT_DEFAULT);
     try {
       localStorage.removeItem("gridZoom");
       localStorage.removeItem("gridPad");
+      localStorage.removeItem("gridFont");
     } catch {}
   }, []);
 
@@ -374,8 +383,10 @@ function CrmContent() {
             <ViewControls
               zoom={gridZoom}
               pad={gridPad}
+              font={gridFont}
               onZoom={handleZoom}
               onPad={handlePad}
+              onFont={handleFont}
               onReset={handleViewReset}
             />
             <span className="text-xs text-slate-400">
@@ -406,6 +417,7 @@ function CrmContent() {
             quickFilter={search}
             zoom={gridZoom}
             cellPad={gridPad}
+            fontScale={gridFont}
             selectedIds={selectedIds}
             onCellChange={handleCellChange}
             onSelectionChange={setSelectedIds}

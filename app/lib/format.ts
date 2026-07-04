@@ -47,6 +47,20 @@ export function formatDateTime(iso: string | null): string {
   }
 }
 
+/** תאריך בלבד (יום/חודש/שנה) */
+export function formatDate(iso: string | null): string {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleDateString("he-IL", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  } catch {
+    return "";
+  }
+}
+
 /** מפריד תאריך לשיחה: היום / אתמול / תאריך */
 export function formatDaySeparator(iso: string): string {
   try {

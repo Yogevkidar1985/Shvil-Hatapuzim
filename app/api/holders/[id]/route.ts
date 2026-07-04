@@ -34,6 +34,17 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
   }
 
+  // תאריך קבלת הטלפון — נקבע אוטומטית כשמוזן מספר חדש (שונה מהקיים ולא ריק)
+  if (typeof updates.phone === "string") {
+    const newPhone = (updates.phone as string).trim();
+    const oldPhone = (existing.phone ?? "").trim();
+    if (newPhone && newPhone !== oldPhone) {
+      updates.phoneAddedAt = new Date();
+    } else if (!newPhone) {
+      updates.phoneAddedAt = null;
+    }
+  }
+
   // עדכון עמודות דינמיות (extra)
   if (body.extra && typeof body.extra === "object") {
     let extra: Record<string, string> = {};

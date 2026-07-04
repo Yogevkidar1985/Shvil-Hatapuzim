@@ -48,6 +48,7 @@ export interface HolderDTO {
   balancePay: string;
   balanceReceive: string;
   phone: string;
+  phoneAddedAt: string | null;
   status: HolderStatus;
   notes: string;
   extra: Record<string, string>;
@@ -91,6 +92,7 @@ export interface MessageDTO {
   holderId: string;
   direction: "in" | "out";
   body: string;
+  templateName: string | null;
   type: string;
   mediaUrl: string | null;
   status: string;

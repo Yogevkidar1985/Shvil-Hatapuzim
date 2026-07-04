@@ -13,20 +13,48 @@ export const PAD_MAX = 26;
 export const PAD_STEP = 2;
 export const PAD_DEFAULT = 14;
 
+export const FONT_MIN = 0.8;
+export const FONT_MAX = 1.6;
+export const FONT_STEP = 0.1;
+export const FONT_DEFAULT = 1;
+
 interface Props {
   zoom: number;
   pad: number;
+  font: number;
   onZoom: (z: number) => void;
   onPad: (p: number) => void;
+  onFont: (f: number) => void;
   onReset: () => void;
 }
 
-export default function ViewControls({ zoom, pad, onZoom, onPad, onReset }: Props) {
+export default function ViewControls({ zoom, pad, font, onZoom, onPad, onFont, onReset }: Props) {
   const zoomPct = Math.round(zoom * 100);
-  const canReset = zoom !== ZOOM_DEFAULT || pad !== PAD_DEFAULT;
+  const fontPct = Math.round(font * 100);
+  const canReset = zoom !== ZOOM_DEFAULT || pad !== PAD_DEFAULT || font !== FONT_DEFAULT;
 
   return (
     <div className="flex items-center gap-2 text-sm select-none">
+      {/* גודל פונט — הגדלה/הקטנה של הטקסט לקריאות */}
+      <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-1.5 py-1 shadow-soft">
+        <span className="text-xs text-slate-400 px-1">פונט</span>
+        <CtrlBtn
+          label="הקטן פונט"
+          disabled={font <= FONT_MIN + 0.001}
+          onClick={() => onFont(Math.max(FONT_MIN, +(font - FONT_STEP).toFixed(2)))}
+        >
+          <span className="text-xs">A</span>
+        </CtrlBtn>
+        <span className="w-12 text-center font-bold text-slate-700 tabular-nums text-xs">{fontPct}%</span>
+        <CtrlBtn
+          label="הגדל פונט"
+          disabled={font >= FONT_MAX - 0.001}
+          onClick={() => onFont(Math.min(FONT_MAX, +(font + FONT_STEP).toFixed(2)))}
+        >
+          <span className="text-lg leading-none">A</span>
+        </CtrlBtn>
+      </div>
+
       {/* זום — גודל הטבלה */}
       <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-1.5 py-1 shadow-soft">
         <span className="text-xs text-slate-400 px-1">גודל טבלה</span>

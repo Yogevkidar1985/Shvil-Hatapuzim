@@ -24,6 +24,7 @@ export default function ContactPanel({ holder, onClose, onHolderUpdated }: Props
   const [messages, setMessages] = useState<MessageDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
+  const [draftTemplate, setDraftTemplate] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [tab, setTab] = useState<"chat" | "details">("chat");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -54,9 +55,10 @@ export default function ContactPanel({ holder, onClose, onHolderUpdated }: Props
     if (!text) return;
     setSending(true);
     try {
-      const res = await api.sendMessage(holder.id, text);
+      const res = await api.sendMessage(holder.id, text, draftTemplate);
       setMessages((m) => [...m, res.message]);
       setDraft("");
+      setDraftTemplate(null);
       if (res.ok) {
         onHolderUpdated({ ...holder, lastMessageAt: res.message.timestamp });
       } else {
@@ -224,7 +226,7 @@ export default function ContactPanel({ holder, onClose, onHolderUpdated }: Props
                   {templates.map((t) => (
                     <button
                       key={t.id}
-                      onClick={() => setDraft(renderTemplate(t.body, holder))}
+                      onClick={() => { setDraft(renderTemplate(t.body, holder)); setDraftTemplate(t.name); }}
                       className="text-xs bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full hover:bg-brand-100 font-medium transition-colors"
                     >
                       {t.name}
@@ -235,7 +237,7 @@ export default function ContactPanel({ holder, onClose, onHolderUpdated }: Props
               <div className="flex gap-2 items-end">
                 <textarea
                   value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
+                  onChange={(e) => { setDraft(e.target.value); setDraftTemplate(null); }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleSend();
                   }}
@@ -274,6 +276,11 @@ function MessageBubble({ message }: { message: MessageDTO }) {
         {message.type === "invite" && (
           <span className="inline-block text-[10px] bg-amber-100 text-amber-700 rounded-full px-2 py-0.5 mb-1 font-semibold">
             👥 הזמנה לקבוצה
+          </span>
+        )}
+        {message.templateName && (
+          <span className="inline-flex items-center gap-1 text-[10px] bg-brand-100 text-brand-700 rounded-full px-2 py-0.5 mb-1 font-semibold">
+            📝 {message.templateName}
           </span>
         )}
         <p className="whitespace-pre-wrap">{message.body}</p>
