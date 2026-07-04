@@ -292,7 +292,9 @@ export default function DataGrid({
   );
 
   const handleColumnMoved = useCallback(
-    (_e: ColumnMovedEvent) => {
+    (e: ColumnMovedEvent) => {
+      // מגיבים רק בסיום הגרירה — עדכון state באמצע גרירה מבטל אותה
+      if (!e.finished) return;
       if (!apiRef.current) return;
       const ordered = apiRef.current
         .getAllGridColumns()

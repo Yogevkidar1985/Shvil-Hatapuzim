@@ -3,14 +3,18 @@ import { prisma } from "@/app/lib/db";
 import { isAuthenticated } from "@/app/lib/auth";
 import { serializeHolder } from "@/app/lib/serialize";
 import { computeMsgStats } from "@/app/lib/msg-stats";
+import { ensureDefaultColumns, ensureInitialHolders } from "@/app/lib/bootstrap";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/holders — כל בעלי הזכויות + סיכום הודעות לכל אחד (להצגת היסטוריה ומניעת כפילויות)
+// בכניסה הראשונה (טבלה ריקה) — טוען אוטומטית את כל 116 אנשי הקשר של גוש 6446.
 export async function GET() {
   if (!isAuthenticated()) {
     return NextResponse.json({ error: "לא מורשה" }, { status: 401 });
   }
+  await ensureDefaultColumns();
+  await ensureInitialHolders();
   const [holders, statsMap] = await Promise.all([
     prisma.rightsHolder.findMany({
       orderBy: [{ rowOrder: "asc" }, { createdAt: "asc" }],
