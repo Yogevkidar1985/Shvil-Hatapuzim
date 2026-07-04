@@ -812,16 +812,17 @@ function hydrate(saved){
   return base;
 }
 function loadState(){
+  // גם הקישור וגם המכשיר עשויים לשאת מצב — החדש ביותר מנצח.
+  // (קישור/סימנייה ישנים לא דורסים יותר עריכות חדשות שנשמרו במכשיר)
+  let fromHash=null, fromLocal=null;
   if (location.hash.startsWith('#d=')){
-    try{
-      const h = hydrate(JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(3))))));
-      if (h) return h;
-    }catch(e){}
+    try{ fromHash = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(3))))); }catch(e){}
   }
-  try{
-    const h = hydrate(JSON.parse(localStorage.getItem(LS_KEY)));
-    if (h) return h;
-  }catch(e){}
+  try{ fromLocal = JSON.parse(localStorage.getItem(LS_KEY)); }catch(e){}
+  const ts = s => (s && s.meta && s.meta.updatedAt) || 0;
+  const h = hydrate(ts(fromLocal) > ts(fromHash) ? fromLocal : fromHash)
+         || hydrate(fromLocal) || hydrate(fromHash);
+  if (h) return h;
   // שחזור חד-פעמי: עריכות שנשמרו תחת גרסאות אחסון קודמות — לא הולכות לאיבוד
   for (const oldKey of ['zrubavel15-status-v10','zrubavel15-status-v9','zrubavel15-status-v8']){
     try{
@@ -999,7 +1000,7 @@ function renderKpis(){
 }
 
 /* ---------- apartment popover ---------- */
-let pop=null, popPinned=false, hideT=null, popAnchor=null;
+let pop=null, popPinned=false, hideT=null, popAnchor=null, popCooldown=0;
 function hidePop(){ if(pop){pop.remove(); pop=null; popPinned=false; popAnchor=null;} }
 function placePop(){
   if (!pop || !popAnchor) return;
@@ -1013,6 +1014,7 @@ function placePop(){
 }
 function scheduleHidePop(){ if(popPinned) return; clearTimeout(hideT); hideT=setTimeout(hidePop, 220); }
 function showPop(a, anchor){
+  if (Date.now() < popCooldown) return;   // אחרי "לכרטיס הדירה" — לא נפתחים מחדש מריחוף
   clearTimeout(hideT);
   if (pop) { pop.remove(); pop=null; }
   const s = STATUSES[a.status] || STATUSES.marketing;
@@ -1032,7 +1034,10 @@ function showPop(a, anchor){
     ${plan?`<div class="pop-plan" title="להגדלת התשריט"><img src="${plan.src}" alt="${esc(plan.label)}"></div>`:''}
     <div class="pop-rows">${rows.map(r=>`<div class="pop-row"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join('')}</div>
     <button class="pop-cta">לכרטיס הדירה המלא</button>`;
-  pop.querySelector('.pop-cta').addEventListener('click', ()=>{ hidePop(); focusApt(a.id); });
+  pop.querySelector('.pop-cta').addEventListener('click', ()=>{
+    popCooldown = Date.now() + 900;   // מונע פתיחה-מחדש מיידית מריחוף על הקובייה
+    hidePop(); focusApt(a.id);
+  });
   if (plan) pop.querySelector('.pop-plan').addEventListener('click', ()=>openLightbox(aptPlan(a)));
   pop.addEventListener('mouseenter', ()=>clearTimeout(hideT));
   pop.addEventListener('mouseleave', scheduleHidePop);
@@ -1474,6 +1479,11 @@ function renderGallery(){
 renderAll();
 renderGallery();
 setTab('photo');
+// ריפוי-עצמי: אם הקישור נשא מצב ישן — מעדכנים אותו למצב שנטען בפועל
+if (location.hash.startsWith('#d=')){
+  try{ history.replaceState(null,'', location.pathname + location.search +
+    '#d='+btoa(unescape(encodeURIComponent(JSON.stringify(state))))); }catch(e){}
+}
 cloudInit();
 // לאחר טעינת התמונות/גופנים — לחשב מחדש גובה הפאנל והדביקות
 window.addEventListener('load', ()=>{ updateStickiness(); positionBadges(); });
