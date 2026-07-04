@@ -45,38 +45,86 @@ interface InitialOwner {
   extra: Record<string, string>;
 }
 
+/** שם מנורמל: רווחים מכווצים */
+function collapsedKey(name: string): string {
+  return name.trim().replace(/\s+/g, " ");
+}
+
+/** מפתח עם מילים ממוינות — תופס "כהן דוד" מול "דוד כהן" */
+function sortedKey(name: string): string {
+  return collapsedKey(name).split(" ").sort().join(" ");
+}
+
+function phoneKey(phone: string): string {
+  return String(phone ?? "").replace(/\D/g, "");
+}
+
 /**
- * טעינה אוטומטית של כל אנשי הקשר (116 בעלי הזכויות מגוש 6446) בכניסה הראשונה.
- * רץ רק כשטבלת בעלי הזכויות ריקה לחלוטין — לעולם לא דורס נתונים קיימים.
+ * טעינה אוטומטית של כל 116 בעלי הזכויות מגוש 6446 — משלימה את מי שחסר.
+ * לא נוגעת ברשומות קיימות ולא יוצרת כפילויות: התאמה לפי שם מנורמל
+ * (כולל סדר מילים הפוך) או לפי מספר טלפון.
  */
 export async function ensureInitialHolders(): Promise<void> {
   if (ensuredHolders) return;
   try {
-    const count = await prisma.rightsHolder.count();
-    if (count === 0) {
-      const owners = initialOwners as InitialOwner[];
+    const owners = initialOwners as InitialOwner[];
 
-      // עמודות דינמיות עבור שדות ההקצאה (חלקות, שטח, מגרש, שווי וכו')
-      const customKeys: string[] = [];
-      for (const o of owners) {
-        for (const k of Object.keys(o.extra ?? {})) {
-          if (!customKeys.includes(k)) customKeys.push(k);
-        }
+    // עמודות דינמיות עבור שדות ההקצאה (חלקות, שטח, מגרש, שווי וכו')
+    const customKeys: string[] = [];
+    for (const o of owners) {
+      for (const k of Object.keys(o.extra ?? {})) {
+        if (!customKeys.includes(k)) customKeys.push(k);
       }
-      const existingCols = await prisma.columnDef.findMany();
-      const existingKeys = new Set(existingCols.map((c) => c.key));
-      let order = existingCols.reduce((m, c) => Math.max(m, c.order), 0);
-      for (const key of customKeys) {
-        if (!existingKeys.has(key)) {
-          order++;
-          await prisma.columnDef.create({
-            data: { key, label: key, type: "text", order, visible: true, isCustom: true, options: "[]" },
-          });
-        }
+    }
+    const existingCols = await prisma.columnDef.findMany();
+    const existingColKeys = new Set(existingCols.map((c) => c.key));
+    let order = existingCols.reduce((m, c) => Math.max(m, c.order), 0);
+    for (const key of customKeys) {
+      if (!existingColKeys.has(key)) {
+        order++;
+        await prisma.columnDef.create({
+          data: { key, label: key, type: "text", order, visible: true, isCustom: true, options: "[]" },
+        });
       }
+    }
 
+    // שמות שהמסמך המקורי עצמו מכיל בשני סדרי מילים ("זאב שחור" וגם "שחור זאב")
+    // הם אנשים שונים — עבורם ההתאמה חייבת להיות מדויקת, לא לפי מילים ממוינות.
+    const sortedCount = new Map<string, number>();
+    for (const o of owners) {
+      const k = sortedKey(o.name);
+      sortedCount.set(k, (sortedCount.get(k) ?? 0) + 1);
+    }
+
+    // אינדקס הרשומות הקיימות — לפי שם מנורמל ולפי טלפון
+    const existing = await prisma.rightsHolder.findMany({
+      select: { name: true, phone: true },
+    });
+    const seen = new Set<string>();
+    for (const h of existing) {
+      const c = collapsedKey(h.name);
+      if (c) {
+        seen.add(`n:${c}`);
+        seen.add(`s:${sortedKey(h.name)}`);
+      }
+      const p = phoneKey(h.phone);
+      if (p) seen.add(`p:${p}`);
+    }
+
+    const missing = owners.filter((o) => {
+      const c = collapsedKey(o.name);
+      if (c && seen.has(`n:${c}`)) return false;
+      const s = sortedKey(o.name);
+      const ambiguous = (sortedCount.get(s) ?? 0) > 1;
+      if (c && !ambiguous && seen.has(`s:${s}`)) return false;
+      const p = phoneKey(o.phone);
+      if (p !== "" && seen.has(`p:${p}`)) return false;
+      return true;
+    });
+
+    if (missing.length > 0) {
       await prisma.rightsHolder.createMany({
-        data: owners.map((o) => ({
+        data: missing.map((o) => ({
           name: o.name,
           phone: o.phone,
           status: ["pending", "signed", "objected"].includes(o.status) ? o.status : "pending",
