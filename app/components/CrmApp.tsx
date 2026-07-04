@@ -21,6 +21,7 @@ import { api } from "@/app/lib/api-client";
 import { exportToExcel } from "@/app/lib/export-client";
 import type { HolderDTO, ColumnDefDTO } from "@/app/lib/types";
 import { isCurrentOwner } from "@/app/lib/types";
+import MobileList from "./MobileList";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 interface EditEntry {
@@ -343,6 +344,20 @@ function CrmContent() {
 
   const selectedHolders = useMemo(() => holders.filter((h) => selectedIds.includes(h.id)), [holders, selectedIds]);
 
+  // רשימת המובייל מסננת גם לפי החיפוש (בדסקטופ AG Grid עושה זאת עם quickFilter)
+  const mobileHolders = useMemo(() => {
+    const q = search.trim().replace(/\s+/g, " ").toLowerCase();
+    if (!q) return filteredHolders;
+    return filteredHolders.filter((h) => {
+      const hay = `${h.name} ${h.phone} ${h.notes}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [filteredHolders, search]);
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }, []);
+
   async function handleLogout() {
     await api.logout().catch(() => {});
     router.push("/login");
@@ -390,18 +405,20 @@ function CrmContent() {
       )}
 
       <div className="flex-1 px-4 pb-4 pt-2 md:overflow-hidden flex flex-col">
-        {/* בקרת תצוגה — זום ורווח עמודות */}
+        {/* בקרת תצוגה — זום ורווח עמודות (רלוונטי לטבלת הדסקטופ בלבד) */}
         {!loading && holders.length > 0 && (
           <div className="flex items-center justify-between pb-2 flex-wrap gap-2">
-            <ViewControls
-              zoom={gridZoom}
-              pad={gridPad}
-              font={gridFont}
-              onZoom={handleZoom}
-              onPad={handlePad}
-              onFont={handleFont}
-              onReset={handleViewReset}
-            />
+            <div className="hidden md:block">
+              <ViewControls
+                zoom={gridZoom}
+                pad={gridPad}
+                font={gridFont}
+                onZoom={handleZoom}
+                onPad={handlePad}
+                onFont={handleFont}
+                onReset={handleViewReset}
+              />
+            </div>
             <span className="text-xs text-slate-400 flex items-center gap-2">
               מציג {filteredHolders.length} מתוך {holders.length}
               {(statusFilter || phoneFilter || sourceFilter !== "current" || search) && (
@@ -421,12 +438,10 @@ function CrmContent() {
             </span>
           </div>
         )}
-        {/* מובייל: גובה קבוע לטבלה (הגלילה הפנימית של AG Grid); דסקטופ: ממלאת את שארית המסך */}
-        <div className="max-md:h-[68dvh] max-md:flex-none flex-1 min-h-0">
         {loading ? (
-          <GridSkeleton />
+          <div className="flex-1 min-h-0"><GridSkeleton /></div>
         ) : holders.length === 0 ? (
-          <div className="card h-full">
+          <div className="card flex-1 min-h-[60dvh]">
             <EmptyState
               title="אין עדיין בעלי זכויות"
               subtitle="ייבאו קובץ Excel קיים, או הוסיפו שורה ראשונה כדי להתחיל."
@@ -439,24 +454,56 @@ function CrmContent() {
             />
           </div>
         ) : (
-          <DataGrid
-            holders={filteredHolders}
-            columns={columns}
-            quickFilter={search}
-            zoom={gridZoom}
-            cellPad={gridPad}
-            fontScale={gridFont}
-            selectedIds={selectedIds}
-            onCellChange={handleCellChange}
-            onSelectionChange={setSelectedIds}
-            onOpenContact={setContactHolder}
-            onSendWhatsApp={setContactHolder}
-            onColumnMoved={handleColumnMoved}
-            onGridApi={(a) => (gridApiRef.current = a)}
-          />
+          <>
+            {/* מובייל: רשימת כרטיסים בגלילת דף אחת — בלי גלילה פנימית מקוננת */}
+            <div className="md:hidden">
+              <MobileList
+                holders={mobileHolders}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
+                onOpenContact={setContactHolder}
+              />
+            </div>
+            {/* דסקטופ: הטבלה המלאה ממלאת את שארית המסך */}
+            <div className="hidden md:block flex-1 min-h-0">
+              <DataGrid
+                holders={filteredHolders}
+                columns={columns}
+                quickFilter={search}
+                zoom={gridZoom}
+                cellPad={gridPad}
+                fontScale={gridFont}
+                selectedIds={selectedIds}
+                onCellChange={handleCellChange}
+                onSelectionChange={setSelectedIds}
+                onOpenContact={setContactHolder}
+                onSendWhatsApp={setContactHolder}
+                onColumnMoved={handleColumnMoved}
+                onGridApi={(a) => (gridApiRef.current = a)}
+              />
+            </div>
+          </>
         )}
-        </div>
       </div>
+
+      {/* מובייל: סרגל פעולה צף כשיש נבחרים — שליחה/קבוצה בלי לגלול חזרה למעלה */}
+      {selectedIds.length > 0 && (
+        <div className="md:hidden fixed bottom-3 inset-x-3 z-30 card shadow-pop px-3 py-2.5 flex items-center gap-2 animate-pop-in">
+          <span className="text-sm font-bold text-slate-700 tabular-nums">{selectedIds.length} נבחרו</span>
+          <button
+            onClick={() => setSelectedIds([])}
+            className="text-xs text-slate-400 hover:text-slate-600"
+            title="ניקוי בחירה"
+          >
+            נקה
+          </button>
+          <div className="flex-1" />
+          <Button variant="secondary" size="sm" icon="👥" onClick={() => setShowGroup(true)}>קבוצה</Button>
+          <Button variant="whatsapp" size="sm" icon="💬" onClick={() => setShowBulk(true)}>
+            שליחה ({selectedIds.length})
+          </Button>
+        </div>
+      )}
 
       {contactHolder && (
         <ContactPanel
