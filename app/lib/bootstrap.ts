@@ -9,6 +9,7 @@ let ensured = false;
 let ensuredTpl = false;
 let ensuredHolders = false;
 let ensuredLegacyTpl = false;
+let ensuredLegacyOwners = false;
 
 export async function ensureDefaultColumns(): Promise<void> {
   if (ensured) return;
@@ -139,6 +140,8 @@ export async function ensureInitialHolders(): Promise<void> {
   } catch {
     /* טבלה עדיין לא קיימת — מתעלמים */
   }
+  // אחרי השלמת 116 הבסיסיים — ייבוא כל העריכות מהמערכת הישנה (השלמת חוסרים)
+  await importLegacyOwners();
 }
 
 /** מוודא שתבניות ברירת המחדל קיימות (פעם ראשונה בלבד) */
@@ -166,7 +169,42 @@ interface LegacyTemplate {
   body?: string;
 }
 
+/** רשומת בעלים כפי שהמערכת הישנה שומרת אותה ב-app_state */
+interface LegacyOwner {
+  name?: string;
+  phone?: string;
+  signed?: boolean;
+  lastUpdate?: string;
+  plotsText?: string;
+  totalArea?: number | string | null;
+  allocMigrash?: (number | string)[];
+  allocShoviYotze?: number | string | null;
+  tabuNotes?: string;
+  period?: string;
+}
+
 const LEGACY_APP_STATE_ID = "hod-hasharon-6446";
+
+/** קריאת מצב המערכת הישנה מטבלת app_state (public) — null אם אין */
+async function readLegacyState(): Promise<any | null> {
+  let rows: { data: unknown }[] = [];
+  try {
+    rows = await prisma.$queryRawUnsafe<{ data: unknown }[]>(
+      `SELECT data FROM public.app_state WHERE id = '${LEGACY_APP_STATE_ID}'`
+    );
+  } catch {
+    // SQLite (פיתוח מקומי) לא מכיר סכמת public — ניסיון ללא קידומת
+    rows = await prisma.$queryRawUnsafe<{ data: unknown }[]>(
+      `SELECT data FROM app_state WHERE id = '${LEGACY_APP_STATE_ID}'`
+    );
+  }
+  if (!rows.length) return null;
+  let data: any = rows[0].data;
+  if (typeof data === "string") {
+    try { data = JSON.parse(data); } catch { return null; }
+  }
+  return data ?? null;
+}
 
 /**
  * ייבוא הודעות/תבניות שנכתבו במערכת הישנה (gush6446 הסטטית).
@@ -177,24 +215,10 @@ const LEGACY_APP_STATE_ID = "hod-hasharon-6446";
 export async function importLegacyTemplates(): Promise<void> {
   if (ensuredLegacyTpl) return;
   try {
-    let rows: { data: unknown }[] = [];
-    try {
-      rows = await prisma.$queryRawUnsafe<{ data: unknown }[]>(
-        `SELECT data FROM public.app_state WHERE id = '${LEGACY_APP_STATE_ID}'`
-      );
-    } catch {
-      // SQLite (פיתוח מקומי) לא מכיר סכמת public — ניסיון ללא קידומת
-      rows = await prisma.$queryRawUnsafe<{ data: unknown }[]>(
-        `SELECT data FROM app_state WHERE id = '${LEGACY_APP_STATE_ID}'`
-      );
-    }
-    if (!rows.length) {
+    const data = await readLegacyState();
+    if (!data) {
       ensuredLegacyTpl = true;
       return;
-    }
-    let data: any = rows[0].data;
-    if (typeof data === "string") {
-      try { data = JSON.parse(data); } catch { data = null; }
     }
     const legacy: LegacyTemplate[] = Array.isArray(data?.templates) ? data.templates : [];
     if (legacy.length === 0) {
@@ -221,6 +245,106 @@ export async function importLegacyTemplates(): Promise<void> {
       bodies.add(body);
     }
     ensuredLegacyTpl = true;
+  } catch {
+    /* טבלת app_state לא קיימת (אין נתוני מערכת ישנה) — מתעלמים */
+  }
+}
+
+/** מיפוי שדות המערכת הישנה → עמודות ה-extra של המערכת החדשה */
+function legacyExtra(o: LegacyOwner): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (o.plotsText) out["חלקות ושטחים"] = String(o.plotsText);
+  if (o.totalArea !== null && o.totalArea !== undefined && o.totalArea !== "")
+    out["שטח כ״ס (מ״ר)"] = String(o.totalArea);
+  if (Array.isArray(o.allocMigrash) && o.allocMigrash.length)
+    out["מגרש תמורה"] = o.allocMigrash.join(", ");
+  if (o.allocShoviYotze !== null && o.allocShoviYotze !== undefined && o.allocShoviYotze !== "")
+    out["שווי מצב יוצא"] = String(o.allocShoviYotze);
+  if (o.tabuNotes) out["הערות נסח טאבו"] = String(o.tabuNotes);
+  return out;
+}
+
+/**
+ * ייבוא כל נתוני הבעלים מהמערכת הישנה (טלפונים, מי חתם, עדכונים, הערות טאבו וכו').
+ * מדיניות: השלמת חוסרים בלבד — ערך שכבר הוזן במערכת החדשה לעולם לא נדרס.
+ * בעלים שקיימים רק במערכת הישנה נוספים כרשומות חדשות בסוף הטבלה.
+ */
+export async function importLegacyOwners(): Promise<void> {
+  if (ensuredLegacyOwners) return;
+  try {
+    const data = await readLegacyState();
+    const legacy: LegacyOwner[] = Array.isArray(data?.owners) ? data.owners : [];
+    if (legacy.length === 0) {
+      ensuredLegacyOwners = true;
+      return;
+    }
+
+    const holders = await prisma.rightsHolder.findMany();
+    const byName = new Map<string, (typeof holders)[number]>();
+    const byPhone = new Map<string, (typeof holders)[number]>();
+    for (const h of holders) {
+      const c = collapsedKey(h.name);
+      if (c && !byName.has(c)) byName.set(c, h);
+      const s = sortedKey(h.name);
+      if (s && !byName.has(`s:${s}`)) byName.set(`s:${s}`, h);
+      const p = phoneKey(h.phone);
+      if (p && !byPhone.has(p)) byPhone.set(p, h);
+    }
+    let maxOrder = holders.reduce((m, h) => Math.max(m, h.rowOrder), 0);
+
+    for (const o of legacy) {
+      const name = String(o.name ?? "").trim();
+      if (!name) continue;
+      const c = collapsedKey(name);
+      const p = phoneKey(String(o.phone ?? ""));
+      const match =
+        byName.get(c) ?? byName.get(`s:${sortedKey(name)}`) ?? (p ? byPhone.get(p) : undefined);
+
+      const extraFromLegacy = legacyExtra(o);
+
+      if (!match) {
+        // בעלים שקיים רק במערכת הישנה — נוסף כרשומה חדשה
+        maxOrder++;
+        const created = await prisma.rightsHolder.create({
+          data: {
+            name,
+            phone: String(o.phone ?? "").trim(),
+            status: o.signed ? "signed" : "pending",
+            notes: String(o.lastUpdate ?? "").trim(),
+            rowOrder: maxOrder,
+            extra: JSON.stringify(extraFromLegacy),
+          },
+        });
+        byName.set(collapsedKey(name), created);
+        continue;
+      }
+
+      // השלמת חוסרים בלבד — לא דורסים ערכים שהוזנו במערכת החדשה
+      const updates: Record<string, unknown> = {};
+      if (!match.phone.trim() && String(o.phone ?? "").trim()) {
+        updates.phone = String(o.phone).trim();
+      }
+      if (match.status === "pending" && o.signed) {
+        updates.status = "signed";
+      }
+      if (!match.notes.trim() && String(o.lastUpdate ?? "").trim()) {
+        updates.notes = String(o.lastUpdate).trim();
+      }
+      let extra: Record<string, string> = {};
+      try { extra = JSON.parse(match.extra); } catch { extra = {}; }
+      let extraChanged = false;
+      for (const [k, v] of Object.entries(extraFromLegacy)) {
+        if (!String(extra[k] ?? "").trim() && v) {
+          extra[k] = v;
+          extraChanged = true;
+        }
+      }
+      if (extraChanged) updates.extra = JSON.stringify(extra);
+      if (Object.keys(updates).length > 0) {
+        await prisma.rightsHolder.update({ where: { id: match.id }, data: updates });
+      }
+    }
+    ensuredLegacyOwners = true;
   } catch {
     /* טבלת app_state לא קיימת (אין נתוני מערכת ישנה) — מתעלמים */
   }
