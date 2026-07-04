@@ -8,6 +8,7 @@ import initialOwners from "@/prisma/initial-owners.json";
 let ensured = false;
 let ensuredTpl = false;
 let ensuredHolders = false;
+let ensuredLegacyTpl = false;
 
 export async function ensureDefaultColumns(): Promise<void> {
   if (ensured) return;
@@ -155,5 +156,72 @@ export async function ensureDefaultTemplates(): Promise<void> {
     ensuredTpl = true;
   } catch {
     /* טבלה עדיין לא קיימת — מתעלמים */
+  }
+  await importLegacyTemplates();
+}
+
+interface LegacyTemplate {
+  id?: string;
+  title?: string;
+  body?: string;
+}
+
+const LEGACY_APP_STATE_ID = "hod-hasharon-6446";
+
+/**
+ * ייבוא הודעות/תבניות שנכתבו במערכת הישנה (gush6446 הסטטית).
+ * המערכת הישנה שומרת {owners, templates} בטבלת app_state (סכמת public באותו
+ * Supabase) תחת המזהה hod-hasharon-6446. מייבאים כל תבנית שטרם קיימת אצלנו;
+ * אם השם תפוס אך התוכן שונה — נשמרת בשם עם סיומת "(מהמערכת הישנה)".
+ */
+export async function importLegacyTemplates(): Promise<void> {
+  if (ensuredLegacyTpl) return;
+  try {
+    let rows: { data: unknown }[] = [];
+    try {
+      rows = await prisma.$queryRawUnsafe<{ data: unknown }[]>(
+        `SELECT data FROM public.app_state WHERE id = '${LEGACY_APP_STATE_ID}'`
+      );
+    } catch {
+      // SQLite (פיתוח מקומי) לא מכיר סכמת public — ניסיון ללא קידומת
+      rows = await prisma.$queryRawUnsafe<{ data: unknown }[]>(
+        `SELECT data FROM app_state WHERE id = '${LEGACY_APP_STATE_ID}'`
+      );
+    }
+    if (!rows.length) {
+      ensuredLegacyTpl = true;
+      return;
+    }
+    let data: any = rows[0].data;
+    if (typeof data === "string") {
+      try { data = JSON.parse(data); } catch { data = null; }
+    }
+    const legacy: LegacyTemplate[] = Array.isArray(data?.templates) ? data.templates : [];
+    if (legacy.length === 0) {
+      ensuredLegacyTpl = true;
+      return;
+    }
+
+    const existing = await prisma.messageTemplate.findMany();
+    const names = new Set(existing.map((t) => t.name.trim()));
+    const bodies = new Set(existing.map((t) => t.body.trim()));
+    let order = existing.reduce((m, t) => Math.max(m, t.order), 0);
+
+    for (const t of legacy) {
+      const title = String(t.title ?? "").trim();
+      const body = String(t.body ?? "").trim();
+      if (!body) continue;
+      if (bodies.has(body)) continue; // תוכן זהה כבר קיים — אין מה לייבא
+      let name = title || "הודעה מהמערכת הישנה";
+      if (names.has(name)) name = `${name} (מהמערכת הישנה)`;
+      if (names.has(name)) continue; // כבר יובא בעבר
+      order++;
+      await prisma.messageTemplate.create({ data: { name, body, order } });
+      names.add(name);
+      bodies.add(body);
+    }
+    ensuredLegacyTpl = true;
+  } catch {
+    /* טבלת app_state לא קיימת (אין נתוני מערכת ישנה) — מתעלמים */
   }
 }
