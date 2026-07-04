@@ -199,6 +199,13 @@ body {
 .ag-theme-quartz .ag-row {
   border-bottom: 1px solid var(--ag-row-border-color);
 }
+/* פסי זברה עדינים — סריקת שורות רחבות קלה יותר */
+.ag-theme-quartz .ag-row-odd {
+  background-color: #fafbfc;
+}
+.ag-theme-quartz .ag-row-odd.ag-row-hover {
+  background-color: var(--ag-row-hover-color);
+}
 .ag-theme-quartz .ag-cell {
   display: flex;
   align-items: center;
@@ -278,4 +285,38 @@ input, select, textarea, button { font-family: inherit; }
   outline: none;
   box-shadow: 0 0 0 3px var(--brand-200);
   border-color: var(--brand-400);
+}
+
+/* גלילה אופקית בלי פס גלילה (כרטיסי KPI במובייל) */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* תג מקש מקלדת (רמז קיצור "/") */
+.kbd {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: #98a2b3;
+  background: #f2f4f7;
+  border: 1px solid #e4e7ec;
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  padding: 1px 6px;
+  line-height: 1.4;
+}
+
+/* כיבוד העדפת צמצום תנועה */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

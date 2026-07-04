@@ -401,8 +401,22 @@ function CrmContent() {
               onFont={handleFont}
               onReset={handleViewReset}
             />
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-400 flex items-center gap-2">
               מציג {filteredHolders.length} מתוך {holders.length}
+              {(statusFilter || phoneFilter || sourceFilter !== "current" || search) && (
+                <button
+                  onClick={() => {
+                    setStatusFilter("");
+                    setPhoneFilter("");
+                    setSourceFilter("current");
+                    setSearch("");
+                  }}
+                  className="text-brand-600 hover:text-brand-800 font-semibold bg-brand-50 hover:bg-brand-100 rounded-full px-2.5 py-0.5 transition-colors"
+                  title="ניקוי כל הסינונים והחיפוש"
+                >
+                  ✕ נקה סינון
+                </button>
+              )}
             </span>
           </div>
         )}

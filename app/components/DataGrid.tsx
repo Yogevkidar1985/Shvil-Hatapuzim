@@ -359,7 +359,7 @@ export default function DataGrid({
         rowHeight={Math.round(52 * zoom)}
         headerHeight={Math.round(46 * zoom)}
         defaultColDef={{ filter: true, floatingFilter: false }}
-        overlayNoRowsTemplate={'<span style="color:#94a3b8;padding:24px">אין נתונים להצגה — ייבאו קובץ או הוסיפו שורה</span>'}
+        overlayNoRowsTemplate={'<span style="color:#94a3b8;padding:24px">אין תוצאות מתאימות לחיפוש או לסינון הנוכחי</span>'}
       />
     </div>
   );
