@@ -56,23 +56,26 @@
     mask-image:radial-gradient(85% 120% at 78% 0%, #000 30%, transparent 100%);
     -webkit-mask-image:radial-gradient(85% 120% at 78% 0%, #000 30%, transparent 100%);
   }
-  header.site::after{ /* warm halo behind the logo */
-    content:""; position:absolute; top:-45%; right:-6%; width:56%; height:190%; pointer-events:none;
+  header.site::after{ /* warm halo behind the logo — צד שמאל, מאחורי הלוגו */
+    content:""; position:absolute; top:-45%; left:-6%; width:56%; height:190%; pointer-events:none;
     background:radial-gradient(closest-side, rgba(208,168,140,.16), transparent 72%);
   }
-  .site-inner{position:relative; max-width:1320px; margin:0 auto; display:flex; align-items:center; gap:30px; flex-wrap:wrap}
-  .head-brand{display:flex; flex-direction:column; align-items:center; gap:11px}
-  .logo-img{width:140px;height:auto;display:block}
+  /* דסקטופ: הלוגו והסלוגן בצד שמאל; הכותרת, תת-הכותרת והכפתורים ממורכזים */
+  .site-inner{position:relative; max-width:1320px; margin:0 auto; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; min-height:150px}
+  .head-brand{position:absolute; left:0; top:50%; transform:translateY(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:11px}
+  .logo-img{width:clamp(96px, 11vw, 140px);height:auto;display:block}
   .brand-tag{
     margin:0; color:var(--tan); font-weight:700; font-size:13.5px; letter-spacing:.14em; text-align:center; white-space:nowrap;
   }
-  .head-txt{min-width:240px; display:flex; flex-direction:column; align-items:flex-start}
+  .head-txt{min-width:0; display:flex; flex-direction:column; align-items:center; text-align:center}
   .site h1{
     margin:0; font-size:clamp(34px,4.2vw,50px); font-weight:800; letter-spacing:-.015em; line-height:1.06;
     text-wrap:balance;
   }
   .site .sub{margin:7px 0 0; color:rgba(240,238,255,.8); font-weight:400; font-size:17px}
-  .head-meta{display:flex; align-items:center; gap:9px; margin-top:16px; flex-wrap:wrap}
+  .head-meta{display:flex; align-items:center; justify-content:center; gap:9px; margin-top:16px; flex-wrap:wrap}
   .addr-chip{
     display:inline-flex; align-items:center; gap:7px;
     background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14);
@@ -380,6 +383,18 @@
   }
   .lightbox figure{margin:0; display:flex; flex-direction:column; align-items:center; gap:14px; max-width:min(94vw,1040px)}
   .lightbox img{max-width:100%; max-height:78vh; background:#fff; border-radius:16px; padding:12px; box-shadow:0 30px 80px rgba(0,0,0,.5)}
+  /* זום ופאן בתשריט — גלגלת / כפתורים / לחיצה כפולה / גרירה */
+  .lightbox .lb-img{transition:transform .16s ease; will-change:transform; touch-action:none; user-select:none}
+  .lightbox .lb-img.zoomed{cursor:grab}
+  .lightbox .lb-img.dragging{transition:none; cursor:grabbing}
+  .lightbox .lb-zoom{position:absolute; bottom:20px; inset-inline-end:20px; display:flex; flex-direction:column; gap:8px; z-index:2}
+  .lightbox .lb-zoom button{
+    width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.3);
+    background:rgba(255,255,255,.12); color:#fff; font-size:21px; line-height:1; cursor:pointer;
+    backdrop-filter:blur(6px); display:grid; place-items:center; transition:background .15s, color .15s;
+  }
+  .lightbox .lb-zoom button:hover{background:var(--tan); color:var(--navy-deep)}
+  .lightbox .lb-zoom .lbz-reset{font-size:17px}
   .lightbox figcaption{color:#fff; font-weight:700; font-size:15px; text-shadow:0 1px 6px rgba(0,0,0,.5)}
   .lightbox .lb-close{
     position:absolute; top:18px; inset-inline-start:18px; width:42px; height:42px; border-radius:50%;
@@ -587,16 +602,16 @@
     .scene-top{flex-direction:column; align-items:center; gap:3px; text-align:center; margin-bottom:10px}
     /* שבבי הסטטוס בחתך מוסתרים במובייל — הבר הלבן כבר מסכם הכל */
     .scene-status{display:none}
-    /* הלוגו וכל הכותרות ממורכזים במובייל */
+    /* הלוגו וכל הכותרות ממורכזים במובייל — הלוגו חוזר לזרימה רגילה מעל הכותרת */
     header.site{padding-top:30px}
-    .site-inner{flex-direction:column; gap:20px}
-    .head-brand{width:100%}
+    .site-inner{flex-direction:column; gap:20px; min-height:0}
+    .head-brand{position:static; transform:none; width:100%}
     .head-txt{width:100%; min-width:0; align-items:center; text-align:center}
     .site h1{text-align:center}
     .site .sub{text-align:center}
     .head-meta{justify-content:center; margin-top:14px}
     /* ההילה החמה עוברת למרכז, מאחורי הלוגו */
-    header.site::after{right:50%; transform:translateX(50%); width:88%}
+    header.site::after{left:auto; right:50%; transform:translateX(50%); width:88%}
   }
   @media (max-width:560px){
     .plan-thumb{width:150px; height:100px}
@@ -1052,9 +1067,22 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ hidePop(); close
 
 /* ---------- floor-plan lightbox (gallery) ---------- */
 let lbEl = null, lbList = [], lbIdx = 0;
-function closeLightbox(){ if(lbEl){ lbEl.remove(); lbEl=null; lbList=[]; } }
+let lbScale = 1, lbPX = 0, lbPY = 0;   // מצב הזום והפאן של התשריט
+function lbApply(){
+  const im = lbEl && lbEl.querySelector('.lb-img'); if(!im) return;
+  im.style.transform = `translate(${lbPX}px, ${lbPY}px) scale(${lbScale})`;
+  im.classList.toggle('zoomed', lbScale > 1);
+}
+function lbZoom(f){
+  lbScale = Math.min(6, Math.max(1, lbScale * f));
+  if (lbScale === 1){ lbPX = 0; lbPY = 0; }
+  lbApply();
+}
+function lbResetZoom(){ lbScale = 1; lbPX = 0; lbPY = 0; lbApply(); }
+function closeLightbox(){ if(lbEl){ lbEl.remove(); lbEl=null; lbList=[]; lbResetZoom(); } }
 function lbRender(){
   if (!lbEl) return;
+  lbResetZoom();   // מעבר תכנית מאפס את הזום
   const p = lbList[lbIdx];
   lbEl.querySelector('.lb-img').src = p.src;
   lbEl.querySelector('.lb-img').alt = p.label;
@@ -1088,9 +1116,14 @@ function openLightbox(planOrList, startIdx){
     <button class="lb-close" aria-label="סגירה">✕</button>
     <button class="lb-nav lb-prev" aria-label="הקודם">‹</button>
     <button class="lb-nav lb-next" aria-label="הבא">›</button>
+    <div class="lb-zoom">
+      <button class="lbz-in" title="הגדלה (או גלגלת העכבר)" aria-label="הגדלת התכנית">+</button>
+      <button class="lbz-out" title="הקטנה" aria-label="הקטנת התכנית">−</button>
+      <button class="lbz-reset" title="איפוס תצוגה" aria-label="איפוס התצוגה">⟲</button>
+    </div>
     <figure>
       <span class="lb-count"></span>
-      <img class="lb-img" src="" alt="">
+      <img class="lb-img" src="" alt="" draggable="false">
       <figcaption class="lb-cap"></figcaption>
       <div class="lb-strip">${lbList.map((p,i)=>`<button data-i="${i}" title="${esc(p.label)}"><img src="${p.src}" alt="${esc(p.label)}"></button>`).join('')}</div>
     </figure>`;
@@ -1098,8 +1131,35 @@ function openLightbox(planOrList, startIdx){
     if (e.target === lbEl || e.target.classList.contains('lb-close')) return closeLightbox();
     if (e.target.closest('.lb-prev')) return lbGo(-1);
     if (e.target.closest('.lb-next')) return lbGo(1);
+    if (e.target.closest('.lbz-in'))  return lbZoom(1.3);
+    if (e.target.closest('.lbz-out')) return lbZoom(1/1.3);
+    if (e.target.closest('.lbz-reset')) return lbResetZoom();
     const t = e.target.closest('.lb-strip button'); if (t){ lbIdx = +t.dataset.i; lbRender(); }
   });
+  // זום בגלגלת מעל התכנית
+  lbEl.addEventListener('wheel', e=>{
+    if (!e.target.closest('figure')) return;
+    e.preventDefault();
+    lbZoom(e.deltaY < 0 ? 1.18 : 1/1.18);
+  }, {passive:false});
+  // לחיצה כפולה — קפיצה בין 100% ל-250%
+  const im = lbEl.querySelector('.lb-img');
+  im.addEventListener('dblclick', ()=>{ lbScale > 1 ? lbResetZoom() : (lbScale = 2.5, lbApply()); });
+  // גרירה להזזת התכנית כשהיא מוגדלת
+  let lbDrag = null;
+  im.addEventListener('pointerdown', e=>{
+    if (lbScale <= 1) return;
+    lbDrag = {x: e.clientX - lbPX, y: e.clientY - lbPY};
+    im.setPointerCapture(e.pointerId);
+    im.classList.add('dragging');
+  });
+  im.addEventListener('pointermove', e=>{
+    if (!lbDrag) return;
+    lbPX = e.clientX - lbDrag.x; lbPY = e.clientY - lbDrag.y; lbApply();
+  });
+  const lbEndDrag = ()=>{ lbDrag = null; im.classList.remove('dragging'); };
+  im.addEventListener('pointerup', lbEndDrag);
+  im.addEventListener('pointercancel', lbEndDrag);
   document.body.appendChild(lbEl);
   lbRender();
 }
@@ -1110,6 +1170,8 @@ document.addEventListener('keydown', e=>{
   if (!lbEl) return;
   if (e.key==='ArrowRight') lbGo(1);      // RTL: right = next-visually-left; keep intuitive
   if (e.key==='ArrowLeft') lbGo(-1);
+  if (e.key==='+' || e.key==='=') lbZoom(1.2);
+  if (e.key==='-') lbZoom(1/1.2);
 });
 window.addEventListener('scroll', placePop, {passive:true});
 window.addEventListener('resize', placePop);
