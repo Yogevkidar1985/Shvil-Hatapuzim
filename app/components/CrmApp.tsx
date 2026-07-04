@@ -20,6 +20,7 @@ import ViewControls, { ZOOM_DEFAULT, PAD_DEFAULT, FONT_DEFAULT } from "./ui/View
 import { api } from "@/app/lib/api-client";
 import { exportToExcel } from "@/app/lib/export-client";
 import type { HolderDTO, ColumnDefDTO } from "@/app/lib/types";
+import { isCurrentOwner } from "@/app/lib/types";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 interface EditEntry {
@@ -47,6 +48,7 @@ function CrmContent() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [phoneFilter, setPhoneFilter] = useState(""); // "" | "has" | "missing"
+  const [sourceFilter, setSourceFilter] = useState("current"); // "current" | "all" | "2015"
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [waState, setWaState] = useState<{ configured: boolean; state: string | null } | null>(null);
@@ -331,11 +333,13 @@ function CrmContent() {
 
   const filteredHolders = useMemo(() => {
     let result = holders;
+    if (sourceFilter === "current") result = result.filter(isCurrentOwner);
+    if (sourceFilter === "2015") result = result.filter((h) => !isCurrentOwner(h));
     if (statusFilter) result = result.filter((h) => h.status === statusFilter);
     if (phoneFilter === "missing") result = result.filter((h) => h.phone.trim() === "");
     if (phoneFilter === "has") result = result.filter((h) => h.phone.trim() !== "");
     return result;
-  }, [holders, statusFilter, phoneFilter]);
+  }, [holders, statusFilter, phoneFilter, sourceFilter]);
 
   const selectedHolders = useMemo(() => holders.filter((h) => selectedIds.includes(h.id)), [holders, selectedIds]);
 
@@ -358,6 +362,8 @@ function CrmContent() {
         onStatusFilter={setStatusFilter}
         phoneFilter={phoneFilter}
         onPhoneFilter={setPhoneFilter}
+        sourceFilter={sourceFilter}
+        onSourceFilter={setSourceFilter}
         onImport={() => setShowImport(true)}
         onExport={handleExport}
         onAddRow={handleAddRow}
