@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { clsx } from "clsx";
 import Button from "./ui/Button";
 import StatCard from "./ui/StatCard";
@@ -54,6 +55,21 @@ export default function Toolbar(p: Props) {
 
   const waOk = p.waState?.configured && p.waState.state === "authorized";
 
+  // קיצור מקלדת "/" — קפיצה לחיפוש מכל מקום; Escape מנקה ויוצא
+  const searchRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const typing = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+      if (e.key === "/" && !typing) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   return (
     <header className="sticky top-0 z-20">
       {/* באנר עליון — ירוק כהה עם זהב */}
@@ -83,7 +99,7 @@ export default function Toolbar(p: Props) {
             WhatsApp {p.waState?.configured ? p.waState.state ?? "?" : "לא מחובר"}
           </button>
           <SaveIndicator state={p.saveState} />
-          <button onClick={p.onSettings} className="text-sm text-white/70 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10" title="הגדרות">
+          <button onClick={p.onSettings} className="text-sm text-white/70 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10" title="הגדרות" aria-label="הגדרות">
             ⚙️
           </button>
           <button onClick={p.onLogout} className="text-sm text-white/70 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10">
@@ -92,8 +108,8 @@ export default function Toolbar(p: Props) {
         </div>
       </div>
       <div className="glass-header border-b border-slate-200/70 pt-3">
-      {/* כרטיסי KPI */}
-      <div className="px-5 pb-3 flex gap-2.5 flex-wrap">
+      {/* כרטיסי KPI — במובייל: גלילה אופקית; בדסקטופ: שבירת שורות */}
+      <div className="px-5 pb-3 flex gap-2.5 overflow-x-auto no-scrollbar flex-nowrap md:flex-wrap md:overflow-visible">
         <StatCard label="בעלי זכויות · נוכחי 2026" value={counts.total} icon="👥" tone="gold"
           active={p.sourceFilter === "current" && p.statusFilter === ""}
           onClick={() => { p.onSourceFilter("current"); p.onStatusFilter(""); }} />
@@ -128,11 +144,31 @@ export default function Toolbar(p: Props) {
         <div className="relative">
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">🔍</span>
           <input
+            ref={searchRef}
             value={p.search}
             onChange={(e) => p.onSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                p.onSearch("");
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
             placeholder="חיפוש בעל זכויות…"
-            className="focus-ring bg-white border border-slate-200 rounded-xl pr-9 pl-3 py-2 text-sm w-64 shadow-soft outline-none"
+            aria-label="חיפוש בעל זכויות"
+            className="focus-ring bg-white border border-slate-200 rounded-xl pr-9 pl-14 py-2 text-sm w-64 shadow-soft outline-none"
           />
+          {p.search ? (
+            <button
+              onClick={() => p.onSearch("")}
+              title="ניקוי חיפוש"
+              aria-label="ניקוי חיפוש"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs leading-none flex items-center justify-center"
+            >
+              ✕
+            </button>
+          ) : (
+            <span className="kbd absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none hidden sm:block">/</span>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -164,12 +200,19 @@ export default function Toolbar(p: Props) {
 
         <div className="w-px h-6 bg-slate-200 mx-1" />
 
-        <Button variant="secondary" size="sm" icon="＋" onClick={p.onAddRow}>שורה</Button>
-        <Button variant="secondary" size="sm" icon="＋" onClick={p.onAddColumn}>עמודה</Button>
-        <Button variant="secondary" size="sm" icon="⬆️" onClick={p.onImport}>ייבוא</Button>
-        <Button variant="secondary" size="sm" icon="⬇️" onClick={p.onExport}>ייצוא</Button>
+        {/* עריכת טבלה */}
+        <Button variant="secondary" size="sm" icon="＋" onClick={p.onAddRow} title="הוספת בעל זכויות חדש">שורה</Button>
+        <Button variant="secondary" size="sm" icon="＋" onClick={p.onAddColumn} title="הוספת עמודה מותאמת">עמודה</Button>
+        <div className="w-px h-6 bg-slate-200 mx-0.5" />
+        {/* קבצים */}
+        <Button variant="secondary" size="sm" icon="⬆️" onClick={p.onImport} title="ייבוא מקובץ Excel">ייבוא</Button>
+        <Button variant="secondary" size="sm" icon="⬇️" onClick={p.onExport} title="ייצוא לקובץ Excel">ייצוא</Button>
+        <div className="w-px h-6 bg-slate-200 mx-0.5" />
+        {/* הודעות וחתימות */}
         <Button variant="secondary" size="sm" icon="📝" onClick={p.onTemplates} title="ניהול תבניות הודעה">תבניות</Button>
-        <Button variant="secondary" size="sm" icon="✅" onClick={p.onSigners}>חתומים</Button>
+        <Button variant="secondary" size="sm" icon="✅" onClick={p.onSigners} title="קליטת רשימת חתומים והצלבה">חתומים</Button>
+        <div className="w-px h-6 bg-slate-200 mx-0.5" />
+        {/* WhatsApp */}
         <Button variant="secondary" size="sm" icon="🔄" onClick={p.onSync} title="משיכת הודעות נכנסות">סנכרון</Button>
         <Button variant="secondary" size="sm" icon="✔" onClick={p.onCheckPhones} title="בדיקה מול WhatsApp אילו מספרים תקינים">
           בדיקת מספרים
