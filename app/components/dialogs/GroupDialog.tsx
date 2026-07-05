@@ -7,11 +7,13 @@ import Button from "../ui/Button";
 import { Avatar } from "../ui/atoms";
 import { useToast } from "../ui/Toast";
 import { api, type MemberOpResult } from "@/app/lib/api-client";
-import { isValidIsraeliPhone } from "@/app/lib/phone";
+import { isValidIsraeliPhone, waMeLink } from "@/app/lib/phone";
 import type { HolderDTO, GroupDTO } from "@/app/lib/types";
 
 interface Props {
   holders: HolderDTO[]; // הנבחרים
+  /** האם GreenAPI מחובר — קובע אם מצב ברירת המחדל אוטומטי או ידני */
+  apiReady?: boolean;
   onClose: () => void;
   onDone: () => void;
 }
@@ -28,16 +30,21 @@ interface Row {
 const THROTTLE_MS = 2500;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export default function GroupDialog({ holders, onClose, onDone }: Props) {
+export default function GroupDialog({ holders, apiReady = false, onClose, onDone }: Props) {
   const { toast } = useToast();
   const [groups, setGroups] = useState<GroupDTO[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
-  const [mode, setMode] = useState<"new" | "existing">("new");
+  const [mode, setMode] = useState<"manual" | "new" | "existing">(apiReady ? "new" : "manual");
   const [groupName, setGroupName] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [running, setRunning] = useState(false);
   const [finished, setFinished] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
+  // מצב ידני: אשף שליחת הזמנות אחד-אחד דרך wa.me
+  const [manualLink, setManualLink] = useState("");
+  const [manualGroupId, setManualGroupId] = useState("");
+  const [manualPos, setManualPos] = useState(-1);
+  const [manualBusy, setManualBusy] = useState(false);
   const [rows, setRows] = useState<Row[]>(() =>
     holders.map((h) => ({
       holder: h,
@@ -53,7 +60,7 @@ export default function GroupDialog({ holders, onClose, onDone }: Props) {
       .then(({ groups }) => {
         setGroups(groups);
         if (groups.length > 0) {
-          setMode("existing");
+          if (apiReady) setMode("existing");
           setSelectedGroupId(groups[0].id);
           setInviteLink(groups[0].inviteLink);
         }
@@ -138,6 +145,66 @@ export default function GroupDialog({ holders, onClose, onDone }: Props) {
     }
   }
 
+  // ===== מצב ידני: יצירת קבוצה + שליחת הזמנות אחד-אחד דרך wa.me =====
+  const inviteMsg = (h: HolderDTO) =>
+    `שלום ${h.name || ""}, מוזמנים להצטרף לקבוצת הוואטסאפ של בעלי הזכויות בפרויקט גוש 6446:\n${manualLink}`;
+
+  const nextManual = (from: number) =>
+    rows.findIndex((r, i) => i > from && r.validPhone && !["invited", "added"].includes(r.status));
+
+  async function startManual() {
+    if (!groupName.trim()) return toast("חובה להזין שם קבוצה", "error");
+    if (!/chat\.whatsapp\.com\//i.test(manualLink)) {
+      return toast("הדביקו קישור הזמנה תקין (chat.whatsapp.com/...)", "error");
+    }
+    setRunning(true);
+    try {
+      const { group } = await api.createManualGroup(groupName.trim(), manualLink.trim());
+      setManualGroupId(group.gaGroupId);
+      setGroups((g) => [group, ...g]);
+      const first = nextManual(-1);
+      if (first === -1) {
+        setFinished(true);
+        onDone();
+      } else {
+        setManualPos(first);
+      }
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "יצירת הקבוצה נכשלה", "error");
+      setRunning(false);
+    }
+  }
+
+  function advanceManual(from: number) {
+    const nxt = nextManual(from);
+    if (nxt === -1) {
+      setManualPos(-1);
+      setRunning(false);
+      setFinished(true);
+      onDone();
+    } else {
+      setManualPos(nxt);
+    }
+  }
+
+  async function manualInviteCurrent() {
+    const idx = manualPos;
+    const r = rows[idx];
+    if (!r) return;
+    const link = waMeLink(r.holder.phone, inviteMsg(r.holder));
+    if (link) window.open(link, "_blank", "noopener");
+    setManualBusy(true);
+    try {
+      await api.markManualInvite(manualGroupId, r.holder.id);
+      setRow(r.holder.id, { status: "invited" });
+    } catch (e) {
+      setRow(r.holder.id, { status: "failed", error: e instanceof Error ? e.message : "שגיאה" });
+    } finally {
+      setManualBusy(false);
+    }
+    advanceManual(idx);
+  }
+
   async function handleSync() {
     try {
       const r = await api.syncGroups();
@@ -165,25 +232,39 @@ export default function GroupDialog({ holders, onClose, onDone }: Props) {
       wide
     >
       <div className="space-y-4">
-        {!finished && (
+        {!finished && manualPos < 0 && (
           <>
-            {/* בחירת יעד: קבוצה חדשה / קיימת */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* בחירת יעד: ידני / חדשה / קיימת */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
-                onClick={() => !running && setMode("new")}
+                onClick={() => !running && setMode("manual")}
                 className={clsx(
                   "rounded-xl border p-3 text-right transition-all",
+                  mode === "manual"
+                    ? "border-brand-400 bg-brand-50 ring-2 ring-brand-100"
+                    : "border-slate-200 hover:bg-slate-50"
+                )}
+              >
+                <div className="font-bold text-slate-700 text-sm">📱 ידני (חינם)</div>
+                <div className="text-xs text-slate-400 mt-0.5">שליחת הזמנה מהווטסאפ שלך</div>
+              </button>
+              <button
+                onClick={() => !running && setMode("new")}
+                disabled={!apiReady}
+                title={apiReady ? "" : "דורש חיבור GreenAPI בהגדרות"}
+                className={clsx(
+                  "rounded-xl border p-3 text-right transition-all disabled:opacity-40",
                   mode === "new"
                     ? "border-brand-400 bg-brand-50 ring-2 ring-brand-100"
                     : "border-slate-200 hover:bg-slate-50"
                 )}
               >
-                <div className="font-bold text-slate-700 text-sm">➕ קבוצה חדשה</div>
-                <div className="text-xs text-slate-400 mt-0.5">תיווצר עכשיו עם הנבחרים</div>
+                <div className="font-bold text-slate-700 text-sm">🤖 חדשה (אוטומטי)</div>
+                <div className="text-xs text-slate-400 mt-0.5">{apiReady ? "GreenAPI יוצר ומצרף" : "דורש GreenAPI"}</div>
               </button>
               <button
-                onClick={() => !running && groups.length > 0 && setMode("existing")}
-                disabled={groups.length === 0}
+                onClick={() => !running && groups.length > 0 && apiReady && setMode("existing")}
+                disabled={groups.length === 0 || !apiReady}
                 className={clsx(
                   "rounded-xl border p-3 text-right transition-all disabled:opacity-40",
                   mode === "existing"
@@ -191,14 +272,43 @@ export default function GroupDialog({ holders, onClose, onDone }: Props) {
                     : "border-slate-200 hover:bg-slate-50"
                 )}
               >
-                <div className="font-bold text-slate-700 text-sm">👥 קבוצה קיימת</div>
+                <div className="font-bold text-slate-700 text-sm">👥 קיימת (אוטומטי)</div>
                 <div className="text-xs text-slate-400 mt-0.5">
-                  {loadingGroups ? "טוען…" : groups.length === 0 ? "אין קבוצות עדיין" : `${groups.length} קבוצות במערכת`}
+                  {loadingGroups ? "טוען…" : groups.length === 0 ? "אין קבוצות" : `${groups.length} קבוצות`}
                 </div>
               </button>
             </div>
 
-            {mode === "new" ? (
+            {mode === "manual" ? (
+              <div className="space-y-3">
+                <div className="bg-brand-50 border border-brand-100 rounded-xl p-3 text-xs text-slate-600 leading-relaxed">
+                  <b className="text-slate-800">איך זה עובד:</b> 1) צרו קבוצת WhatsApp רגילה בטלפון ·
+                  2) בהגדרות הקבוצה → &quot;הזמנה באמצעות קישור&quot; → העתיקו את הקישור ·
+                  3) הדביקו כאן. המערכת תשלח לכל אחד את ההזמנה מהווטסאפ שלכם ותתעד מי הוזמן.
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">שם הקבוצה</label>
+                  <input
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
+                    disabled={running}
+                    placeholder='למשל: "עדכוני גוש 6446 — בעלי זכויות"'
+                    className="focus-ring w-full border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">קישור הזמנה לקבוצה</label>
+                  <input
+                    value={manualLink}
+                    onChange={(e) => setManualLink(e.target.value)}
+                    disabled={running}
+                    dir="ltr"
+                    placeholder="https://chat.whatsapp.com/XXXXXXXX"
+                    className="focus-ring w-full border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none text-sm"
+                  />
+                </div>
+              </div>
+            ) : mode === "new" ? (
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">שם הקבוצה</label>
                 <input
@@ -230,6 +340,32 @@ export default function GroupDialog({ holders, onClose, onDone }: Props) {
               </div>
             )}
           </>
+        )}
+
+        {/* אשף ההזמנה הידנית — נמען אחר נמען */}
+        {manualPos >= 0 && rows[manualPos] && (
+          <div className="card p-4 space-y-3 animate-fade-in">
+            <div className="flex items-center gap-3">
+              <Avatar name={rows[manualPos].holder.name} size={40} />
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-slate-800 truncate">{rows[manualPos].holder.name}</div>
+                <div className="text-sm text-slate-500 tabular-nums" dir="ltr">{rows[manualPos].holder.phone}</div>
+              </div>
+              <span className="text-xs text-slate-400">
+                הוזמנו {doneCounts.invited} / {validRows.length}
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 text-center">
+              הלחיצה תפתח את ווטסאפ עם ההזמנה מוכנה — שלח, חזור לכאן והמשך
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="ghost" onClick={() => { setManualPos(-1); setRunning(false); }}>עצור</Button>
+              <Button variant="secondary" onClick={() => advanceManual(manualPos)}>דלג ←</Button>
+              <Button variant="whatsapp" icon="📱" loading={manualBusy} onClick={manualInviteCurrent}>
+                שלח הזמנה בווטסאפ
+              </Button>
+            </div>
+          </div>
         )}
 
         {/* רשימת אנשים + סטטוס חי */}
@@ -272,16 +408,22 @@ export default function GroupDialog({ holders, onClose, onDone }: Props) {
             🔄 סנכרן עכשיו
           </Button>
           <div className="flex gap-2">
-            {!finished ? (
+            {!finished && manualPos < 0 ? (
               <>
                 <Button variant="ghost" onClick={onClose} disabled={running}>ביטול</Button>
-                <Button variant="whatsapp" icon="👥" loading={running} disabled={validRows.length === 0} onClick={run}>
-                  {mode === "new" ? `צור קבוצה וצרף ${validRows.length}` : `צרף ${validRows.length} לקבוצה`}
-                </Button>
+                {mode === "manual" ? (
+                  <Button variant="whatsapp" icon="📱" loading={running} disabled={validRows.length === 0} onClick={startManual}>
+                    שלח הזמנות ל-{validRows.length}
+                  </Button>
+                ) : (
+                  <Button variant="whatsapp" icon="👥" loading={running} disabled={validRows.length === 0} onClick={run}>
+                    {mode === "new" ? `צור קבוצה וצרף ${validRows.length}` : `צרף ${validRows.length} לקבוצה`}
+                  </Button>
+                )}
               </>
-            ) : (
+            ) : finished ? (
               <Button variant="secondary" onClick={onClose}>סגור</Button>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

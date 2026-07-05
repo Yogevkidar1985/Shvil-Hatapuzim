@@ -118,6 +118,17 @@ export const api = {
       "/api/whatsapp/groups/sync",
       { method: "POST" }
     ),
+  // ===== קבוצה ידנית (בלי GreenAPI) =====
+  createManualGroup: (name: string, inviteLink: string) =>
+    request<{ ok: boolean; group: GroupDTO }>("/api/whatsapp/groups/manual", {
+      method: "POST",
+      body: JSON.stringify({ name, inviteLink }),
+    }),
+  markManualInvite: (gaGroupId: string, holderId: string) =>
+    request<{ ok: boolean }>("/api/whatsapp/groups/manual/invite", {
+      method: "POST",
+      body: JSON.stringify({ gaGroupId, holderId }),
+    }),
 
   // ===== בדיקת תקינות מספרים (מנות קטנות — קוראים בלולאה עד remaining=0) =====
   checkPhones: (holderIds?: string[]) =>
