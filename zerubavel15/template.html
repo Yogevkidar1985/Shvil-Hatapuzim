@@ -381,12 +381,14 @@
   }
   .lightbox figure{margin:0; display:flex; flex-direction:column; align-items:center; gap:14px; max-width:min(94vw,1040px)}
   .lightbox img{max-width:100%; max-height:78vh; background:#fff; border-radius:16px; padding:12px; box-shadow:0 30px 80px rgba(0,0,0,.5)}
-  /* זום ופאן בתשריט — גלגלת / כפתורים / לחיצה כפולה / גרירה */
-  .lightbox .lb-img{transition:transform .16s ease; will-change:transform; touch-action:none; user-select:none}
+  /* זום ופאן בתשריט — צביטה / גלגלת / כפתורים / לחיצה כפולה / גרירה */
+  .lightbox figure{touch-action:none}
+  .lightbox .lb-img{transition:transform .16s ease; will-change:transform; touch-action:none; user-select:none; -webkit-user-select:none}
   .lightbox .lb-img.zoomed{cursor:grab}
   .lightbox .lb-img.dragging{transition:none; cursor:grabbing}
   /* כפתורי הזום — כהים ואטומים כדי שיהיו קריאים גם מעל תכנית לבנה מוגדלת */
-  .lightbox .lb-zoom{position:absolute; bottom:20px; inset-inline-end:20px; display:flex; flex-direction:column; gap:8px; z-index:5}
+  .lightbox .lb-zoom{position:absolute; bottom:calc(20px + env(safe-area-inset-bottom, 0px));
+    inset-inline-end:20px; display:flex; flex-direction:column; gap:8px; z-index:10}
   .lightbox .lb-zoom button{
     width:44px; height:44px; border-radius:50%; border:1.5px solid rgba(255,255,255,.55);
     background:rgba(16,21,62,.85); color:#fff; font-size:21px; line-height:1; cursor:pointer;
@@ -397,16 +399,17 @@
   .lightbox .lb-zoom .lbz-reset{font-size:17px}
   .lightbox figcaption{color:#fff; font-weight:700; font-size:15px; text-shadow:0 1px 6px rgba(0,0,0,.5)}
   .lightbox .lb-close{
-    position:absolute; top:18px; inset-inline-start:18px; width:42px; height:42px; border-radius:50%;
+    position:absolute; top:calc(18px + env(safe-area-inset-top, 0px)); inset-inline-start:18px;
+    width:46px; height:46px; border-radius:50%;
     border:1.5px solid rgba(255,255,255,.55); background:rgba(16,21,62,.85); color:#fff;
-    font-size:19px; cursor:pointer; backdrop-filter:blur(6px); z-index:5;
+    font-size:20px; cursor:pointer; backdrop-filter:blur(6px); z-index:10;
     box-shadow:0 4px 16px rgba(0,0,0,.4);
   }
   .lightbox .lb-nav{
     position:absolute; top:50%; transform:translateY(-50%); width:52px; height:52px; border-radius:50%;
     border:1.5px solid rgba(255,255,255,.55); background:rgba(16,21,62,.85); color:#fff;
     font-size:30px; line-height:1; cursor:pointer; backdrop-filter:blur(6px); display:grid; place-items:center;
-    z-index:5; box-shadow:0 4px 16px rgba(0,0,0,.4); transition:background .15s;
+    z-index:10; box-shadow:0 4px 16px rgba(0,0,0,.4); transition:background .15s;
   }
   .lightbox .lb-nav:hover{background:var(--tan); color:var(--navy-deep)}
   .lightbox .lb-prev{inset-inline-end:20px}
@@ -650,6 +653,9 @@
     .terr{flex:0 0 42px; font-size:9px; padding:0 2px}
     .garden{flex:0 0 70px; font-size:9.5px}
     .bld-roof{margin:0 24px}
+    /* כפתורי התכנית גדולים ונוחים לאצבע במובייל */
+    .lightbox .lb-zoom button{width:50px; height:50px; font-size:24px}
+    .lightbox .lb-close{width:50px; height:50px; font-size:22px}
   }
 </style>
 
@@ -1146,19 +1152,41 @@ function openLightbox(planOrList, startIdx){
   // לחיצה כפולה — קפיצה בין 100% ל-250%
   const im = lbEl.querySelector('.lb-img');
   im.addEventListener('dblclick', ()=>{ lbScale > 1 ? lbResetZoom() : (lbScale = 2.5, lbApply()); });
-  // גרירה להזזת התכנית כשהיא מוגדלת
-  let lbDrag = null;
+  // מגע מלא: צביטה בשתי אצבעות (pinch) להגדלה/הקטנה + גרירה באצבע אחת כשהתכנית מוגדלת
+  let lbDrag = null, pinch0 = null;
+  const ptrs = new Map();
   im.addEventListener('pointerdown', e=>{
-    if (lbScale <= 1) return;
-    lbDrag = {x: e.clientX - lbPX, y: e.clientY - lbPY};
-    im.setPointerCapture(e.pointerId);
-    im.classList.add('dragging');
+    ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    try{ im.setPointerCapture(e.pointerId); }catch(err){}   // לא מפיל את המגע אם הלכידה לא זמינה
+    if (ptrs.size === 2){
+      const [a,b] = [...ptrs.values()];
+      pinch0 = {d: Math.hypot(a.x-b.x, a.y-b.y) || 1, scale: lbScale,
+                cx:(a.x+b.x)/2, cy:(a.y+b.y)/2, px: lbPX, py: lbPY};
+      lbDrag = null; im.classList.add('dragging');
+    } else if (lbScale > 1){
+      lbDrag = {x: e.clientX - lbPX, y: e.clientY - lbPY};
+      im.classList.add('dragging');
+    }
   });
   im.addEventListener('pointermove', e=>{
-    if (!lbDrag) return;
-    lbPX = e.clientX - lbDrag.x; lbPY = e.clientY - lbDrag.y; lbApply();
+    if (!ptrs.has(e.pointerId)) return;
+    ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if (pinch0 && ptrs.size >= 2){
+      const [a,b] = [...ptrs.values()];
+      lbScale = Math.min(6, Math.max(1, pinch0.scale * (Math.hypot(a.x-b.x, a.y-b.y) / pinch0.d)));
+      lbPX = pinch0.px + ((a.x+b.x)/2 - pinch0.cx);
+      lbPY = pinch0.py + ((a.y+b.y)/2 - pinch0.cy);
+      if (lbScale === 1){ lbPX = 0; lbPY = 0; }
+      lbApply();
+    } else if (lbDrag){
+      lbPX = e.clientX - lbDrag.x; lbPY = e.clientY - lbDrag.y; lbApply();
+    }
   });
-  const lbEndDrag = ()=>{ lbDrag = null; im.classList.remove('dragging'); };
+  const lbEndDrag = e=>{
+    ptrs.delete(e.pointerId);
+    if (ptrs.size < 2) pinch0 = null;
+    if (ptrs.size === 0){ lbDrag = null; im.classList.remove('dragging'); }
+  };
   im.addEventListener('pointerup', lbEndDrag);
   im.addEventListener('pointercancel', lbEndDrag);
   document.body.appendChild(lbEl);
