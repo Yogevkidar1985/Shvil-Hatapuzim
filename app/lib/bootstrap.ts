@@ -170,7 +170,8 @@ const CANONICAL_COLUMN_ORDER = [
 ];
 
 const LAYOUT_MIGRATION_KEY = "layoutMigration";
-const LAYOUT_MIGRATION_VER = "v2";
+// v3: יישור מחדש אחרי שגרירה בטעות בגרסה הישנה שיבשה את הסדר במסד הענן
+const LAYOUT_MIGRATION_VER = "v3";
 let ensuredLayout = false;
 
 /**

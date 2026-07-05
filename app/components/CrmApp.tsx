@@ -106,8 +106,9 @@ function CrmContent() {
   }, []);
 
   const gridApiRef = useRef<GridApi | null>(null);
-  const undoStack = useRef<EditEntry[]>([]);
-  const redoStack = useRef<EditEntry[]>([]);
+  // מחסניות בטל/שחזר כ-state — הכפתורים תמיד משקפים את המצב האמיתי
+  const [undoStack, setUndoStack] = useState<EditEntry[]>([]);
+  const [redoStack, setRedoStack] = useState<EditEntry[]>([]);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const reload = useCallback(async () => {
@@ -182,38 +183,34 @@ function CrmContent() {
   }, []);
 
   const handleCellChange = useCallback(
-    (id: string, key: string, value: string, isCustom: boolean) => {
-      const holder = holders.find((h) => h.id === id);
-      const prev = holder
-        ? isCustom
-          ? holder.extra?.[key] ?? ""
-          : String((holder as unknown as Record<string, unknown>)[key] ?? "")
-        : "";
-      undoStack.current.push({ id, key, isCustom, prev, next: value });
-      redoStack.current = [];
+    (id: string, key: string, value: string, isCustom: boolean, prevValue: string) => {
+      setUndoStack((s) => [...s, { id, key, isCustom, prev: prevValue, next: value }]);
+      setRedoStack([]);
       applyCellLocal(id, key, value, isCustom);
       persistCell(id, key, value, isCustom);
     },
-    [holders, applyCellLocal, persistCell]
+    [applyCellLocal, persistCell]
   );
 
   const doUndo = useCallback(() => {
-    const entry = undoStack.current.pop();
+    const entry = undoStack[undoStack.length - 1];
     if (!entry) return;
-    redoStack.current.push(entry);
+    setUndoStack((s) => s.slice(0, -1));
+    setRedoStack((r) => [...r, entry]);
     applyCellLocal(entry.id, entry.key, entry.prev, entry.isCustom);
     persistCell(entry.id, entry.key, entry.prev, entry.isCustom);
     gridApiRef.current?.refreshCells({ force: true });
-  }, [applyCellLocal, persistCell]);
+  }, [undoStack, applyCellLocal, persistCell]);
 
   const doRedo = useCallback(() => {
-    const entry = redoStack.current.pop();
+    const entry = redoStack[redoStack.length - 1];
     if (!entry) return;
-    undoStack.current.push(entry);
+    setRedoStack((r) => r.slice(0, -1));
+    setUndoStack((s) => [...s, entry]);
     applyCellLocal(entry.id, entry.key, entry.next, entry.isCustom);
     persistCell(entry.id, entry.key, entry.next, entry.isCustom);
     gridApiRef.current?.refreshCells({ force: true });
-  }, [applyCellLocal, persistCell]);
+  }, [redoStack, applyCellLocal, persistCell]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -408,6 +405,27 @@ function CrmContent() {
         {/* בקרת תצוגה — זום ורווח עמודות (רלוונטי לטבלת הדסקטופ בלבד) */}
         {!loading && holders.length > 0 && (
           <div className="flex items-center justify-between pb-2 flex-wrap gap-2">
+            {/* בטל/שחזר — תמיד אפשר לחזור אחורה (Ctrl+Z / Ctrl+Y) */}
+            <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-1.5 py-1 shadow-soft">
+              <button
+                onClick={doUndo}
+                disabled={undoStack.length === 0}
+                title="ביטול הפעולה האחרונה (Ctrl+Z)"
+                aria-label="בטל"
+                className="text-xs font-semibold text-slate-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg px-2.5 py-1 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                ↩ בטל
+              </button>
+              <button
+                onClick={doRedo}
+                disabled={redoStack.length === 0}
+                title="ביצוע חוזר (Ctrl+Y)"
+                aria-label="בצע שוב"
+                className="text-xs font-semibold text-slate-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg px-2.5 py-1 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                ↪ שחזר
+              </button>
+            </div>
             <div className="hidden md:block">
               <ViewControls
                 zoom={gridZoom}
