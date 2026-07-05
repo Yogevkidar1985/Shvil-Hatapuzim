@@ -31,7 +31,7 @@ interface Props {
   fontScale?: number;
   /** שורות שנבחרו — משוחזרות אחרי שינוי זום (שמרכיב מחדש את הטבלה) */
   selectedIds?: string[];
-  onCellChange: (id: string, key: string, value: string, isCustom: boolean) => void;
+  onCellChange: (id: string, key: string, value: string, isCustom: boolean, prevValue: string) => void;
   onSelectionChange: (ids: string[]) => void;
   onOpenContact: (holder: HolderDTO) => void;
   onSendWhatsApp: (holder: HolderDTO) => void;
@@ -199,6 +199,9 @@ export default function DataGrid({
         resizable: true,
         ...hint,
         pinned: isFirst ? "right" : undefined,
+        // עמודת השם היא העוגן — נעולה מימין, לא ניתנת לגרירה החוצה מהנעיצה
+        lockPinned: isFirst ? true : undefined,
+        suppressMovable: isFirst ? true : undefined,
         colId: col.key,
         headerClass: isFirst ? "ag-header-cell--first" : undefined,
       };
@@ -332,7 +335,10 @@ export default function DataGrid({
       const meta = visibleCols.find((c) => c.key === colId);
       if (!meta || !e.data) return;
       const value = e.newValue == null ? "" : String(e.newValue);
-      onCellChange(e.data.id, meta.key, value, meta.isCustom);
+      // הערך הקודם חייב להגיע מהאירוע — AG Grid משנה את אובייקט השורה במקום
+      // עוד לפני שהאירוע נורה, כך שקריאה מה-state תחזיר את הערך החדש
+      const prevValue = e.oldValue == null ? "" : String(e.oldValue);
+      onCellChange(e.data.id, meta.key, value, meta.isCustom, prevValue);
     },
     [visibleCols, onCellChange]
   );
@@ -375,7 +381,6 @@ export default function DataGrid({
         onCellValueChanged={handleCellChanged}
         onColumnMoved={handleColumnMoved}
         onSelectionChanged={(e) => onSelectionChange(e.api.getSelectedRows().map((r) => r.id))}
-        onRowDoubleClicked={(e) => e.data && onOpenContact(e.data)}
         animateRows={true}
         stopEditingWhenCellsLoseFocus={true}
         rowHeight={Math.round(52 * zoom)}
