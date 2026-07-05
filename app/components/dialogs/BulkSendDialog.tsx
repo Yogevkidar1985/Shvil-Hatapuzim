@@ -189,7 +189,7 @@ export default function BulkSendDialog({ holders, onClose, onDone }: Props) {
                   setTemplate(e.target.value);
                   setTemplateName(null);
                 }}
-                rows={4}
+                rows={7}
                 className="focus-ring w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-none"
               />
             </div>
