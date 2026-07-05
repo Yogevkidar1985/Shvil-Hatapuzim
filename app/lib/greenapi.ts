@@ -29,11 +29,21 @@ export async function getGreenApiConfig(): Promise<GreenApiConfig> {
       "WhatsApp (GreenAPI) עדיין לא מחובר. היכנסו להגדרות והזינו idInstance ו-apiToken."
     );
   }
+  // GreenAPI מקצה לכל instance כתובת ייעודית לפי 4 הספרות הראשונות של ה-idInstance,
+  // למשל idInstance 7107... → https://7107.api.greenapi.com. הכתובת הכללית הישנה
+  // (api.green-api.com) לא עובדת עבור instances חדשים ומחזירה notAuthorized שגוי.
+  const prefix = String(idInstance).slice(0, 4);
+  const derivedApi = /^\d{4}/.test(idInstance) ? `https://${prefix}.api.greenapi.com` : "https://api.green-api.com";
+  const derivedMedia = /^\d{4}/.test(idInstance) ? `https://${prefix}.media.greenapi.com` : "https://media.green-api.com";
+  // מתעלמים מהכתובת הכללית הישנה אם נשמרה בעבר — היא לא עובדת ל-instances חדשים
+  const isGeneric = (u?: string) => !u || /(^https:\/\/)?(api|media)\.green-?api\.com\/?$/.test(u.trim());
+  const storedApi = cfg[CONFIG_KEYS.greenApiUrl];
+  const storedMedia = cfg[CONFIG_KEYS.greenMediaUrl];
   return {
     idInstance,
     apiToken,
-    apiUrl: cfg[CONFIG_KEYS.greenApiUrl] || process.env.GREENAPI_API_URL || "https://api.green-api.com",
-    mediaUrl: cfg[CONFIG_KEYS.greenMediaUrl] || process.env.GREENAPI_MEDIA_URL || "https://media.green-api.com",
+    apiUrl: (!isGeneric(storedApi) && storedApi) || process.env.GREENAPI_API_URL || derivedApi,
+    mediaUrl: (!isGeneric(storedMedia) && storedMedia) || process.env.GREENAPI_MEDIA_URL || derivedMedia,
   };
 }
 
