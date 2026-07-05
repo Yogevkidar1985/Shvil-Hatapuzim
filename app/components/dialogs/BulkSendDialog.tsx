@@ -8,11 +8,14 @@ import { Avatar } from "../ui/atoms";
 import { api, type DuplicateCheck } from "@/app/lib/api-client";
 import { renderTemplate } from "@/app/lib/template";
 import { useTemplates } from "@/app/lib/useTemplates";
-import { isValidIsraeliPhone } from "@/app/lib/phone";
+import { isValidIsraeliPhone, waMeLink } from "@/app/lib/phone";
+import { formatPhone } from "@/app/lib/format";
 import type { HolderDTO } from "@/app/lib/types";
 
 interface Props {
   holders: HolderDTO[];
+  /** האם GreenAPI מחובר ומאושר — קובע את מצב ברירת המחדל (אוטומטי/ידני) */
+  apiReady?: boolean;
   onClose: () => void;
   onDone: () => void;
 }
@@ -31,12 +34,16 @@ interface Recipient {
 
 const THROTTLE_MS = 3000;
 
-export default function BulkSendDialog({ holders, onClose, onDone }: Props) {
+export default function BulkSendDialog({ holders, apiReady = false, onClose, onDone }: Props) {
   const { templates } = useTemplates();
   const [template, setTemplate] = useState("");
   const [templateName, setTemplateName] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [finished, setFinished] = useState(false);
+  // מצב שליחה: "api" = אוטומטי דרך GreenAPI; "manual" = ידני חינם דרך הווטסאפ של המשתמש
+  const [mode, setMode] = useState<"api" | "manual">(apiReady ? "api" : "manual");
+  const [manualPos, setManualPos] = useState(-1); // אינדקס הנמען הנוכחי באשף הידני (-1 = לא פעיל)
+  const [manualBusy, setManualBusy] = useState(false);
   const [recipients, setRecipients] = useState<Recipient[]>(() =>
     holders.map((h) => {
       const validPhone = isValidIsraeliPhone(h.phone);
@@ -113,6 +120,51 @@ export default function BulkSendDialog({ holders, onClose, onDone }: Props) {
     );
   };
 
+  // ===== שליחה ידנית (חינם) — אשף אחד-אחד דרך wa.me =====
+  const nextManualIdx = (from: number) =>
+    recipients.findIndex((r, i) => i > from && r.included && r.validPhone && r.status !== "ok");
+
+  function startManual() {
+    const first = nextManualIdx(-1);
+    if (first !== -1) setManualPos(first);
+  }
+
+  function advanceManual(fromIdx: number) {
+    const nxt = nextManualIdx(fromIdx);
+    if (nxt === -1) {
+      setManualPos(-1);
+      setFinished(true);
+      onDone();
+    } else {
+      setManualPos(nxt);
+    }
+  }
+
+  async function manualSendCurrent() {
+    const idx = manualPos;
+    const r = recipients[idx];
+    if (!r) return;
+    const message = renderTemplate(template, r.holder);
+    const link = waMeLink(r.holder.phone, message);
+    if (link) window.open(link, "_blank", "noopener");
+    setManualBusy(true);
+    try {
+      await api.logManualSend(r.holder.id, message, templateName);
+      setRecipients((prev) =>
+        prev.map((x, i) => (i === idx ? { ...x, status: "ok" as SendStatus, sentCount: x.sentCount + 1 } : x))
+      );
+    } catch (e) {
+      setRecipients((prev) =>
+        prev.map((x, i) =>
+          i === idx ? { ...x, status: "failed" as SendStatus, error: e instanceof Error ? e.message : "שגיאה" } : x
+        )
+      );
+    } finally {
+      setManualBusy(false);
+    }
+    advanceManual(idx);
+  }
+
   async function runSend(onlyFailed = false) {
     setRunning(true);
     setFinished(false);
@@ -155,8 +207,40 @@ export default function BulkSendDialog({ holders, onClose, onDone }: Props) {
       wide
     >
       <div className="space-y-4">
-        {!running && !finished && (
+        {!running && !finished && manualPos < 0 && (
           <>
+            {/* בחירת מצב שליחה */}
+            <div className="flex items-center gap-1.5 bg-slate-100 rounded-xl p-1 w-fit">
+              <button
+                onClick={() => setMode("manual")}
+                className={clsx(
+                  "text-xs font-semibold rounded-lg px-3 py-1.5 transition-colors",
+                  mode === "manual" ? "bg-white text-brand-700 shadow-soft" : "text-slate-500 hover:text-slate-700"
+                )}
+              >
+                📱 ידני — מהווטסאפ שלך (חינם)
+              </button>
+              <button
+                onClick={() => setMode("api")}
+                className={clsx(
+                  "text-xs font-semibold rounded-lg px-3 py-1.5 transition-colors",
+                  mode === "api" ? "bg-white text-brand-700 shadow-soft" : "text-slate-500 hover:text-slate-700"
+                )}
+              >
+                🤖 אוטומטי (GreenAPI)
+              </button>
+            </div>
+            {mode === "manual" && (
+              <p className="text-xs text-slate-500 bg-brand-50 border border-brand-100 rounded-xl px-3 py-2">
+                💡 במצב ידני: כל לחיצה פותחת את ווטסאפ עם ההודעה מוכנה לנמען הבא — אתה רק לוחץ שם
+                &quot;שלח&quot; וחוזר לכאן. כל הודעה מתועדת במערכת כרגיל.
+              </p>
+            )}
+            {mode === "api" && !apiReady && (
+              <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                ⚠️ GreenAPI לא מחובר — חבר אותו בהגדרות (⚙️) או עבור למצב הידני החינמי.
+              </p>
+            )}
             {templates.length > 0 && (
               <div className="flex gap-1.5 flex-wrap items-center">
                 <span className="text-xs text-slate-400">תבניות:</span>
@@ -266,6 +350,53 @@ export default function BulkSendDialog({ holders, onClose, onDone }: Props) {
           </>
         )}
 
+        {/* אשף השליחה הידנית — נמען אחר נמען */}
+        {manualPos >= 0 && recipients[manualPos] && (
+          <div className="space-y-4 animate-fade-in">
+            <div>
+              <div className="flex justify-between text-sm mb-1.5">
+                <span className="font-semibold text-slate-700">{sentOk} / {included.length} נשלחו</span>
+                <span className="text-slate-400 text-xs">שליחה ידנית</span>
+              </div>
+              <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-l from-brand-400 to-brand-600 transition-all duration-300 rounded-full"
+                  style={{ width: `${included.length ? Math.round((sentOk / included.length) * 100) : 0}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="card p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <Avatar name={recipients[manualPos].holder.name} size={40} />
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-slate-800 truncate">{recipients[manualPos].holder.name}</div>
+                  <div className="text-sm text-slate-500 tabular-nums" dir="ltr">
+                    {formatPhone(recipients[manualPos].holder.phone)}
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-start">
+                <div className="chat-bubble chat-bubble-out">
+                  {renderTemplate(template, recipients[manualPos].holder)}
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-400 text-center">
+              הלחיצה תפתח את ווטסאפ עם ההודעה מוכנה — לחץ שם &quot;שלח&quot;, חזור לכאן והמשך לנמען הבא
+            </p>
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="ghost" onClick={() => setManualPos(-1)}>עצור</Button>
+              <Button variant="secondary" onClick={() => advanceManual(manualPos)}>דלג ←</Button>
+              <Button variant="whatsapp" icon="📱" loading={manualBusy} onClick={manualSendCurrent}>
+                פתח בווטסאפ ותעד
+              </Button>
+            </div>
+          </div>
+        )}
+
         {(running || finished) && (
           <div className="space-y-3">
             <div>
@@ -298,12 +429,18 @@ export default function BulkSendDialog({ holders, onClose, onDone }: Props) {
         )}
 
         <div className="flex gap-2 justify-end pt-1">
-          {!running && !finished && (
+          {!running && !finished && manualPos < 0 && (
             <>
               <Button variant="ghost" onClick={onClose}>ביטול</Button>
-              <Button variant="whatsapp" icon="💬" disabled={included.length === 0} onClick={() => runSend(false)}>
-                שלח ל-{included.length} נמענים
-              </Button>
+              {mode === "manual" ? (
+                <Button variant="whatsapp" icon="📱" disabled={included.length === 0} onClick={startManual}>
+                  התחל שליחה ידנית ({included.length})
+                </Button>
+              ) : (
+                <Button variant="whatsapp" icon="💬" disabled={included.length === 0} onClick={() => runSend(false)}>
+                  שלח ל-{included.length} נמענים
+                </Button>
+              )}
             </>
           )}
           {finished && (

@@ -59,3 +59,13 @@ export function chatIdToLocal(chatId: string): string {
   }
   return digits;
 }
+
+/**
+ * קישור שליחה ידנית — פותח את WhatsApp (במחשב או בטלפון) עם ההודעה מוכנה.
+ * מחזיר null אם המספר אינו תקין.
+ */
+export function waMeLink(phone: string | null | undefined, text: string): string | null {
+  const n = normalizeIsraeliPhone(phone);
+  if (!n) return null;
+  return `https://wa.me/${n.msisdn}?text=${encodeURIComponent(text)}`;
+}
