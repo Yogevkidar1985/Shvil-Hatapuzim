@@ -60,13 +60,43 @@ export default function SettingsDialog({ onClose, onSaved }: Props) {
     }
   }
 
+  const waConnected = state === "authorized" || (hasToken && state === null);
+
   return (
-    <Modal title="הגדרות" subtitle="מפתחות ותצורה — נשמרים בענן, זמינים מכל מחשב" icon="⚙️" onClose={onClose} wide>
+    <Modal title="הגדרות ומצב חיבורים" subtitle="מפתחות ותצורה — נשמרים בענן, זמינים מכל מחשב" icon="⚙️" onClose={onClose} wide>
       {loading ? (
         <div className="flex justify-center py-10"><Spinner /></div>
       ) : (
         <div className="space-y-5">
-          {/* מצב ענן */}
+          {/* ===== לוח בקרת חיבורים ===== */}
+          <div>
+            <h3 className="text-sm font-bold text-slate-700 mb-2">מצב המערכת</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <StatusTile
+                icon="☁️"
+                title="ענן (Supabase)"
+                ok={!!cloud?.connected}
+                okText="מחובר · נתונים נשמרים"
+                badText="לא מחובר"
+              />
+              <StatusTile
+                icon="🤖"
+                title="WhatsApp אוטומטי"
+                ok={waConnected}
+                okText="GreenAPI מחובר"
+                badText="לא מוגדר — ראו למטה"
+              />
+              <StatusTile
+                icon="📱"
+                title="שליחה ידנית"
+                ok={true}
+                okText="זמין תמיד · חינם"
+                badText=""
+              />
+            </div>
+          </div>
+
+          {/* מצב ענן — הרחבה */}
           <div className="flex items-start gap-3 bg-brand-50 border border-brand-100 rounded-2xl p-4">
             <span className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-xl shadow-soft shrink-0">☁️</span>
             <div className="flex-1">
@@ -78,7 +108,26 @@ export default function SettingsDialog({ onClose, onSaved }: Props) {
               </div>
               <p className="text-sm text-slate-500 mt-0.5">
                 כל הנתונים, ההודעות, התבניות והקבוצות נשמרים אוטומטית ב-<b>{cloud?.provider}</b> —
-                לא מקומית. כל שינוי זמין מיד מכל מחשב, בדיוק כמו במערכת הישנה.
+                לא מקומית. כל שינוי זמין מיד מכל מחשב.
+              </p>
+            </div>
+          </div>
+
+          {/* דרכי שליחה — הסבר */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2.5">
+            <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">🚀 שתי דרכים לשלוח הודעות</h3>
+            <div className="flex items-start gap-2.5 text-sm">
+              <span className="text-lg shrink-0">📱</span>
+              <p className="text-slate-600">
+                <b className="text-slate-800">ידני (חינם, פעיל עכשיו):</b> ההודעה נפתחת מוכנה בווטסאפ שלך —
+                אתה לוחץ &quot;שלח&quot;. עובד גם לקבוצה. כל שליחה מתועדת במערכת.
+              </p>
+            </div>
+            <div className="flex items-start gap-2.5 text-sm">
+              <span className="text-lg shrink-0">🤖</span>
+              <p className="text-slate-600">
+                <b className="text-slate-800">אוטומטי (GreenAPI):</b> המערכת שולחת לבד לרשימה שלמה,
+                מקבלת תשובות, ויוצרת קבוצה אוטומטית. דורש חיבור למטה.
               </p>
             </div>
           </div>
@@ -131,5 +180,28 @@ export default function SettingsDialog({ onClose, onSaved }: Props) {
         </div>
       )}
     </Modal>
+  );
+}
+
+function StatusTile({
+  icon, title, ok, okText, badText,
+}: { icon: string; title: string; ok: boolean; okText: string; badText: string }) {
+  return (
+    <div className={clsx(
+      "rounded-2xl border p-3 flex items-center gap-2.5",
+      ok ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"
+    )}>
+      <span className="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-lg shadow-soft shrink-0">{icon}</span>
+      <div className="min-w-0">
+        <div className="font-bold text-slate-800 text-sm truncate">{title}</div>
+        <div className={clsx(
+          "text-xs font-semibold flex items-center gap-1",
+          ok ? "text-green-700" : "text-amber-700"
+        )}>
+          <span className={clsx("w-1.5 h-1.5 rounded-full", ok ? "bg-green-500" : "bg-amber-500")} />
+          {ok ? okText : badText}
+        </div>
+      </div>
+    </div>
   );
 }

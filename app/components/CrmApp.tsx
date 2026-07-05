@@ -544,7 +544,14 @@ function CrmContent() {
           onDone={reload}
         />
       )}
-      {showGroup && <GroupDialog holders={selectedHolders} onClose={() => setShowGroup(false)} onDone={reload} />}
+      {showGroup && (
+        <GroupDialog
+          holders={selectedHolders}
+          apiReady={!!(waState?.configured && waState.state === "authorized")}
+          onClose={() => setShowGroup(false)}
+          onDone={reload}
+        />
+      )}
       {showTemplates && <TemplatesDialog onClose={() => setShowTemplates(false)} onChange={() => {}} />}
       {showSettings && (
         <SettingsDialog
