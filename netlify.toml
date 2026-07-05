@@ -6,8 +6,9 @@
 #   GREENAPI_ID_INSTANCE, GREENAPI_API_TOKEN — לחיבור WhatsApp (אופציונלי בשלב ראשון)
 
 [build]
+  # check-env — בדיקת משתני סביבה עם הודעות ברורות (עוצר לפני נזק אם DATABASE_URL חסר/שגוי);
   # prisma generate — יוצר את הקליינט; db push — יוצר את הטבלאות במסד הענני; ואז בניית Next
-  command = "npx prisma generate && npx prisma db push && npx next build"
+  command = "node scripts/check-env.mjs && npx prisma generate && npx prisma db push && npx next build"
   publish = ".next"
 
 [build.environment]
