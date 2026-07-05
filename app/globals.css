@@ -253,6 +253,7 @@ body {
   box-shadow: 0 1px 1px rgba(15, 23, 42, 0.06);
   position: relative;
   word-break: break-word;
+  white-space: pre-wrap; /* שמירת שורות ריקות ומעברי שורה — הודעה מסודרת, לא גוש צפוף */
 }
 .chat-bubble-out { background: #dcf6e3; color: #0f3d24; border-bottom-right-radius: 4px; }
 .chat-bubble-in { background: #ffffff; color: #1e293b; border-bottom-left-radius: 4px; }
