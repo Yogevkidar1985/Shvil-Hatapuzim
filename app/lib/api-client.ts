@@ -55,6 +55,12 @@ export const api = {
     }),
   syncMessages: () =>
     request<{ ok: boolean; processed: number; saved: number }>("/api/whatsapp/sync", { method: "POST" }),
+  // תיעוד שליחה ידנית (wa.me) — המסלול החינמי ללא GreenAPI
+  logManualSend: (holderId: string, message: string, templateName?: string | null) =>
+    request<{ ok: boolean; message: MessageDTO }>("/api/whatsapp/manual", {
+      method: "POST",
+      body: JSON.stringify({ holderId, message, templateName: templateName ?? null }),
+    }),
 
   // ===== הגדרות מערכת (נשמרות בענן) =====
   getSettings: () =>

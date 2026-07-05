@@ -518,7 +518,14 @@ function CrmContent() {
 
       {showAddColumn && <AddColumnDialog onClose={() => setShowAddColumn(false)} onAdded={(col) => setColumns((prev) => [...prev, col])} />}
       {showImport && <ImportDialog onClose={() => setShowImport(false)} onImported={reload} />}
-      {showBulk && <BulkSendDialog holders={selectedHolders} onClose={() => setShowBulk(false)} onDone={reload} />}
+      {showBulk && (
+        <BulkSendDialog
+          holders={selectedHolders}
+          apiReady={!!(waState?.configured && waState.state === "authorized")}
+          onClose={() => setShowBulk(false)}
+          onDone={reload}
+        />
+      )}
       {showGroup && <GroupDialog holders={selectedHolders} onClose={() => setShowGroup(false)} onDone={reload} />}
       {showTemplates && <TemplatesDialog onClose={() => setShowTemplates(false)} onChange={() => {}} />}
       {showSettings && (

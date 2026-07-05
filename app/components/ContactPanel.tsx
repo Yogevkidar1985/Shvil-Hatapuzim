@@ -8,6 +8,7 @@ import { api } from "@/app/lib/api-client";
 import { renderTemplate } from "@/app/lib/template";
 import { useTemplates } from "@/app/lib/useTemplates";
 import { formatPhone, formatDaySeparator, formatTimeOnly, formatNumber } from "@/app/lib/format";
+import { waMeLink } from "@/app/lib/phone";
 import { Avatar, StatusBadge, Spinner } from "./ui/atoms";
 import Button from "./ui/Button";
 import { useToast } from "./ui/Toast";
@@ -66,6 +67,31 @@ export default function ContactPanel({ holder, onClose, onHolderUpdated }: Props
       }
     } catch (e) {
       toast(e instanceof Error ? e.message : "שליחה נכשלה", "error");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  /** שליחה ידנית (חינם, בלי GreenAPI): פותח את WhatsApp עם ההודעה מוכנה + מתעד במערכת */
+  async function handleManualSend() {
+    const text = draft.trim();
+    if (!text) return;
+    const link = waMeLink(holder.phone, text);
+    if (!link) {
+      toast("מספר הטלפון אינו תקין", "error");
+      return;
+    }
+    window.open(link, "_blank", "noopener");
+    setSending(true);
+    try {
+      const res = await api.logManualSend(holder.id, text, draftTemplate);
+      setMessages((m) => [...m, res.message]);
+      setDraft("");
+      setDraftTemplate(null);
+      onHolderUpdated({ ...holder, lastMessageAt: res.message.timestamp });
+      toast("נפתח בווטסאפ — ההודעה תועדה במערכת", "success");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "התיעוד נכשל", "error");
     } finally {
       setSending(false);
     }
@@ -245,9 +271,20 @@ export default function ContactPanel({ holder, onClose, onHolderUpdated }: Props
                   placeholder="הקלידו הודעה…  (Ctrl+Enter לשליחה)"
                   className="focus-ring flex-1 border border-slate-200 rounded-xl px-3 py-2 resize-none text-sm outline-none bg-slate-50"
                 />
-                <Button variant="whatsapp" loading={sending} disabled={!draft.trim()} onClick={handleSend} className="shrink-0">
-                  שלח
-                </Button>
+                <div className="flex flex-col gap-1.5 shrink-0">
+                  <Button variant="whatsapp" loading={sending} disabled={!draft.trim()} onClick={handleSend}>
+                    שלח
+                  </Button>
+                  <button
+                    onClick={handleManualSend}
+                    disabled={!draft.trim() || sending}
+                    title="שליחה ידנית חינם — נפתח בווטסאפ שלך עם ההודעה מוכנה, והמערכת מתעדת"
+                    aria-label="פתח בווטסאפ לשליחה ידנית"
+                    className="text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg px-2 py-1.5 disabled:opacity-40 transition-colors"
+                  >
+                    📱 ידני
+                  </button>
+                </div>
               </div>
             </div>
           </>
