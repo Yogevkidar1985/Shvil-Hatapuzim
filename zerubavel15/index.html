@@ -754,14 +754,11 @@
 'use strict';
 /* ---------- config ---------- */
 const STATUSES = {
-  marketing:   {label:'בשיווק',     color:'#2E7D4E',
-    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8" opacity=".65"/></svg>'},
-  negotiation: {label:'במשא ומתן', color:'#B7862F',
-    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-11.9 7.6L3 21l1.9-6.1A8.4 8.4 0 1 1 21 11.5Z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/></svg>'},
-  reserved:    {label:'שמור',       color:'#7A7264',
-    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12a1 1 0 0 1 1 1v15l-7-4-7 4V5a1 1 0 0 1 1-1Z"/></svg>'},
-  sold:        {label:'נמכר',       color:'#B23F38',
-    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3M17 6l2.5 2.5M14.5 8.5 17 11"/></svg>'},
+  // צבעים חיים ובולטים, מבחינים היטב זה מזה — במיוחד "שמור" (סגול חי במקום אפור דהוי)
+  marketing:   {label:'בשיווק',     color:'#159B4E'},
+  negotiation: {label:'במשא ומתן', color:'#E08A12'},
+  reserved:    {label:'שמור',       color:'#6A45D9'},
+  sold:        {label:'נמכר',       color:'#DA342B'},
 };
 const LS_KEY = 'zrubavel15-status-v11';   // הקפצת גרסה — מצב ישן שנשמר בדפדפן לא ידרוס עוד את העדכונים
 
@@ -979,9 +976,10 @@ const IC = {
 /* ---------- status pills ---------- */
 function makePillEl(statusKey, interactive){
   const s = STATUSES[statusKey] || STATUSES.marketing;
-  const b = el(interactive?'button':'span','pill'+(interactive?'':' static'), `${s.icon}${esc(s.label)}`);
+  // בלי אייקון — רק נקודת צבע קטנה + הכיתוב, נקי וברור
+  const b = el(interactive?'button':'span','pill'+(interactive?'':' static'), `<i class="dot"></i>${esc(s.label)}`);
   b.style.color = s.color;
-  b.style.background = tint(s.color,.11);
+  b.style.background = tint(s.color,.16);
   return b;
 }
 let openMenu = null;
@@ -1069,7 +1067,7 @@ function showPop(a, anchor){
   pop.setAttribute('role','dialog'); pop.setAttribute('aria-label', a.name);
   pop.innerHTML = `
     <div class="pop-head"><b>${esc(a.name)}</b>
-      <span class="pill static" style="color:${s.color};background:${tint(s.color,.11)}">${s.icon}${esc(s.label)}</span>
+      <span class="pill static" style="color:${s.color};background:${tint(s.color,.16)}"><i class="dot"></i>${esc(s.label)}</span>
     </div>
     ${plan?`<div class="pop-plan" title="להגדלת התשריט"><img src="${plan.src}" alt="${esc(plan.label)}"></div>`:''}
     <div class="pop-rows">${rows.map(r=>`<div class="pop-row"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join('')}</div>
@@ -1258,7 +1256,7 @@ function renderBld(){
       u.style.borderColor = mixWhite(s.color, .38);
       u.style.flexGrow = Math.max(1, (parseFloat(a.size)||50)/50);
       u.innerHTML = `<b>${esc(a.name)}</b><small>${esc(a.size)} מ״ר${a.rooms?' · '+esc(a.rooms):''}</small>`+
-        `<div class="brow"><span class="st">${s.icon}${esc(s.label)}</span>`+
+        `<div class="brow"><span class="st">${esc(s.label)}</span>`+
         (PLANS[a.plan]?`<span class="planchip">▦ תכנית</span>`:'')+`</div>`;
       u.setAttribute('role','button'); u.tabIndex=0;
       u.setAttribute('aria-label', `${a.name} — ${s.label}. פתיחת פרטים`);
