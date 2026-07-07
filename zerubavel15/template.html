@@ -885,7 +885,7 @@ function saveState(silent){
 
 /* ---------- cloud sync — Firebase Firestore (REST). נופל בחזרה לשמירה במכשיר + קישור שיתוף ---------- */
 // כדי להפעיל סנכרון חי בין כל המכשירים: ממלאים כאן projectId ו-apiKey מ-Firebase.
-const FB = { projectId:'', apiKey:'' };
+const FB = { projectId:'zrubavel15-80f7b', apiKey:'AIzaSyAiKgo31utvMqzkoR37kKIt5kt-nq0a7w4' };
 const cloudEnabled = ()=> !!(FB.projectId && FB.apiKey);
 const FB_DOC = ()=> `https://firestore.googleapis.com/v1/projects/${FB.projectId}/databases/(default)/documents/zerubavel15/state?key=${FB.apiKey}`;
 let cloudOK = false;   // האם הענן נגיש כרגע
