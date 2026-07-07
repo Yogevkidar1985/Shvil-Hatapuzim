@@ -444,7 +444,7 @@
 
   /* ================= STATUS INDICATOR ================= */
   .pill{
-    display:inline-flex; align-items:center; gap:7px; padding:8px 15px 8px 13px; border-radius:11px;
+    display:inline-flex; align-items:center; justify-content:center; padding:8px 16px; border-radius:11px;
     font-size:13px; font-weight:800; border:none; cursor:pointer; white-space:nowrap;
     transition:filter .15s;
   }
@@ -976,8 +976,8 @@ const IC = {
 /* ---------- status pills ---------- */
 function makePillEl(statusKey, interactive){
   const s = STATUSES[statusKey] || STATUSES.marketing;
-  // בלי אייקון — רק נקודת צבע קטנה + הכיתוב, נקי וברור
-  const b = el(interactive?'button':'span','pill'+(interactive?'':' static'), `<i class="dot"></i>${esc(s.label)}`);
+  // טקסט בלבד — בלי אייקון ובלי נקודה; הצבע החי מבדיל מספיק
+  const b = el(interactive?'button':'span','pill'+(interactive?'':' static'), esc(s.label));
   b.style.color = s.color;
   b.style.background = tint(s.color,.16);
   return b;
@@ -1067,7 +1067,7 @@ function showPop(a, anchor){
   pop.setAttribute('role','dialog'); pop.setAttribute('aria-label', a.name);
   pop.innerHTML = `
     <div class="pop-head"><b>${esc(a.name)}</b>
-      <span class="pill static" style="color:${s.color};background:${tint(s.color,.16)}"><i class="dot"></i>${esc(s.label)}</span>
+      <span class="pill static" style="color:${s.color};background:${tint(s.color,.16)}">${esc(s.label)}</span>
     </div>
     ${plan?`<div class="pop-plan" title="להגדלת התשריט"><img src="${plan.src}" alt="${esc(plan.label)}"></div>`:''}
     <div class="pop-rows">${rows.map(r=>`<div class="pop-row"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join('')}</div>
