@@ -1278,7 +1278,8 @@ function renderBld(){
     wrap.appendChild(row);
   }
   wrap.appendChild(el('div','bld-ground'));
-  wrap.appendChild(el('div','bld-street','<span>רחוב זרובבל ←</span><span>→ רחוב אהרונסון</span>'));
+  // חצים כמו בהדמיה: זרובבל מצביע ימינה, אהרונסון מצביע שמאלה (bdi מונע היפוך דו-כיווני)
+  wrap.appendChild(el('div','bld-street','<span>רחוב זרובבל <bdi>→</bdi></span><span><bdi>←</bdi> רחוב אהרונסון</span>'));
 
   // photo badges — מפת מכירות חיה על גבי תמונת הבניין:
   // כל ריבוע = קומה. חצי ימני = חזית זרובבל, חצי שמאלי = עורף אהרונסון.
