@@ -883,71 +883,73 @@ function saveState(silent){
   renderAll();
 }
 
-/* ---------- cloud sync (works when self-hosted; falls back to the shareable link) ---------- */
-const CLOUD_BASE = 'https://kvdb.io';
-const CLOUD_KEY = 'zrubavel15-cloud';   // זוכר את מזהה הדלי גם בין ביקורים — אותו דלי משותף
-let cloudId = (new URLSearchParams(location.search)).get('c')
-           || (()=>{ try{ return localStorage.getItem(CLOUD_KEY); }catch(e){ return null; } })()
-           || null;
-function rememberCloud(id){
-  cloudId = id;
-  try{ localStorage.setItem(CLOUD_KEY, id); }catch(e){}
-  const u = new URL(location.href); u.searchParams.set('c', id);
-  history.replaceState(null,'', u.pathname + u.search + u.hash);
-}
+/* ---------- cloud sync — Firebase Firestore (REST). נופל בחזרה לשמירה במכשיר + קישור שיתוף ---------- */
+// כדי להפעיל סנכרון חי בין כל המכשירים: ממלאים כאן projectId ו-apiKey מ-Firebase.
+const FB = { projectId:'', apiKey:'' };
+const cloudEnabled = ()=> !!(FB.projectId && FB.apiKey);
+const FB_DOC = ()=> `https://firestore.googleapis.com/v1/projects/${FB.projectId}/databases/(default)/documents/zerubavel15/state?key=${FB.apiKey}`;
+let cloudOK = false;   // האם הענן נגיש כרגע
 let cloudSaveT = null;
 function setSync(mode){
   const el = document.getElementById('sync-ind'); if(!el) return;
   el.classList.remove('cloud','saving');
   if (mode==='cloud'){ el.classList.add('cloud'); el.textContent='מסונכרן בענן ✓'; }
   else if (mode==='saving'){ el.classList.add('saving'); el.textContent='שומר…'; }
-  else { el.textContent='נשמר במכשיר זה'; }
+  else { el.textContent = cloudEnabled() ? 'נשמר במכשיר (הענן לא נגיש)' : 'נשמר במכשיר זה'; }
 }
-// fetch עם קצאב זמן — שירות ענן מת/איטי לא יתקע לעולם את הממשק (כפתור שיתוף וכו')
+// fetch עם קצאב זמן — שירות איטי/חסום לא יתקע לעולם את הממשק
 function fetchT(url, opts, ms){
   const ac = new AbortController();
   const t = setTimeout(()=>ac.abort(), ms||6000);
   return fetch(url, {...(opts||{}), signal:ac.signal}).finally(()=>clearTimeout(t));
 }
+function fbParse(doc){
+  try{ return hydrate(JSON.parse(doc.fields.json.stringValue)); }catch(e){ return null; }
+}
+function fbRemoteTs(doc){ try{ return +doc.fields.updatedAt.integerValue || 0; }catch(e){ return 0; } }
 async function cloudSave(){
+  if (!cloudEnabled()){ setSync('local'); return; }
   try{
     setSync('saving');
-    if (!cloudId){
-      // kvdb.io דורש אימייל ביצירת דלי — בלעדיו היצירה נכשלת בשקט והשמירה נשארת מקומית בלבד
-      const r = await fetchT(CLOUD_BASE+'/', {method:'POST',
-        headers:{'Content-Type':'application/x-www-form-urlencoded'},
-        body:'email=kidaryogev%40gmail.com'});
-      if(!r.ok) throw 0;
-      rememberCloud((await r.text()).trim());
-    }
-    const r2 = await fetchT(`${CLOUD_BASE}/${cloudId}/state`, {method:'PUT', body: JSON.stringify(state)});
-    if(!r2.ok) throw 0;
-    setSync('cloud');
-  }catch(e){ setSync('local'); }   // חסום/לא זמין → נשמר בקישור המקומי ובקישור השיתוף
+    const body = { fields: {
+      json:      { stringValue: JSON.stringify(state) },
+      updatedAt: { integerValue: String(state.meta.updatedAt || Date.now()) }
+    }};
+    const r = await fetchT(FB_DOC(), {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+    if(!r.ok) throw 0;
+    cloudOK = true; setSync('cloud');
+  }catch(e){ cloudOK = false; setSync('local'); }
 }
 function cloudSaveDebounced(){ clearTimeout(cloudSaveT); cloudSaveT = setTimeout(cloudSave, 700); }
 async function cloudInit(){
-  if (!cloudId) return;
+  if (!cloudEnabled()) return;
   try{
-    const r = await fetchT(`${CLOUD_BASE}/${cloudId}/state`, {cache:'no-store'});
+    const r = await fetchT(FB_DOC(), {cache:'no-store'});
+    if (r.status === 404){ cloudOK = true; setSync('cloud'); cloudSave(); return; }  // מסמך ריק — זורעים אותו
     if(!r.ok) throw 0;
-    const h = hydrate(await r.json());
-    if (h){ state = h; setSync('cloud'); renderAll(); }
-  }catch(e){ setSync('local'); }
+    const doc = await r.json();
+    cloudOK = true;
+    if (fbRemoteTs(doc) > (state.meta.updatedAt || 0)){
+      const h = fbParse(doc); if (h){ state = h; renderAll(); }   // הענן עדכני יותר — מאמצים
+    } else {
+      cloudSave();   // המכשיר עדכני יותר — דוחפים לענן
+    }
+    setSync('cloud');
+  }catch(e){ cloudOK = false; setSync('local'); }
 }
 /* משיכת עדכונים מהענן ברקע — צופה בדף רואה כל שינוי בלי לרענן */
 setInterval(async ()=>{
-  if (!cloudId || editMode) return;   // לא דורסים עריכה פעילה
+  if (!cloudEnabled() || editMode) return;   // לא דורסים עריכה פעילה
   try{
-    const r = await fetchT(`${CLOUD_BASE}/${cloudId}/state`, {cache:'no-store'});
+    const r = await fetchT(FB_DOC(), {cache:'no-store'});
     if (!r.ok) return;
-    const s = await r.json();
-    if (s && s.floors && (s.meta && s.meta.updatedAt || 0) > (state.meta.updatedAt || 0)){
-      const h = hydrate(s);
-      if (h){ state = h; setSync('cloud'); renderAll(); }
+    const doc = await r.json();
+    if (fbRemoteTs(doc) > (state.meta.updatedAt || 0)){
+      const h = fbParse(doc);
+      if (h){ state = h; cloudOK = true; setSync('cloud'); renderAll(); }
     }
   }catch(e){}
-}, 45000);
+}, 30000);
 
 /* ---------- helpers ---------- */
 const $ = s=>document.querySelector(s);
@@ -1510,7 +1512,7 @@ $('#btn-share').addEventListener('click',async ()=>{
   // מנסים לקבע דלי ענן, אך לא ממתינים יותר מ-2.5 שניות כדי שהכפתור לא ייתקע כשהענן לא זמין
   try{ await Promise.race([cloudSave(), new Promise(r=>setTimeout(r,2500))]); }catch(e){}
   const url = location.href;
-  const live = !!cloudId;   // האם הצלחנו לסנכרן בענן
+  const live = cloudOK;   // האם הצלחנו לסנכרן בענן
   const shareData = {
     title: state.meta.title || 'זרובבל 15',
     text: `סטטוס הדירות בפרויקט ${state.meta.title || 'זרובבל 15'} — ${state.meta.address||''}`.trim(),
