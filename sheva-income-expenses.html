@@ -1,0 +1,329 @@
+<title>הוצאות והכנסות · שבעה אבא</title>
+<style>
+  :root {
+    --paper: #f6f3ee;
+    --card: #fffdfa;
+    --ink: #2b2825;
+    --ink-soft: #6f695f;
+    --line: #e6dfd3;
+    --line-strong: #d7cdbd;
+    --income: #2f7d63;
+    --income-bg: #eaf3ef;
+    --expense: #b1543f;
+    --expense-bg: #f6ebe7;
+    --accent: #c98a2b;
+    --shadow: 0 1px 2px rgba(43,40,37,.04), 0 8px 24px rgba(43,40,37,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #191817;
+      --card: #232120;
+      --ink: #ece7df;
+      --ink-soft: #a49c8f;
+      --line: #35322f;
+      --line-strong: #45413c;
+      --income: #6fc3a1;
+      --income-bg: #1e2b26;
+      --expense: #e0917b;
+      --expense-bg: #2e211d;
+      --accent: #e0ab5a;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --paper: #f6f3ee; --card: #fffdfa; --ink: #2b2825; --ink-soft: #6f695f;
+    --line: #e6dfd3; --line-strong: #d7cdbd; --income: #2f7d63; --income-bg: #eaf3ef;
+    --expense: #b1543f; --expense-bg: #f6ebe7; --accent: #c98a2b;
+    --shadow: 0 1px 2px rgba(43,40,37,.04), 0 8px 24px rgba(43,40,37,.05);
+  }
+  :root[data-theme="dark"] {
+    --paper: #191817; --card: #232120; --ink: #ece7df; --ink-soft: #a49c8f;
+    --line: #35322f; --line-strong: #45413c; --income: #6fc3a1; --income-bg: #1e2b26;
+    --expense: #e0917b; --expense-bg: #2e211d; --accent: #e0ab5a;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Assistant','Heebo','Rubik','Segoe UI',system-ui,-apple-system,sans-serif;
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: clamp(20px, 5vw, 48px) clamp(16px, 4vw, 32px) 64px;
+  }
+
+  header.masthead { margin-bottom: 28px; }
+  .eyebrow {
+    font-size: .72rem;
+    letter-spacing: .14em;
+    color: var(--accent);
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+  h1 {
+    font-size: clamp(1.7rem, 5vw, 2.3rem);
+    font-weight: 800;
+    margin: 0 0 4px;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+  }
+  .subtitle { color: var(--ink-soft); margin: 0; font-size: .98rem; }
+
+  /* ---- Summary strip ---- */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 26px 0 36px;
+  }
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 14px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .stat .label { font-size: .78rem; color: var(--ink-soft); margin-bottom: 6px; font-weight: 600; }
+  .stat .value { font-size: 1.45rem; font-weight: 800; letter-spacing: -.01em; }
+  .stat.inc .value { color: var(--income); }
+  .stat.exp .value { color: var(--expense); }
+  .stat.net { border-color: var(--line-strong); }
+  .stat.net .value { color: var(--accent); }
+  .stat .value .cur { font-size: .8em; font-weight: 600; opacity: .7; margin-inline-start: 2px; }
+
+  /* ---- Person card ---- */
+  .person { margin-bottom: 30px; }
+  .person > h2 {
+    font-size: 1.28rem;
+    font-weight: 800;
+    margin: 0 0 12px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .person > h2 .bal {
+    font-size: .82rem;
+    font-weight: 700;
+    margin-inline-start: auto;
+    background: var(--income-bg);
+    color: var(--income);
+    padding: 3px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .block + .block { border-top: 1px solid var(--line); }
+  .block-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    font-weight: 700;
+    font-size: .9rem;
+  }
+  .block.income .block-head { background: var(--income-bg); color: var(--income); }
+  .block.expense .block-head { background: var(--expense-bg); color: var(--expense); }
+  .block-head .dot { font-size: .75rem; }
+
+  table { width: 100%; border-collapse: collapse; }
+  td {
+    padding: 9px 16px;
+    border-top: 1px solid var(--line);
+    font-size: .98rem;
+  }
+  tr:first-child td { border-top: none; }
+  td.name { text-align: right; color: var(--ink); }
+  td.name .sub { display: block; color: var(--ink-soft); font-size: .8rem; }
+  td.amt {
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  td.amt .cur { font-weight: 500; color: var(--ink-soft); font-size: .82em; margin-inline-start: 2px; }
+
+  tr.total td {
+    border-top: 2px solid var(--line-strong);
+    font-weight: 800;
+    background: color-mix(in srgb, var(--card) 100%, var(--ink) 3%);
+  }
+  tr.total td.name { color: var(--ink); }
+  .block.income tr.total td.amt { color: var(--income); }
+  .block.expense tr.total td.amt { color: var(--expense); }
+
+  tr.muted td.name, tr.muted td.amt { color: var(--ink-soft); }
+  tr.muted td.amt { text-decoration: line-through; }
+
+  /* balance footer inside card */
+  .card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: color-mix(in srgb, var(--card) 100%, var(--ink) 4%);
+    border-top: 2px solid var(--line-strong);
+    font-weight: 800;
+  }
+  .card-foot .amt { font-size: 1.1rem; }
+  .card-foot.pos .amt { color: var(--income); }
+
+  .note {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-inline-start: 3px solid var(--accent);
+    border-radius: 10px;
+    font-size: .88rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+  .note b { color: var(--ink); font-weight: 700; }
+
+  footer.foot {
+    margin-top: 40px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-soft);
+    font-size: .86rem;
+    text-align: center;
+  }
+</style>
+
+<div class="wrap" dir="rtl">
+  <header class="masthead">
+    <p class="eyebrow">סיכום כספי</p>
+    <h1>הוצאות והכנסות · שבעה אבא</h1>
+    <p class="subtitle">ריכוז לפי אדם — הכנסות מול הוצאות, כולל יתרות</p>
+  </header>
+
+  <section class="summary" aria-label="סיכום כולל">
+    <div class="stat inc">
+      <div class="label">סה״כ הכנסות</div>
+      <div class="value">10,270<span class="cur">₪</span></div>
+    </div>
+    <div class="stat exp">
+      <div class="label">סה״כ הוצאות</div>
+      <div class="value">9,280<span class="cur">₪</span></div>
+    </div>
+    <div class="stat net">
+      <div class="label">יתרה נטו</div>
+      <div class="value">+990<span class="cur">₪</span></div>
+    </div>
+  </section>
+
+  <!-- ============ יורם ============ -->
+  <div class="person">
+    <h2>יורם</h2>
+    <div class="card">
+      <div class="block expense">
+        <div class="block-head"><span>הוצאות</span><span class="dot">▾</span></div>
+        <table>
+          <tr><td class="name">לוינסקי</td><td class="amt">330<span class="cur">₪</span></td></tr>
+          <tr><td class="name">בג׳ה מכולת</td><td class="amt">100<span class="cur">₪</span></td></tr>
+          <tr><td class="name">שתיה</td><td class="amt">100<span class="cur">₪</span></td></tr>
+          <tr><td class="name">קייטרינג</td><td class="amt">3,520<span class="cur">₪</span></td></tr>
+          <tr class="total"><td class="name">סה״כ הוצאות</td><td class="amt">4,050<span class="cur">₪</span></td></tr>
+        </table>
+      </div>
+      <div class="block income">
+        <div class="block-head"><span>הכנסות</span><span class="dot">▴</span></div>
+        <table>
+          <tr><td class="name">הורים אביה</td><td class="amt">2,000<span class="cur">₪</span></td></tr>
+          <tr class="total"><td class="name">סה״כ הכנסות</td><td class="amt">2,000<span class="cur">₪</span></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="note">
+      <span>ℹ️</span>
+      <span>חישוב היתרה: <b>4,050 − 2,000 − 990 = 1,060 ₪</b> (במסר נרשמה יתרה של 1,100 ₪).
+      היתרה הועברה ליורם ב-<b>ביט</b>. ה-990 ₪ הם ההעברה שהתקבלה ממור.</span>
+    </div>
+  </div>
+
+  <!-- ============ מור ============ -->
+  <div class="person">
+    <h2>מור</h2>
+    <div class="card">
+      <div class="block income">
+        <div class="block-head"><span>הכנסות</span><span class="dot">▴</span></div>
+        <table>
+          <tr><td class="name">הילדים של דודה אסתר</td><td class="amt">1,200<span class="cur">₪</span></td></tr>
+          <tr><td class="name">חברות של חופית</td><td class="amt">570<span class="cur">₪</span></td></tr>
+          <tr class="muted"><td class="name">אבא של שלומית (אשתו של מור)<span class="sub">לא נכלל בסופו של דבר</span></td><td class="amt">500<span class="cur">₪</span></td></tr>
+          <tr class="total"><td class="name">סה״כ הכנסות</td><td class="amt">2,270<span class="cur">₪</span></td></tr>
+        </table>
+      </div>
+      <div class="block expense">
+        <div class="block-head"><span>הוצאות</span><span class="dot">▾</span></div>
+        <table>
+          <tr><td class="name">קניות לשבת</td><td class="amt">80<span class="cur">₪</span></td></tr>
+          <tr><td class="name">עופות ובשר לשבת</td><td class="amt">700<span class="cur">₪</span></td></tr>
+          <tr class="total"><td class="name">סה״כ הוצאות</td><td class="amt">780<span class="cur">₪</span></td></tr>
+        </table>
+      </div>
+      <div class="card-foot pos">
+        <span>יתרה למור</span>
+        <span class="amt">1,490 ₪</span>
+      </div>
+    </div>
+    <div class="note">
+      <span>ℹ️</span>
+      <span>מור העביר ליורם <b>990 ₪</b> בביט. הסכום הנותר הוא הכסף שביקשנו ממור לא להעביר.
+      סוכם עם מור שאנחנו מודים לו על המחווה ושעלינו להעניק לו — לא הם לנו 🙏🏻</span>
+    </div>
+  </div>
+
+  <!-- ============ חופית ============ -->
+  <div class="person">
+    <h2>חופית</h2>
+    <div class="card">
+      <div class="block expense">
+        <div class="block-head"><span>הוצאות</span><span class="dot">▾</span></div>
+        <table>
+          <tr><td class="name">אוהל</td><td class="amt">2,400<span class="cur">₪</span></td></tr>
+          <tr><td class="name">השלמה ליורם (ביט)</td><td class="amt">1,100<span class="cur">₪</span></td></tr>
+          <tr><td class="name">קניות אור · בבזה</td><td class="amt">150<span class="cur">₪</span></td></tr>
+          <tr><td class="name">קניות אור · שופרסל</td><td class="amt">600<span class="cur">₪</span></td></tr>
+          <tr><td class="name">קניות אור · חד פעמי</td><td class="amt">200<span class="cur">₪</span></td></tr>
+          <tr class="total"><td class="name">סה״כ הוצאות</td><td class="amt">4,450<span class="cur">₪</span></td></tr>
+        </table>
+      </div>
+      <div class="block income">
+        <div class="block-head"><span>הכנסות</span><span class="dot">▴</span></div>
+        <table>
+          <tr><td class="name">אמנון</td><td class="amt">500<span class="cur">₪</span></td></tr>
+          <tr><td class="name">אחים של אבא</td><td class="amt">3,500<span class="cur">₪</span></td></tr>
+          <tr><td class="name">הורים אור</td><td class="amt">2,000<span class="cur">₪</span></td></tr>
+          <tr class="total"><td class="name">סה״כ הכנסות</td><td class="amt">6,000<span class="cur">₪</span></td></tr>
+        </table>
+      </div>
+      <div class="card-foot pos">
+        <span>יתרה נזילה</span>
+        <span class="amt">1,550 ₪</span>
+      </div>
+    </div>
+  </div>
+
+  <footer class="foot">
+    לכל שאלה או משהו שלא מובן — תשאלו 🙏🏻
+  </footer>
+</div>
