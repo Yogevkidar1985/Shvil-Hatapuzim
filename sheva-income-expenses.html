@@ -170,6 +170,9 @@
   tr.muted td.name, tr.muted td.amt { color: var(--ink-soft); }
   tr.muted td.amt { text-decoration: line-through; }
 
+  /* refund / credit row — reduces the total, shown in income color */
+  tr.credit td.amt { color: var(--income); }
+
   /* balance footer inside card */
   .card-foot {
     display: flex;
@@ -222,11 +225,11 @@
     </div>
     <div class="stat exp">
       <div class="label">סה״כ הוצאות</div>
-      <div class="value">9,280<span class="cur">₪</span></div>
+      <div class="value">9,779.41<span class="cur">₪</span></div>
     </div>
     <div class="stat net">
       <div class="label">יתרה נטו</div>
-      <div class="value">+990<span class="cur">₪</span></div>
+      <div class="value">+490.59<span class="cur">₪</span></div>
     </div>
   </section>
 
@@ -320,6 +323,27 @@
         <span>יתרה נזילה</span>
         <span class="amt">1,550 ₪</span>
       </div>
+    </div>
+  </div>
+
+  <!-- ============ אמנון ============ -->
+  <div class="person">
+    <h2>אמנון</h2>
+    <div class="card">
+      <div class="block expense">
+        <div class="block-head"><span>הוצאות</span><span class="dot">▾</span></div>
+        <table>
+          <tr><td class="name">אושר עד</td><td class="amt">839.90<span class="cur">₪</span></td></tr>
+          <tr class="credit"><td class="name">אושר עד<span class="sub">זיכוי / החזר</span></td><td class="amt">−418.37<span class="cur">₪</span></td></tr>
+          <tr><td class="name">גרון סנטר · שקעים</td><td class="amt">77.88<span class="cur">₪</span></td></tr>
+          <tr class="total"><td class="name">סה״כ הוצאות</td><td class="amt">499.41<span class="cur">₪</span></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="note">
+      <span>ℹ️</span>
+      <span>אמנון תרם <b>500 ₪</b> (מופיע כהכנסה אצל חופית). ההוצאות שלו —
+      <b>499.41 ₪</b> — כמעט זהות לתרומה, כלומר הכסף שתרם שימש בפועל לקניות אלה.</span>
     </div>
   </div>
 
