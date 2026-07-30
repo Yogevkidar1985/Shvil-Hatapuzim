@@ -823,6 +823,30 @@ const DEFAULT_STATE = {
 
 /* ---------- state ---------- */
 let editMode = false;
+/* ---------- מצב צוות: קוד שפותח עריכה + צפייה בהערות פנימיות ---------- */
+const TEAM_PIN = '2673';   // קוד הצוות — ניתן לשינוי
+let teamMode = false;
+try{ teamMode = localStorage.getItem('zrubavel15-team') === '1'; }catch(e){}
+function unlockTeam(){
+  if (teamMode) return true;
+  const pin = prompt('קוד צוות — לעריכת סטטוסים ולצפייה בהערות הפנימיות:');
+  if (pin === null) return false;
+  if (pin.trim() === TEAM_PIN){
+    teamMode = true;
+    try{ localStorage.setItem('zrubavel15-team','1'); }catch(e){}
+    toast('מצב צוות פעיל ✓');
+    return true;
+  }
+  toast('קוד שגוי');
+  return false;
+}
+function lockTeam(){
+  teamMode = false; editMode = false;
+  try{ localStorage.removeItem('zrubavel15-team'); }catch(e){}
+  $('#btn-edit').classList.remove('on'); $('#btn-edit').textContent = '✎';
+  const si = $('#sync-ind'); if (si) si.hidden = true;
+  renderAll(); toast('ננעל — חזרה לתצוגת לקוח');
+}
 let state = loadState();
 
 /* מיזוג מצב שמור עם עדכוני תוכן: הסטטוסים, ההערות והשדות שהמשתמש ערך
@@ -1008,6 +1032,7 @@ function closeMenu(){ if(openMenu){openMenu.remove();openMenu=null;} }
 document.addEventListener('click', e=>{ if(openMenu && !openMenu.contains(e.target)) closeMenu(); }, true);
 
 function makeStatusPill(a){
+  if (!teamMode) return makePillEl(a.status, false);   // לקוח רואה סטטוס בלבד — ללא עריכה
   const b = makePillEl(a.status, true);
   b.title = 'לחיצה לשינוי סטטוס';
   b.setAttribute('aria-label', `סטטוס: ${STATUSES[a.status]?.label} — לחיצה לשינוי`);
@@ -1105,7 +1130,7 @@ function showPop(a, anchor){
   if (a.outdoor) rows.push(['מרפסת / גינה', a.outdoor]);
   if (a.facing) rows.push(['חזית', a.facing]);
   if (a.note) rows.push(['הערה', a.note]);
-  if (a.internal) rows.push(['🔒 פנימי', a.internal]);
+  if (a.internal && teamMode) rows.push(['🔒 פנימי', a.internal]);   // רק לצוות
   const plan = PLANS[a.plan];
   pop = el('div','unit-pop');
   pop.setAttribute('role','dialog'); pop.setAttribute('aria-label', a.name);
@@ -1479,7 +1504,7 @@ function renderFloors(){
         }
         row.appendChild(bot);
         if (a.note) row.appendChild(el('div','note', esc(a.note)));
-        if (a.internal) row.appendChild(el('div','apt-internal', '🔒 '+esc(a.internal)));   // הערת צוות פנימית
+        if (a.internal && teamMode) row.appendChild(el('div','apt-internal', '🔒 '+esc(a.internal)));   // הערת צוות — רק לצוות
       }
       card.appendChild(row);
     }
@@ -1502,6 +1527,10 @@ function renderFloors(){
       }
     });
     wrap.appendChild(reset);
+    const lock = el('button','mini-btn','🔒 נעילה — חזרה לתצוגת לקוח');
+    lock.style.alignSelf='center';
+    lock.addEventListener('click', lockTeam);   // מסתיר הערות פנימיות ועריכה עד להזנת הקוד מחדש
+    wrap.appendChild(lock);
   }
 }
 
@@ -1543,12 +1572,14 @@ function renderAll(){ hidePop(); renderMeta(); renderKpis(); renderBld(); render
 
 /* ---------- header actions ---------- */
 $('#btn-edit').addEventListener('click',()=>{
+  // כניסה למצב צוות מוגנת בקוד — צופה רגיל לא יכול לערוך או לראות הערות פנימיות
+  if (!teamMode){ if (!unlockTeam()) return; }
   editMode = !editMode;
   $('#btn-edit').classList.toggle('on',editMode);
   $('#btn-edit').textContent = editMode ? '✓ סיום עריכה' : '✎';
   renderAll();
-  // מחוון השמירה גלוי רק במצב עריכה; עם הכניסה מקבעים דלי בענן
-  const si = $('#sync-ind'); if (si) si.hidden = !editMode;
+  // מחוון השמירה גלוי לצוות; עם הכניסה מקבעים דלי בענן
+  const si = $('#sync-ind'); if (si) si.hidden = !teamMode;
   if (editMode) cloudSave();
   toast(editMode?'מצב עריכה פעיל — השינויים נשמרים':'מצב תצוגה');
 });
@@ -1635,6 +1666,7 @@ function renderGallery(){
 renderAll();
 renderGallery();
 setTab('photo');
+if (teamMode){ const si=$('#sync-ind'); if(si) si.hidden=false; }   // מכשיר צוות — מציג מחוון שמירה מהטעינה
 // ריפוי-עצמי: אם הקישור נשא מצב ישן — מעדכנים אותו למצב שנטען בפועל
 if (location.hash.startsWith('#d=')){
   try{ history.replaceState(null,'', location.pathname + location.search +
