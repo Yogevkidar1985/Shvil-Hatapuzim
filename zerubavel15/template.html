@@ -455,12 +455,26 @@
   /* status pill inside a card — ringed for prominence */
   .apt-top .pill{box-shadow:inset 0 0 0 1px currentColor}
   .smenu{
-    position:absolute; z-index:80; background:rgba(255,253,249,.94); backdrop-filter:blur(14px);
+    position:absolute; z-index:80; width:250px; background:rgba(255,253,249,.96); backdrop-filter:blur(14px);
     border:1px solid var(--line); border-radius:16px;
     box-shadow:0 18px 48px rgba(10,14,40,.28); padding:9px; display:flex; flex-direction:column; gap:6px;
     animation:popIn .16s ease;
   }
   .smenu .pill{justify-content:flex-start}
+  /* הערה פנימית לצוות בתוך תפריט הסטטוס */
+  .smenu-note{display:flex; flex-direction:column; gap:7px; margin-top:6px; padding-top:9px; border-top:1px solid var(--line)}
+  .smenu-note-lbl{font-size:11px; font-weight:800; color:var(--tan-deep); letter-spacing:.01em}
+  .smenu-note textarea{
+    width:100%; box-sizing:border-box; resize:vertical; min-height:44px;
+    border:1px solid var(--line); border-radius:10px; padding:8px 10px;
+    font:inherit; font-size:13px; color:var(--ink); background:#fff;
+  }
+  .smenu-note textarea:focus{outline:none; border-color:var(--tan-deep)}
+  .smenu-save{
+    border:none; border-radius:9px; cursor:pointer; padding:8px; font-weight:800; font-size:12.5px;
+    background:var(--navy); color:#fff; transition:background .15s;
+  }
+  .smenu-save:hover{background:var(--navy-soft)}
 
   /* ================= FLOOR CARDS ================= */
   .floors{display:flex; flex-direction:column; gap:14px}
@@ -511,6 +525,12 @@
   .chip svg{flex:0 0 auto; color:var(--tan-deep); opacity:.95}
   .chip b{color:var(--navy); font-weight:800; font-variant-numeric:tabular-nums}
   .apt .note{font-size:12.5px; color:var(--tan-deep); font-weight:600}
+  /* הערת צוות פנימית — סימון מובחן, לא כמו הערת השיווק ללקוחות */
+  .apt-internal{
+    font-size:12.5px; font-weight:700; color:var(--navy); align-self:flex-start;
+    background:rgba(27,36,103,.06); border:1px dashed rgba(27,36,103,.28);
+    border-radius:9px; padding:6px 11px; line-height:1.4;
+  }
   .apt .info{flex:1; min-width:0; display:flex; flex-direction:column; gap:10px}
 
   /* edit fields */
@@ -772,7 +792,7 @@ const PLANS = {
 const PLAN_ORDER = ['ground','typical','floor6','roof'];
 
 const apt = (id,name,rooms,size,outdoor,facing,kind,plan,status)=>(
-  {id,name,rooms,size,outdoor,facing,kind,plan,status:status||'marketing',note:''});
+  {id,name,rooms,size,outdoor,facing,kind,plan,status:status||'marketing',note:'',internal:''});
 
 const DEFAULT_STATE = {
   // dataRev עולה רק כשנדחף לדף עדכון תוכן; הסטטוסים והעריכות של המשתמש
@@ -821,6 +841,7 @@ function hydrate(saved){
     if (!s) continue;
     a.status = s.status || a.status;          // הסטטוס של המשתמש תמיד גובר
     if (s.note) a.note = s.note;
+    if (s.internal) a.internal = s.internal;   // הערה פנימית של הצוות נשמרת גם בעדכוני תוכן
     for (const k of (s._ed||[])) if (s[k]!=null) a[k]=s[k];   // שדות שהמשתמש ערך ידנית
     if (s._ed) a._ed = s._ed;
     delete savedApts[a.id];
@@ -996,13 +1017,35 @@ function makeStatusPill(a){
     for (const k of Object.keys(STATUSES)){
       const o = makePillEl(k, true);
       if (k===a.status) o.innerHTML += ' ✓';
-      o.addEventListener('click', ()=>{ a.status=k; closeMenu(); saveState(true); toast(`עודכן: ${STATUSES[k].label}`); });
+      o.addEventListener('click', ()=>{
+        a.internal = ta.value.trim();   // שומרים גם הערה שהוקלדה זה עתה
+        a.status=k; saveState(true); toast(`עודכן: ${STATUSES[k].label}`);
+        // מרעננים את הכרטיס ומשקפים את הבחירה בתפריט (הסימון ✓ עובר לסטטוס שנבחר)
+        [...m.querySelectorAll('.pill')].forEach(pel=>{ pel.innerHTML = pel.textContent.replace(/ ✓$/,''); });
+        o.innerHTML += ' ✓';
+      });
       m.appendChild(o);
     }
+    // ----- הערה פנימית לצוות: למי הדירה משוריינת / לדיון -----
+    const noteBox = el('div','smenu-note');
+    noteBox.appendChild(el('div','smenu-note-lbl','🔒 הערה פנימית — לצוות בלבד'));
+    const ta = el('textarea'); ta.rows = 2;
+    ta.value = a.internal || '';
+    ta.placeholder = 'למשל: משוריין למשפחת כהן · ממתין לחתימת חוזה';
+    ta.addEventListener('click', e=>e.stopPropagation());
+    ta.addEventListener('keydown', e=>e.stopPropagation());
+    noteBox.appendChild(ta);
+    const save = el('button','smenu-save','שמירת הערה');
+    save.addEventListener('click', ()=>{ a.internal = ta.value.trim(); closeMenu(); saveState(true);
+      toast(a.internal ? 'הערה פנימית נשמרה ✓' : 'ההערה נמחקה'); });
+    noteBox.appendChild(save);
+    m.appendChild(noteBox);
+
     document.body.appendChild(m);
+    const W = 250;
     const r = b.getBoundingClientRect();
     m.style.top = (r.bottom + window.scrollY + 8)+'px';
-    let x = r.left + window.scrollX; if (x + 175 > document.documentElement.clientWidth) x = r.right + window.scrollX - 175;
+    let x = r.left + window.scrollX; if (x + W > document.documentElement.clientWidth) x = r.right + window.scrollX - W;
     m.style.left = Math.max(8,x)+'px';
     openMenu = m;
   });
@@ -1062,6 +1105,7 @@ function showPop(a, anchor){
   if (a.outdoor) rows.push(['מרפסת / גינה', a.outdoor]);
   if (a.facing) rows.push(['חזית', a.facing]);
   if (a.note) rows.push(['הערה', a.note]);
+  if (a.internal) rows.push(['🔒 פנימי', a.internal]);
   const plan = PLANS[a.plan];
   pop = el('div','unit-pop');
   pop.setAttribute('role','dialog'); pop.setAttribute('aria-label', a.name);
@@ -1386,6 +1430,7 @@ function renderFloors(){
           <label class="efield">מרפסת / גינה<input data-k="outdoor" value="${esc(a.outdoor)}"></label>
           <label class="efield">חזית / כיוון<input data-k="facing" value="${esc(a.facing)}"></label>
           <label class="efield">הערה (יוצג לקונים)<input data-k="note" value="${esc(a.note)}" placeholder="למשל: מחיר, מועד מסירה"></label>
+          <label class="efield">🔒 הערה פנימית (לצוות)<input data-k="internal" value="${esc(a.internal||'')}" placeholder="למשל: משוריין למשפחת כהן"></label>
         </div>`;
         info.querySelectorAll('input').forEach(inp=>{
           inp.addEventListener('change',()=>{
@@ -1434,6 +1479,7 @@ function renderFloors(){
         }
         row.appendChild(bot);
         if (a.note) row.appendChild(el('div','note', esc(a.note)));
+        if (a.internal) row.appendChild(el('div','apt-internal', '🔒 '+esc(a.internal)));   // הערת צוות פנימית
       }
       card.appendChild(row);
     }
