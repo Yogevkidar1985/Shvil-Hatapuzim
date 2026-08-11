@@ -1,4 +1,4 @@
-<title>מחשבון הוצאות · שבעה אבא</title>
+<title>הוצאות אבא · מחשבון התחשבנות</title>
 <style>
   :root {
     --paper: #f6f3ee; --card: #fffdfa; --ink: #2b2825; --ink-soft: #6f695f;
@@ -79,19 +79,24 @@
   /* ---- Expenses table ---- */
   .table-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
   .table-scroll { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; min-width: 520px; }
-  thead th { text-align: right; font-size: .78rem; color: var(--ink-soft); font-weight: 700; padding: 11px 14px; background: color-mix(in srgb, var(--card) 100%, var(--ink) 4%); border-bottom: 1px solid var(--line); }
-  thead th.amt-col, thead th.pay-col { text-align: right; }
-  tbody td { padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  table { width: 100%; border-collapse: collapse; min-width: 540px; }
+  thead th { text-align: right; font-size: .74rem; letter-spacing: .04em; text-transform: none; color: var(--ink-soft); font-weight: 700; padding: 12px 16px; background: color-mix(in srgb, var(--card) 100%, var(--ink) 5%); border-bottom: 1px solid var(--line-strong); }
+  th.idx-col, td.idx-cell { width: 34px; text-align: center; color: var(--ink-soft); font-weight: 700; font-size: .82rem; }
+  tbody td { padding: 9px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--card) 100%, var(--ink) 2.5%); }
+  tbody tr:hover td { background: var(--accent-bg); }
   tbody tr:last-child td { border-bottom: none; }
-  .desc-input { width: 100%; min-width: 130px; }
-  .amt-input { width: 108px; text-align: left; font-weight: 700; }
-  .pay-select { width: 100%; min-width: 120px; }
+  .desc-input { width: 100%; min-width: 150px; }
+  .amt-wrap { display: inline-flex; align-items: center; gap: 6px; }
+  .amt-input { width: 96px; text-align: left; font-weight: 700; }
+  .amt-cur { color: var(--ink-soft); font-weight: 600; font-size: .9rem; }
+  .pay-select { width: 100%; min-width: 128px; text-align: right; }
   .pay-select.unpaid { color: var(--expense); font-weight: 700; }
-  .row-del { border: none; background: transparent; color: var(--ink-soft); cursor: pointer; font-size: 1.1rem; padding: 4px 6px; border-radius: 8px; }
+  td.del-cell { width: 44px; text-align: center; }
+  .row-del { border: none; background: transparent; color: var(--ink-soft); cursor: pointer; font-size: 1.05rem; padding: 5px 7px; border-radius: 8px; }
   .row-del:hover { background: var(--expense-bg); color: var(--expense); }
-  tr.total-row td { background: color-mix(in srgb, var(--card) 100%, var(--ink) 5%); font-weight: 800; border-top: 2px solid var(--line-strong); }
-  tr.total-row .amt-cell { text-align: left; color: var(--expense); font-size: 1.05rem; padding-inline-end: 22px; }
+  tr.total-row td { background: color-mix(in srgb, var(--card) 100%, var(--ink) 6%); font-weight: 800; border-top: 2px solid var(--line-strong); border-bottom: none; }
+  tr.total-row .amt-cell { text-align: left; color: var(--expense); font-size: 1.08rem; white-space: nowrap; }
 
   .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
   button.btn { font: inherit; font-weight: 700; cursor: pointer; border-radius: 10px; padding: 9px 16px; border: 1px solid var(--line-strong); background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
@@ -130,7 +135,7 @@
 
 <div class="wrap" dir="rtl">
   <p class="eyebrow">מחשבון התחשבנות</p>
-  <h1>הוצאות · שבעה אבא</h1>
+  <h1>הוצאות אבא</h1>
   <p class="subtitle">כמו Splitwise — בוחרים מי שילם בכל הוצאה, ורואים כמה נשאר לכל אחד לשלם. הכול ניתן לעריכה.</p>
 
   <section class="summary">
@@ -148,15 +153,17 @@
       <table>
         <thead>
           <tr>
+            <th class="idx-col">#</th>
             <th>הוצאה</th>
-            <th class="amt-col">סכום</th>
-            <th class="pay-col">מי שילם</th>
+            <th>סכום</th>
+            <th>מי שילם</th>
             <th></th>
           </tr>
         </thead>
         <tbody id="exp-body"></tbody>
         <tfoot>
           <tr class="total-row">
+            <td class="idx-cell"></td>
             <td>סה״כ הוצאות</td>
             <td class="amt-cell" id="foot-total">—</td>
             <td colspan="2"></td>
@@ -186,11 +193,10 @@
 <script>
 (function(){
   "use strict";
-  var KEY = "sheva-splitter-v1";
+  var KEY = "sheva-splitter-v2";
   var DEFAULT = {
     people: ["אביחי","יוגב","חופית"],
     expenses: [
-      { desc:"אבא", amount:30, payer:null },
       { desc:"בית כנסת · אולם אמנון", amount:350, payer:"חופית" },
       { desc:"סעודה (60 מנות × 48)", amount:2880, payer:"יוגב" },
       { desc:"מצבה", amount:4000, payer:null }
@@ -289,6 +295,11 @@
     state.expenses.forEach(function(e, i){
       var tr = document.createElement("tr");
 
+      // index
+      var tdI = document.createElement("td");
+      tdI.className = "idx-cell"; tdI.textContent = (i+1);
+      tr.appendChild(tdI);
+
       // description
       var tdD = document.createElement("td");
       var di = document.createElement("input");
@@ -298,11 +309,14 @@
 
       // amount
       var tdA = document.createElement("td");
+      var wrap = document.createElement("div"); wrap.className = "amt-wrap";
       var ai = document.createElement("input");
       ai.type = "number"; ai.className = "amt-input"; ai.min = "0"; ai.step = "0.01";
       ai.value = e.amount;
       ai.oninput = function(){ e.amount = ai.value===""?0:Number(ai.value); render(); };
-      tdA.appendChild(ai); tr.appendChild(tdA);
+      var acur = document.createElement("span"); acur.className = "amt-cur"; acur.textContent = "₪";
+      wrap.appendChild(ai); wrap.appendChild(acur);
+      tdA.appendChild(wrap); tr.appendChild(tdA);
 
       // payer
       var tdP = document.createElement("td");
@@ -324,6 +338,7 @@
 
       // delete
       var tdX = document.createElement("td");
+      tdX.className = "del-cell";
       var del = document.createElement("button");
       del.className = "row-del"; del.type="button"; del.textContent = "🗑"; del.title = "מחק";
       del.onclick = function(){ state.expenses.splice(i,1); render(); };
