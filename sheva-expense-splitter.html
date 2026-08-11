@@ -237,17 +237,24 @@
   }
 
   // ---------- render ----------
-  function render(){
+  // recalc() updates only the computed views (totals, balances, settlement).
+  // It never rebuilds the expenses rows, so an input keeps focus while typing.
+  function recalc(){
     var c = compute();
     document.getElementById("st-total").innerHTML = fmt(c.total)+'<span class="cur">₪</span>';
     document.getElementById("st-share").innerHTML = fmt(c.share)+'<span class="cur">₪</span>';
     document.getElementById("st-paid").innerHTML = fmt(c.paidTotal)+'<span class="cur">₪</span>';
     document.getElementById("foot-total").textContent = cur(c.total);
-    renderPeople();
-    renderExpenses();
     renderBalances(c);
     renderSettle(c);
     save();
+  }
+  // render() rebuilds the full structure — call only on structural changes
+  // (add/remove expense, add/remove participant, reset).
+  function render(){
+    renderPeople();
+    renderExpenses();
+    recalc();
   }
 
   function renderPeople(){
@@ -313,7 +320,7 @@
       var ai = document.createElement("input");
       ai.type = "number"; ai.className = "amt-input"; ai.min = "0"; ai.step = "0.01";
       ai.value = e.amount;
-      ai.oninput = function(){ e.amount = ai.value===""?0:Number(ai.value); render(); };
+      ai.oninput = function(){ e.amount = ai.value===""?0:Number(ai.value); recalc(); };
       var acur = document.createElement("span"); acur.className = "amt-cur"; acur.textContent = "₪";
       wrap.appendChild(ai); wrap.appendChild(acur);
       tdA.appendChild(wrap); tr.appendChild(tdA);
@@ -333,7 +340,7 @@
       });
       sel.value = e.payer || "";
       if(!e.payer) sel.classList.add("unpaid");
-      sel.onchange = function(){ e.payer = sel.value || null; render(); };
+      sel.onchange = function(){ e.payer = sel.value || null; sel.classList.toggle("unpaid", !e.payer); recalc(); };
       tdP.appendChild(sel); tr.appendChild(tdP);
 
       // delete
