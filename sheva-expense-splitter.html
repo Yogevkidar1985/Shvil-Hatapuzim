@@ -120,15 +120,26 @@
   .bfoot.even { background: color-mix(in srgb,var(--card) 100%,var(--ink) 4%); color: var(--ink-soft); }
 
   /* ---- Settlement ---- */
-  .settle { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 6px 18px; }
-  .settle .srow { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: .96rem; }
-  .settle .srow:last-child { border-bottom: none; }
-  .settle .who { font-weight: 800; }
-  .settle .arrow { color: var(--ink-soft); font-weight: 600; font-size: .9rem; }
-  .settle .amt { margin-inline-start: auto; font-weight: 800; color: var(--accent); }
-  .settle .empty { padding: 14px 0; color: var(--ink-soft); }
-  .note { display: flex; gap: 8px; margin-top: 12px; padding: 10px 14px; background: var(--card); border: 1px solid var(--line); border-inline-start: 3px solid var(--accent); border-radius: 10px; font-size: .86rem; color: var(--ink-soft); }
-  .note b { color: var(--ink); }
+  .settle { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+  .settle-intro { padding: 14px 18px; border-bottom: 1px solid var(--line); font-size: .93rem; color: var(--ink-soft); line-height: 1.6; }
+  .settle-intro b { color: var(--ink); font-weight: 800; }
+  .settle-label { padding: 13px 18px 2px; font-size: .76rem; font-weight: 800; color: var(--ink-soft); letter-spacing: .04em; }
+  .srow { padding: 12px 18px; border-bottom: 1px solid var(--line); }
+  .srow:last-child { border-bottom: none; }
+  .sline { display: flex; align-items: center; gap: 12px; }
+  .sflow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .sperson { font-weight: 800; padding: 4px 12px; border-radius: 999px; font-size: .94rem; white-space: nowrap; }
+  .sperson.pays { background: var(--expense-bg); color: var(--expense); }
+  .sperson.gets { background: var(--income-bg); color: var(--income); }
+  .sword { color: var(--ink-soft); font-size: .88rem; font-weight: 600; }
+  .samt { margin-inline-start: auto; font-weight: 800; font-size: 1.1rem; color: var(--accent); white-space: nowrap; }
+  .sreason { color: var(--ink-soft); font-size: .82rem; margin-top: 7px; padding-inline-start: 2px; }
+  .settle-empty { padding: 16px 18px; color: var(--ink-soft); }
+  .settle-unpaid { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: var(--expense-bg); border-top: 2px solid var(--line-strong); }
+  .settle-unpaid .u-txt { line-height: 1.5; }
+  .settle-unpaid .u-txt b { color: var(--expense); }
+  .settle-unpaid .u-sub { display: block; color: var(--ink-soft); font-size: .82rem; margin-top: 2px; }
+  .settle-unpaid .u-amt { margin-inline-start: auto; font-weight: 800; font-size: 1.1rem; color: var(--expense); white-space: nowrap; }
 
   footer.foot { margin-top: 34px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: .84rem; text-align: center; }
 </style>
@@ -180,12 +191,8 @@
   <h2 class="sec">כמה נשאר לכל אחד לשלם</h2>
   <div class="balances" id="balances"></div>
 
-  <h2 class="sec">התחשבנות <span class="hint">— מי מעביר למי כדי לאזן</span></h2>
+  <h2 class="sec">התחשבנות <span class="hint">— מי מעביר למי, וכמה עוד צריך לשלם</span></h2>
   <div class="settle" id="settle"></div>
-  <div class="note" id="settle-note" style="display:none">
-    <span>ℹ️</span>
-    <span id="settle-note-txt"></span>
-  </div>
 
   <footer class="foot">כל השינויים נשמרים אוטומטית במכשיר הזה · לכל שאלה — תשאלו 🙏🏻</footer>
 </div>
@@ -389,16 +396,21 @@
   function renderSettle(c){
     var host = document.getElementById("settle");
     host.innerHTML = "";
-    var note = document.getElementById("settle-note");
-    var noteTxt = document.getElementById("settle-note-txt");
 
+    // intro — the goal, in plain words
+    var intro = document.createElement("div");
+    intro.className = "settle-intro";
+    intro.innerHTML = 'המטרה: כל אחד מבין ' + state.people.length + ' המשתתפים נושא בחלק שווה של <b>' + cur(c.share) + '</b>.';
+    host.appendChild(intro);
+
+    // who overpaid (creditors) vs who underpaid (debtors)
     var debtors = [], creditors = [];
     state.people.forEach(function(name){
       var bal = (c.paid[name]||0) - c.share;
       if(bal < -0.005) debtors.push({ n:name, amt:-bal });
       else if(bal > 0.005) creditors.push({ n:name, amt:bal });
     });
-    // greedy match debtors -> creditors
+    // greedy match debtors -> creditors (reimburse those who overpaid)
     var tx = [];
     var di=0, ci=0;
     var D = debtors.map(function(x){return {n:x.n,amt:x.amt};});
@@ -410,26 +422,48 @@
       if(D[di].amt < 0.005) di++;
       if(C[ci].amt < 0.005) ci++;
     }
-    if(tx.length === 0){
-      var e = document.createElement("div");
-      e.className = "empty"; e.textContent = "אין העברות נדרשות בין המשתתפים כרגע.";
-      host.appendChild(e);
-    } else {
+
+    // section 1 — transfers between participants
+    if(tx.length){
+      var lbl = document.createElement("div");
+      lbl.className = "settle-label";
+      lbl.textContent = "העברות בין המשתתפים";
+      host.appendChild(lbl);
       tx.forEach(function(t){
         var row = document.createElement("div");
         row.className = "srow";
-        row.innerHTML = '<span class="who">'+esc(t.from)+'</span><span class="arrow">משלם ל־</span><span class="who">'+esc(t.to)+'</span><span class="amt">'+cur(t.amt)+'</span>';
+        row.innerHTML =
+          '<div class="sline">' +
+            '<div class="sflow">' +
+              '<span class="sperson pays">' + esc(t.from) + '</span>' +
+              '<span class="sword">מעביר ל־</span>' +
+              '<span class="sperson gets">' + esc(t.to) + '</span>' +
+            '</div>' +
+            '<span class="samt">' + cur(t.amt) + '</span>' +
+          '</div>' +
+          '<div class="sreason">החזר עבור התשלום העודף של ' + esc(t.to) + ' (שילם/ה יותר מחלקו/ה).</div>';
         host.appendChild(row);
       });
-    }
-    // leftover debt = unpaid expenses (no payer) that still must be paid to vendors
-    var leftover = 0;
-    for(var k=di; k<D.length; k++) leftover += D[k].amt;
-    if(leftover > 0.005){
-      note.style.display = "";
-      noteTxt.innerHTML = 'בנוסף נותרו <b>'+cur(leftover)+'</b> של הוצאות שעדיין <b>לא שולמו</b> (מסומנות "טרם שולם"). כשמשלמים אותן ובוחרים מי שילם — ההתחשבנות תתעדכן.';
     } else {
-      note.style.display = "none";
+      var e = document.createElement("div");
+      e.className = "settle-empty";
+      e.textContent = "אף אחד לא שילם מעבר לחלקו — אין העברות בין המשתתפים.";
+      host.appendChild(e);
+    }
+
+    // section 2 — expenses not paid yet (owed to vendors, not to each other)
+    var unpaid = state.expenses.filter(function(x){ return !x.payer && (Number(x.amount)||0) > 0; });
+    var unpaidSum = unpaid.reduce(function(a,x){ return a + (Number(x.amount)||0); }, 0);
+    if(unpaidSum > 0.005){
+      var names = unpaid.map(function(x){ return (x.desc||"ללא שם").split("·")[0].trim(); }).join(", ");
+      var u = document.createElement("div");
+      u.className = "settle-unpaid";
+      u.innerHTML =
+        '<div class="u-txt"><b>עדיין לא שולם</b>' +
+          '<span class="u-sub">' + esc(names) + ' — טרם נבחר מי משלם. כשישולם, בחרו מי שילם וההתחשבנות תתעדכן.</span>' +
+        '</div>' +
+        '<span class="u-amt">' + cur(unpaidSum) + '</span>';
+      host.appendChild(u);
     }
   }
 
