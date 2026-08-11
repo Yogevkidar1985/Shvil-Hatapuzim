@@ -326,7 +326,8 @@
       var wrap = document.createElement("div"); wrap.className = "amt-wrap";
       var ai = document.createElement("input");
       ai.type = "number"; ai.className = "amt-input"; ai.min = "0"; ai.step = "0.01";
-      ai.value = e.amount;
+      ai.value = (e.amount === 0 || e.amount === "" || e.amount == null) ? "" : e.amount;
+      ai.placeholder = "0";
       ai.oninput = function(){ e.amount = ai.value===""?0:Number(ai.value); recalc(); };
       var acur = document.createElement("span"); acur.className = "amt-cur"; acur.textContent = "₪";
       wrap.appendChild(ai); wrap.appendChild(acur);
@@ -471,7 +472,7 @@
 
   // ---------- events ----------
   document.getElementById("add-exp").onclick = function(){
-    state.expenses.push({ desc:"", amount:0, payer:null });
+    state.expenses.push({ desc:"", amount:"", payer:null });
     render();
     var inputs = document.querySelectorAll("#exp-body .desc-input");
     if(inputs.length) inputs[inputs.length-1].focus();
