@@ -476,6 +476,71 @@
   }
   .smenu-save:hover{background:var(--navy-soft)}
 
+  /* ================= LEADS — מערכת ניהול מתעניינים (צוות בלבד) ================= */
+  .leads-sec{max-width:1320px; margin:0 auto 46px; padding:0 26px}
+  .leads-card{background:var(--paper); border:1px solid var(--line); border-radius:var(--r-lg);
+    box-shadow:0 14px 40px rgba(16,21,62,.08); padding:22px 22px 18px}
+  .leads-head{display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:14px}
+  .leads-title{margin:0; font-size:20px; color:var(--navy); font-weight:800; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .leads-lock{font-size:11px; font-weight:800; color:var(--navy); background:rgba(27,36,103,.07);
+    border:1px dashed rgba(27,36,103,.3); border-radius:999px; padding:4px 11px}
+  .leads-sub{margin:4px 0 0; font-size:12.5px; color:var(--muted); font-weight:600}
+  .leads-actions{display:flex; gap:8px; flex-wrap:wrap}
+  .lead-btn{border:none; border-radius:11px; cursor:pointer; padding:10px 16px; font:inherit;
+    font-weight:800; font-size:13.5px; background:var(--navy); color:#fff; transition:background .15s, transform .12s}
+  .lead-btn:hover{background:var(--navy-soft); transform:translateY(-1px)}
+  .lead-btn.ghost{background:transparent; color:var(--navy); border:1px solid var(--line)}
+  .lead-btn.ghost:hover{background:var(--tan-soft); border-color:var(--tan)}
+  .leads-tools{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px}
+  .leads-filters{display:flex; gap:7px; flex-wrap:wrap}
+  .lfilter{border:1px solid var(--line); background:#fff; border-radius:999px; cursor:pointer; font:inherit;
+    font-size:12px; font-weight:700; color:var(--ink); padding:6px 12px; display:inline-flex; align-items:center; gap:6px;
+    transition:border-color .15s, background .15s}
+  .lfilter .dot{width:8px; height:8px; border-radius:50%}
+  .lfilter.act{background:var(--navy); border-color:var(--navy); color:#fff}
+  .leads-search{border:1px solid var(--line); border-radius:11px; padding:9px 13px; font:inherit; font-size:13px;
+    color:var(--ink); background:#fff; min-width:min(260px,100%)}
+  .leads-search:focus{outline:none; border-color:var(--tan-deep)}
+  .leads-list{display:flex; flex-direction:column; gap:12px}
+  .leads-empty{text-align:center; color:var(--muted); font-weight:600; font-size:14px; padding:26px 0 18px}
+  .lead-row{border:1px solid var(--line); border-radius:var(--r-md); background:#fff; padding:14px 16px;
+    display:flex; flex-direction:column; gap:10px}
+  .lead-row.dropped{opacity:.62}
+  .lead-top{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .lead-name{flex:1; min-width:170px; border:1px solid transparent; border-radius:9px; padding:7px 10px;
+    font:inherit; font-size:15.5px; font-weight:800; color:var(--navy); background:transparent}
+  .lead-row input:hover, .lead-row textarea:hover{border-color:var(--line)}
+  .lead-row input:focus, .lead-row textarea:focus, .lead-row select:focus{outline:none; border-color:var(--tan-deep); background:#fff}
+  .lead-when{font-size:11px; color:var(--muted); font-weight:600; white-space:nowrap}
+  .lead-del{border:none; background:none; cursor:pointer; font-size:15px; color:var(--muted); padding:4px 6px; border-radius:8px}
+  .lead-del:hover{background:#FBE9E7; color:#C62828}
+  .lead-grid{display:grid; grid-template-columns:1.1fr 1.3fr 1.2fr; gap:9px}
+  .lfield{display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--muted); font-weight:700}
+  .lfield input, .lfield select{border:1px solid var(--line); border-radius:9px; padding:8px 10px; font:inherit;
+    font-size:13.5px; color:var(--ink); background:#FDFBF7; width:100%; box-sizing:border-box}
+  .lfield .lfield-in{display:flex; gap:6px; align-items:center}
+  .lfield .lfield-in input{flex:1; min-width:0}
+  .lgo{flex:none; display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px;
+    border:1px solid var(--line); border-radius:9px; background:#fff; text-decoration:none; font-size:14px;
+    transition:background .15s, border-color .15s}
+  .lgo:hover{background:var(--tan-soft); border-color:var(--tan)}
+  .lgo.off{opacity:.35; pointer-events:none}
+  .lead-notes{border:1px solid var(--line); border-radius:9px; padding:8px 10px; font:inherit; font-size:13px;
+    color:var(--ink); background:#FDFBF7; resize:vertical; min-height:38px; width:100%; box-sizing:border-box}
+  .lead-aptstat{display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--muted); margin-top:4px}
+  .lead-aptstat .pill{font-size:10.5px; padding:3px 9px}
+  /* צ'יפ ספירת מתעניינים על כרטיס דירה (צוות) */
+  .apt-leads{border:none; cursor:pointer; font:inherit; align-self:flex-start; display:inline-flex; align-items:center; gap:6px;
+    font-size:12px; font-weight:800; color:var(--navy); background:rgba(27,36,103,.06);
+    border:1px dashed rgba(27,36,103,.28); border-radius:9px; padding:6px 11px; transition:background .15s}
+  .apt-leads:hover{background:rgba(27,36,103,.12)}
+  @media (max-width:760px){
+    .lead-grid{grid-template-columns:1fr}
+    .leads-card{padding:16px 14px 14px}
+    .leads-tools{flex-direction:column; align-items:stretch}
+    .leads-search{min-width:0}
+  }
+
   /* ================= FLOOR CARDS ================= */
   .floors{display:flex; flex-direction:column; gap:14px}
   .floor{
@@ -762,6 +827,27 @@
   </aside>
 </main>
 
+<!-- ===== מערכת ניהול מתעניינים — מוצגת לצוות בלבד (מאחורי קוד הצוות) ===== -->
+<section class="leads-sec" id="leads-sec" hidden>
+  <div class="leads-card">
+    <div class="leads-head">
+      <div>
+        <h2 class="leads-title">ניהול מתעניינים <span class="leads-lock">🔒 לצוות בלבד</span></h2>
+        <p class="leads-sub" id="leads-count"></p>
+      </div>
+      <div class="leads-actions">
+        <button class="lead-btn ghost" id="lead-export" title="הורדת הרשימה כקובץ אקסל (CSV)">⬇ ייצוא</button>
+        <button class="lead-btn" id="lead-add">+ מתעניין חדש</button>
+      </div>
+    </div>
+    <div class="leads-tools">
+      <div class="leads-filters" id="leads-filters"></div>
+      <input class="leads-search" id="leads-search" type="search" placeholder="חיפוש לפי שם / טלפון / אימייל…">
+    </div>
+    <div class="leads-list" id="leads-list"></div>
+  </div>
+</section>
+
 <footer class="site">
   <img class="foot-logo" src="__LOGO__" alt="זרובבל 15">
   <p class="foot-lead" id="m-foot1">הזדמנות אחרונה להצטרף לנבחרת מנצחת</p>
@@ -819,7 +905,19 @@ const DEFAULT_STATE = {
       apt('a2','דירה 2','2 חדרים','46','מרפסת 12 מ״ר','חזית לרחוב אהרונסון','small','typical')]},
     {id:'f1',num:1,label:'קומה 1',apts:[apt('a1','דירת גן · דירה 1','','50','גינה 46 מ״ר','כניסה פרטית','garden','ground','sold')]},
   ],
+  leads:[],   // מתעניינים (לידים) — מנוהל במצב צוות בלבד, לא נכתב לקישור השיתוף
 };
+
+/* סטטוסי תהליך ההחתמה של מתעניין */
+const LEAD_STATUSES = {
+  meeting: {label:'מתעניין בפגישה',        color:'#2563C9'},
+  draft:   {label:'נשלחה טיוטה להחתמה',   color:'#E08A12'},
+  signed:  {label:'נחתם טופס החתמה',      color:'#159B4E'},
+  dropped: {label:'לא רלוונטי / ירד מהפרק', color:'#7A7E92'},
+};
+const newLead = ()=>({ id:'L'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+  name:'', phone:'', email:'', apt:'', status:'meeting', notes:'',
+  created:Date.now(), updated:Date.now() });
 
 /* ---------- state ---------- */
 let editMode = false;
@@ -855,6 +953,7 @@ let state = loadState();
 function hydrate(saved){
   if (!saved || !saved.floors) return null;
   const savedRev = (saved.meta && saved.meta.dataRev) || 0;
+  saved.leads = Array.isArray(saved.leads) ? saved.leads : [];
   if (savedRev >= DEFAULT_STATE.meta.dataRev) return saved;   // המצב השמור עדכני — כמו שהוא
   const base = JSON.parse(JSON.stringify(DEFAULT_STATE));
   // אינדקס הדירות השמורות לפי מזהה
@@ -883,6 +982,7 @@ function hydrate(saved){
     base.meta._edited = saved.meta._edited || [];
     for (const k of base.meta._edited) if (saved.meta[k]!=null) base.meta[k]=saved.meta[k];
   }
+  base.leads = saved.leads;   // רשימת המתעניינים שורדת כל עדכון תוכן
   return base;
 }
 function loadState(){
@@ -896,7 +996,11 @@ function loadState(){
   const ts = s => (s && s.meta && s.meta.updatedAt) || 0;
   const h = hydrate(ts(fromLocal) > ts(fromHash) ? fromLocal : fromHash)
          || hydrate(fromLocal) || hydrate(fromHash);
-  if (h) return h;
+  if (h){
+    // הקישור (#d=) לעולם לא נושא לידים — אם המצב נבחר מהקישור, הלידים מגיעים מהמכשיר
+    if (!(h.leads||[]).length && fromLocal && (fromLocal.leads||[]).length) h.leads = fromLocal.leads;
+    return h;
+  }
   // שחזור חד-פעמי: עריכות שנשמרו תחת גרסאות אחסון קודמות — לא הולכות לאיבוד
   for (const oldKey of ['zrubavel15-status-v10','zrubavel15-status-v9','zrubavel15-status-v8']){
     try{
@@ -912,13 +1016,19 @@ function loadState(){
   }
   return JSON.parse(JSON.stringify(DEFAULT_STATE));
 }
+/* הגרסה הציבורית של המצב לקישור השיתוף — לעולם בלי לידים ובלי הערות צוות (פרטיות!) */
+function pubHash(){
+  const pub = JSON.parse(JSON.stringify(state));
+  delete pub.leads;
+  for (const f of pub.floors) for (const a of (f.apts||[])) delete a.internal;
+  return btoa(unescape(encodeURIComponent(JSON.stringify(pub))));
+}
 function saveState(silent){
   state.meta.updatedAt = Date.now();
   state.meta.dataRev = DEFAULT_STATE.meta.dataRev;
   try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
   try{
-    history.replaceState(null,'', location.pathname + location.search +
-      '#d='+btoa(unescape(encodeURIComponent(JSON.stringify(state)))));
+    history.replaceState(null,'', location.pathname + location.search + '#d='+pubHash());
   }catch(e){}
   if(!silent) toast('נשמר ✓');
   cloudSaveDebounced();
@@ -974,6 +1084,9 @@ async function cloudInit(){
     if (fbRemoteTs(doc) > (state.meta.updatedAt || 0)){
       const h = fbParse(doc); if (h){ state = h; renderAll(); }   // הענן עדכני יותר — מאמצים
     } else {
+      // לפני שדוחפים לענן: אם בענן יש לידים ובמכשיר הזה אין (למשל כניסה מקישור) — מצילים אותם
+      const h = fbParse(doc);
+      if (h && (h.leads||[]).length && !(state.leads||[]).length){ state.leads = h.leads; renderAll(); }
       cloudSave();   // המכשיר עדכני יותר — דוחפים לענן
     }
     setSync('cloud');
@@ -989,6 +1102,9 @@ setInterval(async ()=>{
     if (fbRemoteTs(doc) > (state.meta.updatedAt || 0)){
       const h = fbParse(doc);
       if (h){ state = h; cloudOK = true; setSync('cloud'); renderAll(); }
+    } else {
+      const h = fbParse(doc);   // הצלת לידים גם במשיכה השוטפת
+      if (h && (h.leads||[]).length && !(state.leads||[]).length){ state.leads = h.leads; renderAll(); }
     }
   }catch(e){}
 }, 30000);
@@ -1505,6 +1621,21 @@ function renderFloors(){
         row.appendChild(bot);
         if (a.note) row.appendChild(el('div','note', esc(a.note)));
         if (a.internal && teamMode) row.appendChild(el('div','apt-internal', '🔒 '+esc(a.internal)));   // הערת צוות — רק לצוות
+        if (teamMode){   // צ'יפ מתעניינים על כרטיס הדירה — לחיצה מסננת את רשימת הלידים לדירה זו
+          const nL = (state.leads||[]).filter(l=>l.apt===a.id && l.status!=='dropped').length;
+          if (nL){
+            const c = el('button','apt-leads', `👥 ${nL===1?'מתעניין אחד':nL+' מתעניינים'}`);
+            c.title = 'הצגת המתעניינים בדירה זו';
+            c.addEventListener('click', ev=>{
+              ev.stopPropagation();
+              leadFilter = { status:'', apt:a.id, q:'' };
+              const s = $('#leads-search'); if (s) s.value = '';
+              renderLeads();
+              $('#leads-sec').scrollIntoView({behavior:'smooth', block:'start'});
+            });
+            row.appendChild(c);
+          }
+        }
       }
       card.appendChild(row);
     }
@@ -1568,7 +1699,192 @@ function setupReveals(){
   clearTimeout(revealFailsafe);
   revealFailsafe = setTimeout(()=>document.querySelectorAll('.reveal:not(.in)').forEach(e=>e.classList.add('in')), 1500);
 }
-function renderAll(){ hidePop(); renderMeta(); renderKpis(); renderBld(); renderFloors(); setupReveals(); }
+/* ================= מערכת ניהול מתעניינים (לידים) — צוות בלבד ================= */
+let leadFilter = { status:'', apt:'', q:'' };
+
+function leadPillEl(k, interactive){
+  const s = LEAD_STATUSES[k] || LEAD_STATUSES.meeting;
+  const b = el(interactive?'button':'span','pill'+(interactive?'':' static'), esc(s.label));
+  b.style.color = s.color;
+  b.style.background = tint(s.color,.16);
+  return b;
+}
+
+function makeLeadStatusPill(ld){
+  const b = leadPillEl(ld.status, true);
+  b.title = 'לחיצה לשינוי שלב בתהליך';
+  b.addEventListener('click', ev=>{
+    ev.stopPropagation(); closeMenu();
+    const m = el('div','smenu');
+    for (const k of Object.keys(LEAD_STATUSES)){
+      const o = leadPillEl(k, true);
+      if (k===ld.status) o.innerHTML += ' ✓';
+      o.addEventListener('click', ()=>{
+        ld.status = k; ld.updated = Date.now(); closeMenu();
+        // נחתם טופס החתמה → מציעים לעדכן מיד את הדירה המקושרת ל"שמור"
+        if (k==='signed' && ld.apt){
+          const a = state.floors.flatMap(f=>f.apts).find(x=>x.id===ld.apt);
+          if (a && a.status!=='reserved' && a.status!=='sold' &&
+              confirm(`${ld.name||'המתעניין'} חתם על טופס ההחתמה — לעדכן את ${a.name} לסטטוס "שמור"?`)){
+            a.status = 'reserved';
+          }
+        }
+        saveState(true); toast(`עודכן: ${LEAD_STATUSES[k].label}`);
+      });
+      m.appendChild(o);
+    }
+    document.body.appendChild(m);
+    const W = 250, r = b.getBoundingClientRect();
+    m.style.top = (r.bottom + window.scrollY + 8)+'px';
+    let x = r.left + window.scrollX; if (x + W > document.documentElement.clientWidth) x = r.right + window.scrollX - W;
+    m.style.left = Math.max(8,x)+'px';
+    openMenu = m;
+  });
+  return b;
+}
+
+const fmtDay = ts => { const d = new Date(ts||Date.now()); return d.getDate()+'.'+(d.getMonth()+1); };
+
+function leadContactField(ld, key, label, ph, type, hrefFn, icon){
+  const w = el('div','lfield'); w.appendChild(el('span', null, esc(label)));
+  const line = el('span','lfield-in');
+  const inp = document.createElement('input');
+  inp.type = type; inp.value = ld[key]||''; inp.placeholder = ph; inp.dir = 'ltr';
+  if (type==='tel') inp.inputMode = 'tel';
+  const go = el('a','lgo'+(ld[key]?'':' off'), icon);
+  go.target = '_blank'; go.rel = 'noopener';
+  const setHref = ()=>{ if (ld[key]){ go.href = hrefFn(ld[key]); go.classList.remove('off'); }
+                        else { go.removeAttribute('href'); go.classList.add('off'); } };
+  setHref();
+  inp.addEventListener('change', ()=>{ ld[key]=inp.value.trim(); ld.updated=Date.now(); setHref(); saveState(true); });
+  line.appendChild(inp); line.appendChild(go); w.appendChild(line);
+  return w;
+}
+
+function leadAptField(ld){
+  const w = el('div','lfield'); w.appendChild(el('span', null, 'דירה מבוקשת'));
+  const sel = document.createElement('select');
+  sel.appendChild(new Option('— ללא שיוך לדירה —',''));
+  for (const f of state.floors) for (const a of f.apts) sel.appendChild(new Option(`${a.name} · ${f.label}`, a.id));
+  sel.value = ld.apt||'';
+  if (ld.apt && sel.value !== ld.apt){ sel.appendChild(new Option('(דירה שנמחקה)', ld.apt)); sel.value = ld.apt; }
+  sel.addEventListener('change', ()=>{ ld.apt = sel.value; ld.updated = Date.now(); saveState(true); });
+  w.appendChild(sel);
+  const a = state.floors.flatMap(f=>f.apts).find(x=>x.id===ld.apt);
+  if (a){   // הסטטוס החי של הדירה — מתעדכן אוטומטית בכל שינוי בלוח הדירות
+    const st = el('span','lead-aptstat','סטטוס הדירה כרגע: ');
+    st.appendChild(makePillEl(a.status, false));
+    w.appendChild(st);
+  }
+  return w;
+}
+
+function leadRow(ld){
+  const row = el('div','lead-row'+(ld.status==='dropped'?' dropped':''));
+  const top = el('div','lead-top');
+  const name = document.createElement('input');
+  name.className = 'lead-name'; name.value = ld.name||''; name.placeholder = 'שם מלא של המתעניין…';
+  name.addEventListener('change', ()=>{ ld.name = name.value.trim(); ld.updated = Date.now(); saveState(true); });
+  top.appendChild(name);
+  top.appendChild(makeLeadStatusPill(ld));
+  top.appendChild(el('span','lead-when', `נוצר ${fmtDay(ld.created)} · עודכן ${fmtDay(ld.updated)}`));
+  const del = el('button','lead-del','🗑'); del.title = 'מחיקת מתעניין מהרשימה';
+  del.addEventListener('click', ()=>{
+    if (confirm(`למחוק את ${ld.name||'המתעניין'} מהרשימה? הפעולה אינה הפיכה.`)){
+      state.leads = state.leads.filter(x=>x!==ld); saveState(true); toast('המתעניין נמחק');
+    }
+  });
+  top.appendChild(del);
+  row.appendChild(top);
+  const grid = el('div','lead-grid');
+  grid.appendChild(leadContactField(ld,'phone','טלפון','050-0000000','tel', v=>'tel:'+v.replace(/[^+\d]/g,''), '📞'));
+  grid.appendChild(leadContactField(ld,'email','אימייל','name@mail.com','email', v=>'mailto:'+v, '✉️'));
+  grid.appendChild(leadAptField(ld));
+  row.appendChild(grid);
+  const notes = document.createElement('textarea');
+  notes.className = 'lead-notes'; notes.rows = 1; notes.value = ld.notes||'';
+  notes.placeholder = 'Notes — סיכום שיחה, העדפות, השלב הבא…';
+  notes.addEventListener('change', ()=>{ ld.notes = notes.value.trim(); ld.updated = Date.now(); saveState(true); });
+  row.appendChild(notes);
+  return row;
+}
+
+function renderLeads(){
+  const sec = $('#leads-sec'); if (!sec) return;
+  sec.hidden = !teamMode;                      // ללקוחות המקטע לא קיים בכלל
+  if (!teamMode) return;
+  const leads = state.leads || (state.leads = []);
+  const counts = { '':leads.length };
+  for (const k of Object.keys(LEAD_STATUSES)) counts[k] = leads.filter(l=>l.status===k).length;
+  $('#leads-count').textContent = leads.length
+    ? `${leads.length} מתעניינים ברשימה · ${counts.signed} חתמו על טופס החתמה`
+    : 'עוד אין מתעניינים ברשימה';
+  // פילטרים לפי שלב + סינון לפי דירה
+  const fl = $('#leads-filters'); fl.innerHTML = '';
+  const mkF = (key, label, color)=>{
+    const btn = el('button','lfilter'+(leadFilter.status===key?' act':''));
+    if (color) btn.appendChild(Object.assign(el('span','dot'),{style:`background:${color}`}));
+    btn.appendChild(document.createTextNode(`${label} · ${counts[key]||0}`));
+    btn.addEventListener('click', ()=>{ leadFilter.status = key; renderLeads(); });
+    fl.appendChild(btn);
+  };
+  mkF('', 'הכל', null);
+  for (const [k,s] of Object.entries(LEAD_STATUSES)) mkF(k, s.label, s.color);
+  if (leadFilter.apt){
+    const a = state.floors.flatMap(f=>f.apts).find(x=>x.id===leadFilter.apt);
+    const chip = el('button','lfilter act', `${esc(a?a.name:'דירה')} ✕`);
+    chip.title = 'הסרת הסינון לפי דירה';
+    chip.addEventListener('click', ()=>{ leadFilter.apt=''; renderLeads(); });
+    fl.appendChild(chip);
+  }
+  // הרשימה: פעילים תחילה (ירדו מהפרק בסוף), מהעדכני לישן
+  const list = $('#leads-list'); list.innerHTML = '';
+  let rows = leads.slice().sort((a,b)=> ((a.status==='dropped')-(b.status==='dropped')) || (b.updated||0)-(a.updated||0));
+  if (leadFilter.status) rows = rows.filter(l=>l.status===leadFilter.status);
+  if (leadFilter.apt)    rows = rows.filter(l=>l.apt===leadFilter.apt);
+  const q = (leadFilter.q||'').trim().toLowerCase();
+  if (q) rows = rows.filter(l=>`${l.name} ${l.phone} ${l.email}`.toLowerCase().includes(q));
+  if (!rows.length){
+    list.appendChild(el('div','leads-empty', leads.length
+      ? 'אין מתעניינים שתואמים את הסינון הנוכחי'
+      : 'עוד אין מתעניינים — לחצו "+ מתעניין חדש" כדי להוסיף את הראשון'));
+    return;
+  }
+  for (const ld of rows) list.appendChild(leadRow(ld));
+}
+
+/* יצוא הרשימה לקובץ CSV (נפתח באקסל, כולל עברית) */
+function leadsCsv(){
+  const aptName = Object.fromEntries(state.floors.flatMap(f=>f.apts).map(a=>[a.id,a.name]));
+  const q = v => '"'+String(v??'').replace(/"/g,'""')+'"';
+  const head = ['שם מלא','טלפון','אימייל','דירה','שלב','הערות','נוצר','עודכן'];
+  const rows = (state.leads||[]).map(l=>[
+    l.name, l.phone, l.email, aptName[l.apt]||'', (LEAD_STATUSES[l.status]||{}).label||'',
+    l.notes, new Date(l.created).toLocaleDateString('he-IL'), new Date(l.updated).toLocaleDateString('he-IL'),
+  ].map(q).join(','));
+  return '\uFEFF'+[head.map(q).join(','), ...rows].join('\r\n');
+}
+$('#lead-add').addEventListener('click', ()=>{
+  state.leads = state.leads || [];
+  state.leads.unshift(newLead());
+  leadFilter = { status:'', apt:'', q:'' };
+  const s = $('#leads-search'); if (s) s.value = '';
+  saveState(true);
+  const first = $('#leads-list .lead-name'); if (first) first.focus();
+  toast('נוסף מתעניין חדש — מלאו את הפרטים');
+});
+$('#leads-search').addEventListener('input', e=>{ leadFilter.q = e.target.value; renderLeads(); });
+$('#lead-export').addEventListener('click', ()=>{
+  if (!(state.leads||[]).length){ toast('אין עדיין מתעניינים לייצוא'); return; }
+  const blob = new Blob([leadsCsv()], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'מתעניינים-זרובבל15.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  toast('הקובץ ירד ✓');
+});
+
+function renderAll(){ hidePop(); renderMeta(); renderKpis(); renderBld(); renderFloors(); renderLeads(); setupReveals(); }
 
 /* ---------- header actions ---------- */
 $('#btn-edit').addEventListener('click',()=>{
@@ -1667,10 +1983,9 @@ renderAll();
 renderGallery();
 setTab('photo');
 if (teamMode){ const si=$('#sync-ind'); if(si) si.hidden=false; }   // מכשיר צוות — מציג מחוון שמירה מהטעינה
-// ריפוי-עצמי: אם הקישור נשא מצב ישן — מעדכנים אותו למצב שנטען בפועל
+// ריפוי-עצמי: אם הקישור נשא מצב ישן — מעדכנים אותו למצב שנטען בפועל (בגרסה הציבורית בלבד)
 if (location.hash.startsWith('#d=')){
-  try{ history.replaceState(null,'', location.pathname + location.search +
-    '#d='+btoa(unescape(encodeURIComponent(JSON.stringify(state))))); }catch(e){}
+  try{ history.replaceState(null,'', location.pathname + location.search + '#d='+pubHash()); }catch(e){}
 }
 cloudInit();
 // לאחר טעינת התמונות/גופנים — לחשב מחדש גובה הפאנל והדביקות
