@@ -560,6 +560,20 @@
   /* העורך הפתוח — משתלב בתוך הטבלה */
   .lead-table .lead-row.expanded{border:none; border-top:1px solid var(--tan); border-radius:0;
     background:#FDFAF5; box-shadow:inset 0 6px 14px -10px rgba(16,21,62,.18); margin:0}
+  /* שורת הסינון הפעיל — מה מסונן כרגע, עם הסרה מהירה */
+  .leads-active{display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin-bottom:12px;
+    padding:9px 12px; background:var(--tan-soft); border:1px dashed var(--tan); border-radius:12px}
+  .leads-active .la-lbl{font-size:11.5px; font-weight:800; color:var(--tan-deep); margin-inline-end:2px}
+  .la-chip{display:inline-flex; align-items:center; gap:7px; background:#fff; border:1px solid var(--line);
+    border-radius:999px; padding:5px 11px; font-size:12px; font-weight:700; color:var(--navy)}
+  .la-chip .dot{width:8px; height:8px; border-radius:50%; flex:none}
+  .la-x{border:none; background:rgba(16,21,62,.07); cursor:pointer; border-radius:50%; width:18px; height:18px;
+    font-size:9px; line-height:1; color:var(--muted); display:inline-flex; align-items:center; justify-content:center;
+    transition:background .15s, color .15s}
+  .la-x:hover{background:#FBE9E7; color:#C62828}
+  .la-clear{margin-inline-start:auto; border:1px solid var(--navy); background:var(--navy); color:#fff; cursor:pointer;
+    font:inherit; font-size:11.5px; font-weight:800; padding:6px 13px; border-radius:999px; transition:background .15s}
+  .la-clear:hover{background:var(--navy-soft)}
   .leads-list{display:flex; flex-direction:column; gap:12px}
   .leads-empty{text-align:center; color:var(--muted); font-weight:600; font-size:14px; padding:26px 0 18px}
   .lead-row{border:1px solid var(--line); border-radius:var(--r-md); background:#fff; padding:14px 16px;
@@ -932,6 +946,7 @@
         <input class="leads-search" id="leads-search" type="search" placeholder="חיפוש לפי שם / טלפון / אימייל…">
       </div>
     </div>
+    <div class="leads-active" id="leads-active" hidden></div>
     <div class="leads-list" id="leads-list"></div>
   </div>
 </section>
@@ -1011,31 +1026,91 @@ const leadApts = ld => Array.isArray(ld.apts) ? ld.apts : (ld.apt ? [ld.apt] : [
 
 /* ---------- state ---------- */
 let editMode = false;
-/* ---------- מצב צוות: קוד שפותח עריכה + צפייה בהערות פנימיות ---------- */
-const TEAM_PIN = '2673';   // קוד הצוות — ניתן לשינוי
-let teamMode = false;
-try{ teamMode = localStorage.getItem('zrubavel15-team') === '1'; }catch(e){}
-function unlockTeam(){
-  if (teamMode) return true;
-  const pin = prompt('קוד צוות — לעריכת סטטוסים ולצפייה בהערות הפנימיות:');
+/* ---------- האיזור האישי (מצב צוות) — מוגן בקוד ומוצפן ----------
+   הקוד עצמו לא מופיע בדף: נשמרת רק טביעת אצבע (SHA-256) לאימות.
+   הלידים והערות הצוות נשמרים במסמך ענן נפרד, מוצפן AES-256-GCM עם
+   מפתח שנגזר מקוד הצוות — לקוח שפותח את הדף לא מוריד אותם בכלל. */
+const TEAM_SALT = 'zrubavel15-team-v1';
+const TEAM_PIN_HASH = 'a2e42614108142488fcc8766d77e9cf333a58fc44044deda4a0147675fc85b94';
+const LS_PRIV = 'zrubavel15-priv-v1';
+const LS_PIN  = 'zrubavel15-teampin';
+let teamMode = false, teamKey = null, teamKeyReady = null, privUpdatedAt = 0;
+/* privReady — האם כבר בידינו העותק המוסמך של האיזור האישי (מהענן או שאין כזה).
+   לפני כן אסור לכתוב את המסמך הפרטי, אחרת מכשיר שנכנס עלול לדרוס את הרשימה בריק. */
+let privReady = false;
+const te = new TextEncoder();
+async function sha256hex(str){
+  const d = await crypto.subtle.digest('SHA-256', te.encode(str));
+  return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function deriveTeamKey(pin){
+  return crypto.subtle.importKey('raw', te.encode(pin), 'PBKDF2', false, ['deriveKey'])
+    .then(km=>crypto.subtle.deriveKey({name:'PBKDF2', salt:te.encode(TEAM_SALT), iterations:310000, hash:'SHA-256'},
+      km, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']));
+}
+const b64buf = buf=>{ const u=new Uint8Array(buf); let r=''; for(let i=0;i<u.length;i+=0x8000) r+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000)); return btoa(r); };
+const unb64 = s=>Uint8Array.from(atob(s), c=>c.charCodeAt(0));
+async function encPriv(obj){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, teamKey, te.encode(JSON.stringify(obj)));
+  return b64buf(iv)+'.'+b64buf(ct);
+}
+async function decPriv(str){
+  try{
+    const [i,c] = str.split('.');
+    const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(i)}, teamKey, unb64(c));
+    return JSON.parse(new TextDecoder().decode(pt));
+  }catch(e){ return null; }
+}
+/* החלק הפרטי של המצב: הלידים + הערות הצוות לכל דירה */
+function splitPrivate(){
+  return { leads: state.leads||[],
+    internals: Object.fromEntries(state.floors.flatMap(f=>f.apts).filter(a=>a.internal).map(a=>[a.id, a.internal])),
+    updatedAt: privUpdatedAt };
+}
+function applyPrivate(pv){
+  if (!pv) return;
+  if (Array.isArray(pv.leads)) state.leads = pv.leads;
+  const map = pv.internals || {};
+  for (const f of state.floors) for (const a of f.apts) a.internal = map[a.id] || '';
+  privUpdatedAt = pv.updatedAt || privUpdatedAt || 0;
+}
+try{   // מכשיר צוות מזוהה — נגזר המפתח ברקע וממשיכים
+  const sp = localStorage.getItem(LS_PIN);
+  if (sp){ teamMode = true; teamKeyReady = deriveTeamKey(sp).then(k=>{ teamKey=k; }).catch(()=>{}); }
+}catch(e){}
+async function unlockTeam(){
+  if (teamMode && (teamKey || teamKeyReady)) return true;
+  const pin = prompt('קוד צוות — לעריכה, לאיזור האישי ולניהול המתעניינים:');
   if (pin === null) return false;
-  if (pin.trim() === TEAM_PIN){
-    teamMode = true;
-    try{ localStorage.setItem('zrubavel15-team','1'); }catch(e){}
-    toast('מצב צוות פעיל ✓');
-    return true;
-  }
-  toast('קוד שגוי');
-  return false;
+  const pn = pin.trim();
+  if (await sha256hex(TEAM_SALT+':'+pn) !== TEAM_PIN_HASH){ toast('קוד שגוי'); return false; }
+  teamKey = await deriveTeamKey(pn);
+  teamMode = true;
+  try{ localStorage.setItem(LS_PIN, pn); }catch(e){}
+  toast('מצב צוות פעיל ✓');
+  await cloudFetchPrivate();   // ממתינים למתעניינים המוצפנים לפני כל כתיבה לענן
+  return true;
 }
 function lockTeam(){
-  teamMode = false; editMode = false;
-  try{ localStorage.removeItem('zrubavel15-team'); }catch(e){}
+  teamMode = false; editMode = false; teamKey = null; teamKeyReady = null; privReady = false;
+  try{ localStorage.removeItem(LS_PIN); localStorage.removeItem(LS_PRIV); localStorage.removeItem('zrubavel15-team'); }catch(e){}
+  // מנקים את הנתונים הפרטיים גם מהזיכרון — מחשב משותף חוזר לתצוגת לקוח נקייה
+  state.leads = [];
+  for (const f of state.floors) for (const a of f.apts) a.internal = '';
+  privUpdatedAt = 0;
   $('#btn-edit').classList.remove('on'); $('#btn-edit').textContent = '✎';
   const si = $('#sync-ind'); if (si) si.hidden = true;
   renderAll(); toast('ננעל — חזרה לתצוגת לקוח');
 }
 let state = loadState();
+/* האיזור האישי: צוות ממזג את הנתונים הפרטיים מהמכשיר; אצל לקוח הם לא קיימים בזיכרון כלל */
+if (teamMode){
+  try{ const pv = JSON.parse(localStorage.getItem(LS_PRIV)); if (pv) applyPrivate(pv); }catch(e){}
+} else {
+  state.leads = [];
+  for (const f of state.floors) for (const a of f.apts) a.internal = '';
+}
 
 /* מיזוג מצב שמור עם עדכוני תוכן: הסטטוסים, ההערות והשדות שהמשתמש ערך
    נשמרים תמיד; תוכן שנדחף לדף (שמות, שטחים, טקסטים) מתעדכן כשה-dataRev עולה.
@@ -1106,17 +1181,25 @@ function loadState(){
   }
   return JSON.parse(JSON.stringify(DEFAULT_STATE));
 }
-/* הגרסה הציבורית של המצב לקישור השיתוף — לעולם בלי לידים ובלי הערות צוות (פרטיות!) */
-function pubHash(){
+/* הגרסה הציבורית של המצב — לעולם בלי לידים ובלי הערות צוות; רק היא נכתבת
+   לקישור, ל-localStorage הציבורי ולמסמך הענן הציבורי */
+function publicState(){
   const pub = JSON.parse(JSON.stringify(state));
   delete pub.leads;
   for (const f of pub.floors) for (const a of (f.apts||[])) delete a.internal;
-  return btoa(unescape(encodeURIComponent(JSON.stringify(pub))));
+  return pub;
+}
+function pubHash(){
+  return btoa(unescape(encodeURIComponent(JSON.stringify(publicState()))));
 }
 function saveState(silent){
   state.meta.updatedAt = Date.now();
   state.meta.dataRev = DEFAULT_STATE.meta.dataRev;
-  try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(publicState())); }catch(e){}
+  if (teamMode){   // הנתונים הפרטיים נשמרים בנפרד — רק במכשירי צוות
+    privUpdatedAt = Date.now();
+    try{ localStorage.setItem(LS_PRIV, JSON.stringify(splitPrivate())); }catch(e){}
+  }
   try{
     history.replaceState(null,'', location.pathname + location.search + '#d='+pubHash());
   }catch(e){}
@@ -1129,7 +1212,8 @@ function saveState(silent){
 // כדי להפעיל סנכרון חי בין כל המכשירים: ממלאים כאן projectId ו-apiKey מ-Firebase.
 const FB = { projectId:'zrubavel15-80f7b', apiKey:'AIzaSyAiKgo31utvMqzkoR37kKIt5kt-nq0a7w4' };
 const cloudEnabled = ()=> !!(FB.projectId && FB.apiKey);
-const FB_DOC = ()=> `https://firestore.googleapis.com/v1/projects/${FB.projectId}/databases/(default)/documents/zerubavel15/state?key=${FB.apiKey}`;
+const FB_DOC  = ()=> `https://firestore.googleapis.com/v1/projects/${FB.projectId}/databases/(default)/documents/zerubavel15/state?key=${FB.apiKey}`;
+const FB_PRIV = ()=> `https://firestore.googleapis.com/v1/projects/${FB.projectId}/databases/(default)/documents/zerubavel15/private?key=${FB.apiKey}`;
 let cloudOK = false;   // האם הענן נגיש כרגע
 let cloudSaveT = null;
 function setSync(mode){
@@ -1153,14 +1237,49 @@ async function cloudSave(){
   if (!cloudEnabled()){ setSync('local'); return; }
   try{
     setSync('saving');
+    // המסמך הציבורי — דירות וטקסטים בלבד, לעולם בלי לידים ובלי הערות צוות
     const body = { fields: {
-      json:      { stringValue: JSON.stringify(state) },
+      json:      { stringValue: JSON.stringify(publicState()) },
       updatedAt: { integerValue: String(state.meta.updatedAt || Date.now()) }
     }};
     const r = await fetchT(FB_DOC(), {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
     if(!r.ok) throw 0;
+    // האיזור האישי — מסמך נפרד, מוצפן במפתח של הצוות; נכתב רק ממכשיר צוות
+    if (teamMode && privReady){   // privReady מונע דריסת הרשימה לפני שנמשכה
+      if (teamKeyReady) await teamKeyReady;
+      if (teamKey){
+        const enc = await encPriv(splitPrivate());
+        const pr = await fetchT(FB_PRIV(), {method:'PATCH', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ fields:{ enc:{stringValue:enc}, updatedAt:{integerValue:String(privUpdatedAt || Date.now())} } })});
+        if(!pr.ok) throw 0;
+      }
+    }
     cloudOK = true; setSync('cloud');
   }catch(e){ cloudOK = false; setSync('local'); }
+}
+
+/* משיכת האיזור האישי מהענן — רק מכשיר צוות עם המפתח בכלל פונה למסמך הזה */
+async function cloudFetchPrivate(){
+  if (!cloudEnabled() || !teamMode) return;
+  if (teamKeyReady) await teamKeyReady;
+  if (!teamKey) return;
+  try{
+    const r = await fetchT(FB_PRIV(), {cache:'no-store'});
+    if (r.status === 404){ privReady = true; cloudSaveDebounced(); return; }   // אין עדיין מסמך פרטי — מותר לזרוע
+    if (!r.ok) return;                                                          // תקלת רשת — לא נוגעים בענן
+    const doc = await r.json();
+    const ts = fbRemoteTs(doc);
+    const local = privUpdatedAt || 0;
+    if (ts > local){
+      const pv = await decPriv(doc.fields.enc.stringValue);
+      if (!pv) return;              // פענוח נכשל — לא מסמנים מוכן ולא דורסים לעולם
+      applyPrivate(pv); privUpdatedAt = ts;
+      try{ localStorage.setItem(LS_PRIV, JSON.stringify(splitPrivate())); }catch(e){}
+      privReady = true; renderAll(); return;
+    }
+    privReady = true;
+    if (local > ts) cloudSaveDebounced();   // המכשיר עדכני יותר — דוחפים את שלנו
+  }catch(e){}
 }
 function cloudSaveDebounced(){ clearTimeout(cloudSaveT); cloudSaveT = setTimeout(cloudSave, 700); }
 async function cloudInit(){
@@ -1172,13 +1291,18 @@ async function cloudInit(){
     const doc = await r.json();
     cloudOK = true;
     if (fbRemoteTs(doc) > (state.meta.updatedAt || 0)){
-      const h = fbParse(doc); if (h){ state = h; renderAll(); }   // הענן עדכני יותר — מאמצים
-    } else {
-      // לפני שדוחפים לענן: אם בענן יש לידים ובמכשיר הזה אין (למשל כניסה מקישור) — מצילים אותם
       const h = fbParse(doc);
-      if (h && (h.leads||[]).length && !(state.leads||[]).length){ state.leads = h.leads; renderAll(); }
+      if (h){   // מאמצים את הציבורי; הפרטי של הצוות נשמר, אצל לקוח — מנוקה
+        const keep = teamMode ? splitPrivate() : null;
+        state = h;
+        if (keep) applyPrivate(keep);
+        else { state.leads = []; for (const f of state.floors) for (const a of f.apts) a.internal=''; }
+        renderAll();
+      }
+    } else {
       cloudSave();   // המכשיר עדכני יותר — דוחפים לענן
     }
+    cloudFetchPrivate();   // צוות בלבד — מושך את המסמך המוצפן
     setSync('cloud');
   }catch(e){ cloudOK = false; setSync('local'); }
 }
@@ -1191,11 +1315,15 @@ setInterval(async ()=>{
     const doc = await r.json();
     if (fbRemoteTs(doc) > (state.meta.updatedAt || 0)){
       const h = fbParse(doc);
-      if (h){ state = h; cloudOK = true; setSync('cloud'); renderAll(); }
-    } else {
-      const h = fbParse(doc);   // הצלת לידים גם במשיכה השוטפת
-      if (h && (h.leads||[]).length && !(state.leads||[]).length){ state.leads = h.leads; renderAll(); }
+      if (h){
+        const keep = teamMode ? splitPrivate() : null;
+        state = h;
+        if (keep) applyPrivate(keep);
+        else { state.leads = []; for (const f of state.floors) for (const a of f.apts) a.internal=''; }
+        cloudOK = true; setSync('cloud'); renderAll();
+      }
     }
+    cloudFetchPrivate();   // עדכוני לידים חיים בין מכשירי הצוות
   }catch(e){}
 }, 30000);
 
@@ -2091,6 +2219,42 @@ function renderLeads(){
   }
   const q = (leadFilter.q||'').trim().toLowerCase();
   if (q) rows = rows.filter(l=>`${l.name} ${l.phone} ${l.email}`.toLowerCase().includes(q));
+  // ---- שורת הסינון הפעיל + ספירת התוצאות ----
+  const bar = $('#leads-active'); bar.innerHTML = '';
+  const active = [];
+  if (leadFilter.status) active.push({lbl:'שלב: '+LEAD_STATUSES[leadFilter.status].label,
+    dot:LEAD_STATUSES[leadFilter.status].color, clear:()=>leadFilter.status=''});
+  if (leadFilter.aptStatus){
+    const AF = {marketing:'דירה בשיווק', negotiation:'דירה במשא ומתן', reserved:'דירה שמורה', sold:'דירה נמכרה', none:'ללא שיוך לדירה'};
+    active.push({lbl:AF[leadFilter.aptStatus]||leadFilter.aptStatus,
+      dot:(STATUSES[leadFilter.aptStatus]||{}).color, clear:()=>leadFilter.aptStatus=''});
+  }
+  if (leadFilter.apt){
+    const a = state.floors.flatMap(f=>f.apts).find(x=>x.id===leadFilter.apt);
+    active.push({lbl:'דירה: '+(a?a.name:'—'), clear:()=>leadFilter.apt=''});
+  }
+  if ((leadFilter.q||'').trim()) active.push({lbl:'חיפוש: "'+leadFilter.q.trim()+'"',
+    clear:()=>{ leadFilter.q=''; const si=$('#leads-search'); if(si) si.value=''; }});
+  bar.hidden = !active.length;
+  if (active.length){
+    bar.appendChild(el('span','la-lbl','מסונן לפי:'));
+    for (const f of active){
+      const c = el('span','la-chip');
+      if (f.dot) c.appendChild(Object.assign(el('span','dot'),{style:`background:${f.dot}`}));
+      c.appendChild(document.createTextNode(f.lbl));
+      const x = el('button','la-x','✕'); x.title = 'הסרת הסינון';
+      x.addEventListener('click', ()=>{ f.clear(); renderLeads(); });
+      c.appendChild(x); bar.appendChild(c);
+    }
+    const clr = el('button','la-clear','✕ ניקוי כל הסינונים');
+    clr.addEventListener('click', ()=>{
+      leadFilter = { status:'', apt:'', q:'', aptStatus:'' };
+      const si = $('#leads-search'); if (si) si.value = '';
+      renderLeads();
+    });
+    bar.appendChild(clr);
+    $('#leads-count').textContent = `מציג ${rows.length} מתוך ${leads.length} מתעניינים`;
+  }
   if (!rows.length){
     list.appendChild(el('div','leads-empty', leads.length
       ? 'אין מתעניינים שתואמים את הסינון הנוכחי'
@@ -2163,9 +2327,9 @@ $('#lead-export').addEventListener('click', ()=>{
 function renderAll(){ hidePop(); renderMeta(); renderKpis(); renderBld(); renderFloors(); renderLeads(); setupReveals(); }
 
 /* ---------- header actions ---------- */
-$('#btn-edit').addEventListener('click',()=>{
-  // כניסה למצב צוות מוגנת בקוד — צופה רגיל לא יכול לערוך או לראות הערות פנימיות
-  if (!teamMode){ if (!unlockTeam()) return; }
+$('#btn-edit').addEventListener('click', async ()=>{
+  // כניסה לאיזור האישי מוגנת בקוד — צופה רגיל לא יכול לערוך או לראות את המתעניינים
+  if (!teamMode){ if (!await unlockTeam()) return; }
   editMode = !editMode;
   $('#btn-edit').classList.toggle('on',editMode);
   $('#btn-edit').textContent = editMode ? '✓ סיום עריכה' : '✎';
