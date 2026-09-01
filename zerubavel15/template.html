@@ -564,8 +564,20 @@
   .lgo.off{opacity:.35; pointer-events:none}
   .lead-notes{border:1px solid var(--line); border-radius:9px; padding:8px 10px; font:inherit; font-size:13px;
     color:var(--ink); background:#FDFBF7; resize:vertical; min-height:38px; width:100%; box-sizing:border-box}
-  .lead-aptstat{display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--muted); margin-top:4px}
-  .lead-aptstat .pill{font-size:10.5px; padding:3px 9px}
+  /* הדירות שנבחרו למתעניין — צ'יפ לכל דירה עם הסטטוס החי שלה והסרה */
+  .lead-aptchips{display:flex; flex-wrap:wrap; gap:6px; margin-top:7px}
+  .lead-aptchip{display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:800; color:var(--navy);
+    background:var(--tan-soft); border:1px solid var(--line); border-radius:999px; padding:4px 10px}
+  .lead-aptchip .pill{font-size:10px; padding:2px 8px}
+  .aptchip-x{border:none; background:rgba(16,21,62,.07); cursor:pointer; border-radius:50%; width:18px; height:18px;
+    font-size:9px; line-height:1; color:var(--muted); display:inline-flex; align-items:center; justify-content:center;
+    transition:background .15s, color .15s}
+  .aptchip-x:hover{background:#FBE9E7; color:#C62828}
+  /* כפתור סגירת העורך בתצוגת הרשימה */
+  .lead-close{border:1px solid var(--line); background:#fff; cursor:pointer; font:inherit; font-size:12px;
+    font-weight:800; color:var(--navy); padding:7px 12px; border-radius:9px; transition:background .15s, border-color .15s}
+  .lead-close:hover{background:var(--tan-soft); border-color:var(--tan)}
+  .lline-name:hover{color:var(--tan-deep); text-decoration:underline; text-decoration-color:var(--tan)}
   /* צ'יפ ספירת מתעניינים על כרטיס דירה (צוות) */
   .apt-leads{border:none; cursor:pointer; font:inherit; align-self:flex-start; display:inline-flex; align-items:center; gap:6px;
     font-size:12px; font-weight:800; color:var(--navy); background:rgba(27,36,103,.06);
@@ -966,8 +978,10 @@ const LEAD_STATUSES = {
   dropped: {label:'לא רלוונטי / ירד מהפרק', color:'#7A7E92'},
 };
 const newLead = ()=>({ id:'L'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
-  name:'', phone:'', email:'', apt:'', status:'meeting', notes:'',
+  name:'', phone:'', email:'', apt:'', apts:[], status:'meeting', notes:'',
   created:Date.now(), updated:Date.now() });
+/* מתעניין יכול לרצות יותר מדירה אחת; apts הוא הרשימה, apt נשמר לתאימות לאחור */
+const leadApts = ld => Array.isArray(ld.apts) ? ld.apts : (ld.apt ? [ld.apt] : []);
 
 /* ---------- state ---------- */
 let editMode = false;
@@ -1672,7 +1686,7 @@ function renderFloors(){
         if (a.note) row.appendChild(el('div','note', esc(a.note)));
         if (a.internal && teamMode) row.appendChild(el('div','apt-internal', '🔒 '+esc(a.internal)));   // הערת צוות — רק לצוות
         if (teamMode){   // צ'יפ מתעניינים על כרטיס הדירה — לחיצה מסננת את רשימת הלידים לדירה זו
-          const nL = (state.leads||[]).filter(l=>l.apt===a.id && l.status!=='dropped').length;
+          const nL = (state.leads||[]).filter(l=>l.status!=='dropped' && leadApts(l).includes(a.id)).length;
           if (nL){
             const c = el('button','apt-leads', `👥 ${nL===1?'מתעניין אחד':nL+' מתעניינים'}`);
             c.title = 'הצגת המתעניינים בדירה זו';
@@ -1774,12 +1788,14 @@ function makeLeadStatusPill(ld){
       if (k===ld.status) o.innerHTML += ' ✓';
       o.addEventListener('click', ()=>{
         ld.status = k; ld.updated = Date.now(); closeMenu();
-        // נחתם טופס החתמה → מציעים לעדכן מיד את הדירה המקושרת ל"שמור"
-        if (k==='signed' && ld.apt){
-          const a = state.floors.flatMap(f=>f.apts).find(x=>x.id===ld.apt);
-          if (a && a.status!=='reserved' && a.status!=='sold' &&
-              confirm(`${ld.name||'המתעניין'} חתם על טופס ההחתמה — לעדכן את ${a.name} לסטטוס "שמור"?`)){
-            a.status = 'reserved';
+        // נחתם טופס החתמה → מציעים לעדכן כל דירה מקושרת ל"שמור"
+        if (k==='signed'){
+          for (const id of leadApts(ld)){
+            const a = state.floors.flatMap(f=>f.apts).find(x=>x.id===id);
+            if (a && a.status!=='reserved' && a.status!=='sold' &&
+                confirm(`${ld.name||'המתעניין'} חתם על טופס ההחתמה — לעדכן את ${a.name} לסטטוס "שמור"?`)){
+              a.status = 'reserved';
+            }
           }
         }
         saveState(true); toast(`עודכן: ${LEAD_STATUSES[k].label}`);
@@ -1815,24 +1831,41 @@ function leadContactField(ld, key, label, ph, type, hrefFn, icon){
 }
 
 function leadAptField(ld){
-  const w = el('div','lfield'); w.appendChild(el('span', null, 'דירה מבוקשת'));
+  const w = el('div','lfield'); w.appendChild(el('span', null, 'דירות מבוקשות (אפשר יותר מאחת)'));
+  const chosen = leadApts(ld);
   const sel = document.createElement('select');
-  sel.appendChild(new Option('— ללא שיוך לדירה —',''));
-  for (const f of state.floors) for (const a of f.apts) sel.appendChild(new Option(`${a.name} · ${f.label}`, a.id));
-  sel.value = ld.apt||'';
-  if (ld.apt && sel.value !== ld.apt){ sel.appendChild(new Option('(דירה שנמחקה)', ld.apt)); sel.value = ld.apt; }
-  sel.addEventListener('change', ()=>{ ld.apt = sel.value; ld.updated = Date.now(); saveState(true); });
+  sel.appendChild(new Option('+ הוספת דירה לרשימה…',''));
+  for (const f of state.floors) for (const a of f.apts)
+    if (!chosen.includes(a.id)) sel.appendChild(new Option(`${a.name} · ${f.label}`, a.id));
+  sel.addEventListener('change', ()=>{
+    if (!sel.value) return;
+    const list = leadApts(ld).slice(); list.push(sel.value);
+    ld.apts = list; ld.apt = list[0]||'';   // apt נשמר לתאימות לאחור
+    ld.updated = Date.now(); saveState(true);
+  });
   w.appendChild(sel);
-  const a = state.floors.flatMap(f=>f.apts).find(x=>x.id===ld.apt);
-  if (a){   // הסטטוס החי של הדירה — מתעדכן אוטומטית בכל שינוי בלוח הדירות
-    const st = el('span','lead-aptstat','סטטוס הדירה כרגע: ');
-    st.appendChild(makePillEl(a.status, false));
-    w.appendChild(st);
+  if (chosen.length){   // הדירות שנבחרו — עם הסטטוס החי של כל אחת וכפתור הסרה
+    const chips = el('div','lead-aptchips');
+    for (const id of chosen){
+      const a = state.floors.flatMap(f=>f.apts).find(x=>x.id===id);
+      const chip = el('span','lead-aptchip');
+      chip.appendChild(document.createTextNode((a ? a.name : 'דירה שנמחקה')+' '));
+      if (a) chip.appendChild(makePillEl(a.status, false));
+      const x = el('button','aptchip-x','✕');
+      x.title = 'הסרת הדירה מהמתעניין';
+      x.addEventListener('click', ()=>{
+        ld.apts = leadApts(ld).filter(v=>v!==id); ld.apt = ld.apts[0]||'';
+        ld.updated = Date.now(); saveState(true);
+      });
+      chip.appendChild(x);
+      chips.appendChild(chip);
+    }
+    w.appendChild(chips);
   }
   return w;
 }
 
-function leadRow(ld){
+function leadRow(ld, inList){
   const row = el('div','lead-row'+(ld.status==='dropped'?' dropped':''));
   const top = el('div','lead-top');
   const name = document.createElement('input');
@@ -1848,6 +1881,12 @@ function leadRow(ld){
     }
   });
   top.appendChild(del);
+  if (inList){   // בתצוגת רשימה העורך מחליף את השורה — כפתור סגירה ברור במקום כפילות
+    const close = el('button','lead-close','▲ סגירה');
+    close.title = 'סגירת הכרטיס וחזרה לשורה';
+    close.addEventListener('click', ()=>{ leadOpen = null; renderLeads(); });
+    top.appendChild(close);
+  }
   row.appendChild(top);
   const grid = el('div','lead-grid');
   grid.appendChild(leadContactField(ld,'phone','טלפון','050-0000000','tel', v=>'tel:'+v.replace(/[^+\d]/g,''), '📞'));
@@ -1881,9 +1920,15 @@ function leadLine(ld){
     row.appendChild(ph);
   } else row.appendChild(el('span','lline-phone','—'));
   const aptEl = el('span','lline-apt');
-  const a = state.floors.flatMap(f=>f.apts).find(x=>x.id===ld.apt);
-  if (a){ aptEl.appendChild(document.createTextNode(a.name+' ')); aptEl.appendChild(makePillEl(a.status,false)); }
-  else aptEl.textContent = '—';
+  const ids = leadApts(ld);
+  if (ids.length){
+    ids.forEach((id,i)=>{
+      const a = state.floors.flatMap(f=>f.apts).find(x=>x.id===id);
+      if (i) aptEl.appendChild(document.createTextNode(' · '));
+      aptEl.appendChild(document.createTextNode((a ? a.name : '?')+' '));
+      if (a) aptEl.appendChild(makePillEl(a.status,false));
+    });
+  } else aptEl.textContent = '—';
   row.appendChild(aptEl);
   row.appendChild(el('span','lline-notes', esc(ld.notes||'')));
   const acts = el('span','lline-acts');
@@ -1946,7 +1991,7 @@ function renderLeads(){
   const list = $('#leads-list'); list.innerHTML = '';
   let rows = leads.slice().sort((a,b)=> ((a.status==='dropped')-(b.status==='dropped')) || (b.updated||0)-(a.updated||0));
   if (leadFilter.status) rows = rows.filter(l=>l.status===leadFilter.status);
-  if (leadFilter.apt)    rows = rows.filter(l=>l.apt===leadFilter.apt);
+  if (leadFilter.apt)    rows = rows.filter(l=>leadApts(l).includes(leadFilter.apt));
   const q = (leadFilter.q||'').trim().toLowerCase();
   if (q) rows = rows.filter(l=>`${l.name} ${l.phone} ${l.email}`.toLowerCase().includes(q));
   if (!rows.length){
@@ -1959,9 +2004,10 @@ function renderLeads(){
     const table = el('div','lead-table');
     table.appendChild(leadHeader());
     for (const ld of rows){
-      table.appendChild(leadLine(ld));
-      if (leadOpen === ld.id){   // השורה הפתוחה — עורך מלא משולב בטבלה
-        const ed = leadRow(ld); ed.classList.add('expanded'); table.appendChild(ed);
+      if (leadOpen === ld.id){   // השורה הפתוחה מוחלפת בעורך — בלי כפילות של השם
+        const ed = leadRow(ld, true); ed.classList.add('expanded'); table.appendChild(ed);
+      } else {
+        table.appendChild(leadLine(ld));
       }
     }
     list.appendChild(table);
@@ -1976,7 +2022,7 @@ function leadsCsv(){
   const q = v => '"'+String(v??'').replace(/"/g,'""')+'"';
   const head = ['שם מלא','טלפון','אימייל','דירה','שלב','הערות','נוצר','עודכן'];
   const rows = (state.leads||[]).map(l=>[
-    l.name, l.phone, l.email, aptName[l.apt]||'', (LEAD_STATUSES[l.status]||{}).label||'',
+    l.name, l.phone, l.email, leadApts(l).map(id=>aptName[id]||'').filter(Boolean).join(' + '), (LEAD_STATUSES[l.status]||{}).label||'',
     l.notes, new Date(l.created).toLocaleDateString('he-IL'), new Date(l.updated).toLocaleDateString('he-IL'),
   ].map(q).join(','));
   return '\uFEFF'+[head.map(q).join(','), ...rows].join('\r\n');
