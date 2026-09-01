@@ -515,6 +515,18 @@
   .lead-line.dropped > *{opacity:.55}
   .lead-line.open{background:var(--tan-soft)}
   .lead-line .pill{justify-self:start; white-space:nowrap; font-size:11px; padding:4px 11px}
+  /* תגית הסטטוס של הליד — צבע מלא, רוחב אחיד וממורכז: ברור במבט אחד */
+  .lead-line > .lpill{
+    background:var(--st) !important; color:#fff !important;
+    width:100%; max-width:150px; justify-content:center; text-align:center;
+    font-size:11.5px; font-weight:800; padding:7px 10px; letter-spacing:.01em;
+    box-shadow:inset 0 -1.5px 0 rgba(0,0,0,.18);
+  }
+  .lead-top > .lpill{
+    background:var(--st) !important; color:#fff !important;
+    font-size:11.5px; font-weight:800; padding:7px 14px;
+    box-shadow:inset 0 -1.5px 0 rgba(0,0,0,.18);
+  }
   /* שורת הכותרות של הטבלה */
   .lead-line.thead{cursor:default; background:#F7F1E8; padding:9px 16px; border-top:none}
   .lead-line.thead:hover{background:#F7F1E8}
@@ -1771,9 +1783,12 @@ let leadOpen = null;      // הליד הפתוח לעריכה בתצוגת הר�
 
 function leadPillEl(k, interactive){
   const s = LEAD_STATUSES[k] || LEAD_STATUSES.meeting;
-  const b = el(interactive?'button':'span','pill'+(interactive?'':' static'), esc(s.label));
+  const b = el(interactive?'button':'span','pill lpill'+(interactive?'':' static'), esc(s.label));
   b.style.color = s.color;
   b.style.background = tint(s.color,.16);
+  // גוון מעט כהה יותר לתגית המלאה — ניגודיות טובה לטקסט לבן
+  const n=parseInt(s.color.slice(1),16), shade=k2=>Math.round(k2*.88);
+  b.style.setProperty('--st', `rgb(${shade(n>>16)},${shade((n>>8)&255)},${shade(n&255)})`);
   return b;
 }
 
