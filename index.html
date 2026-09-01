@@ -589,6 +589,9 @@
   .lead-close{border:1px solid var(--line); background:#fff; cursor:pointer; font:inherit; font-size:12px;
     font-weight:800; color:var(--navy); padding:7px 12px; border-radius:9px; transition:background .15s, border-color .15s}
   .lead-close:hover{background:var(--tan-soft); border-color:var(--tan)}
+  .lead-row.expanded{cursor:pointer}
+  .lead-row.expanded input, .lead-row.expanded textarea, .lead-row.expanded select, .lead-row.expanded button, .lead-row.expanded a{cursor:auto}
+  .lead-row.expanded button, .lead-row.expanded .pill{cursor:pointer}
   .lline-name:hover{color:var(--tan-deep); text-decoration:underline; text-decoration-color:var(--tan)}
   /* צ'יפ ספירת מתעניינים על כרטיס דירה (צוות) */
   .apt-leads{border:none; cursor:pointer; font:inherit; align-self:flex-start; display:inline-flex; align-items:center; gap:6px;
@@ -907,6 +910,7 @@
         <p class="leads-sub" id="leads-count"></p>
       </div>
       <div class="leads-actions">
+        <button class="lead-btn ghost" id="lead-goto-scene" title="קפיצה לחתך הבניין האינטראקטיבי">🏢 לחתך האינטראקטיבי</button>
         <button class="lead-btn ghost" id="lead-export" title="הורדת הרשימה כקובץ אקסל (CSV)">⬇ ייצוא</button>
         <button class="lead-btn" id="lead-add">+ מתעניין חדש</button>
       </div>
@@ -1890,7 +1894,8 @@ function leadRow(ld, inList){
   top.appendChild(makeLeadStatusPill(ld));
   top.appendChild(el('span','lead-when', `נוצר ${fmtDay(ld.created)} · עודכן ${fmtDay(ld.updated)}`));
   const del = el('button','lead-del','🗑'); del.title = 'מחיקת מתעניין מהרשימה';
-  del.addEventListener('click', ()=>{
+  del.addEventListener('click', ev=>{
+    ev.stopPropagation();
     if (confirm(`למחוק את ${ld.name||'המתעניין'} מהרשימה? הפעולה אינה הפיכה.`)){
       state.leads = state.leads.filter(x=>x!==ld); saveState(true); toast('המתעניין נמחק');
     }
@@ -2020,7 +2025,16 @@ function renderLeads(){
     table.appendChild(leadHeader());
     for (const ld of rows){
       if (leadOpen === ld.id){   // השורה הפתוחה מוחלפת בעורך — בלי כפילות של השם
-        const ed = leadRow(ld, true); ed.classList.add('expanded'); table.appendChild(ed);
+        const ed = leadRow(ld, true); ed.classList.add('expanded');
+        // סגירה בלחיצה על כל שטח ריק בכרטיס — שוליים, פס הכותרת, רווחים בין שדות, התאריכים
+        ed.addEventListener('click', e=>{
+          const t = e.target;
+          if (t === ed || t.classList.contains('lead-top') || t.classList.contains('lead-grid')
+              || t.classList.contains('lead-when') || t.classList.contains('lead-aptchips')){
+            leadOpen = null; renderLeads();
+          }
+        });
+        table.appendChild(ed);
       } else {
         table.appendChild(leadLine(ld));
       }
@@ -2054,6 +2068,11 @@ $('#lead-add').addEventListener('click', ()=>{
   toast('נוסף מתעניין חדש — מלאו את הפרטים');
 });
 $('#leads-search').addEventListener('input', e=>{ leadFilter.q = e.target.value; renderLeads(); });
+$('#lead-goto-scene').addEventListener('click', ()=>{
+  setTab('schema');   // עוברים לטאב החתך ומגיעים אליו
+  const sc = document.getElementById('scene');
+  if (sc) sc.scrollIntoView({behavior:'smooth', block:'start'});
+});
 $('#lead-export').addEventListener('click', ()=>{
   if (!(state.leads||[]).length){ toast('אין עדיין מתעניינים לייצוא'); return; }
   const blob = new Blob([leadsCsv()], {type:'text/csv;charset=utf-8'});
