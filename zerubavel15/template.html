@@ -986,7 +986,7 @@ const apt = (id,name,rooms,size,outdoor,facing,kind,plan,status)=>(
 const DEFAULT_STATE = {
   // dataRev עולה רק כשנדחף לדף עדכון תוכן; הסטטוסים והעריכות של המשתמש
   // שורדים תמיד דרך hydrate() — הנתונים לא מתאפסים יותר לעולם
-  meta:{dataRev:12,
+  meta:{dataRev:13,
         title:'זרובבל 15', subtitle:'פסיעה אחת מקו החוף של תל אביב', address:'זרובבל 15, תל אביב', tagline:'היהלום בין הכרם לים',
         foot1:'הזדמנות אחרונה להצטרף לנבחרת מנצחת', foot2:'בפריים לוקיישן בין הכרם לים'},
   floors:[
@@ -1006,7 +1006,7 @@ const DEFAULT_STATE = {
     {id:'f2',num:2,label:'קומה 2',apts:[
       apt('a3','דירה 3','3 חדרים','70','מרפסת 12 מ״ר','חזית לרחוב זרובבל','big','typical'),
       apt('a2','דירה 2','2 חדרים','46','מרפסת 12 מ״ר','חזית לרחוב אהרונסון','small','typical')]},
-    {id:'f1',num:1,label:'קומה 1',apts:[apt('a1','דירת גן · דירה 1','','50','גינה 46 מ״ר','כניסה פרטית','garden','ground','sold')]},
+    {id:'f1',num:1,label:'קומה 1',apts:[apt('a1','דירת גן · דירה 1','','46','גינה 120 מ״ר','כניסה פרטית','garden','ground','sold')]},
   ],
   leads:[],   // מתעניינים (לידים) — מנוהל במצב צוות בלבד, לא נכתב לקישור השיתוף
 };
@@ -1148,6 +1148,14 @@ function hydrate(saved){
     for (const k of base.meta._edited) if (saved.meta[k]!=null) base.meta[k]=saved.meta[k];
   }
   base.leads = saved.leads;   // רשימת המתעניינים שורדת כל עדכון תוכן
+  // תיקון תוכן מפורש: שטחי דירת הגן — גובר גם על ערך שנערך ידנית בעבר
+  if (savedRev < 13){
+    const a1 = base.floors.flatMap(f=>f.apts).find(a=>a.id==='a1');
+    if (a1){
+      a1.size = '46'; a1.outdoor = 'גינה 120 מ״ר';
+      if (a1._ed) a1._ed = a1._ed.filter(k=>k!=='size' && k!=='outdoor');
+    }
+  }
   return base;
 }
 function loadState(){
@@ -1669,7 +1677,11 @@ function renderBld(){
       u.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); showPop(a,u); popPinned=true; } });
       units.appendChild(u);
       if (a.kind==='penthouse') units.appendChild(el('div','terr','מרפסת<br>20 מ״ר'));   // צד שמאל — לכיוון אהרונסון
-      if (a.kind==='garden') units.appendChild(el('div','garden','גינה<br>46 מ״ר'));
+      if (a.kind==='garden'){
+        // נקרא מנתוני הדירה — עדכון שטח הגינה בעריכה משתקף מיד גם בחתך
+        const g = (a.outdoor||'').match(/(\d+)/);
+        units.appendChild(el('div','garden', g ? `גינה<br>${g[1]} מ״ר` : 'גינה'));
+      }
     }
     row.appendChild(units);
     const rail = el('div','frail');
