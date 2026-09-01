@@ -531,6 +531,16 @@
   .lead-line.thead{cursor:default; background:#F7F1E8; padding:9px 16px; border-top:none}
   .lead-line.thead:hover{background:#F7F1E8}
   .lh{font-size:11px; font-weight:800; color:var(--tan-deep); letter-spacing:.02em}
+  .lh-btn{border:none; background:none; cursor:pointer; font:inherit; padding:3px 6px; margin:-3px -6px;
+    border-radius:7px; justify-self:start; text-align:right; transition:background .15s, color .15s}
+  .lh-btn:hover{background:rgba(185,141,110,.16)}
+  .lh-btn.act{color:#fff; background:var(--navy)}
+  .smenu-opt{border:none; background:none; cursor:pointer; font:inherit; font-size:12.5px; font-weight:700;
+    color:var(--ink); text-align:right; padding:7px 10px; border-radius:8px; display:flex; align-items:center; gap:8px;
+    transition:background .12s}
+  .smenu-opt:hover{background:var(--tan-soft)}
+  .smenu-opt.act{background:rgba(27,36,103,.08); color:var(--navy)}
+  .smenu-opt .dot{width:8px; height:8px; border-radius:50%; flex:none}
   .lline-name{font-weight:800; color:var(--navy); font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
   .lline-name.empty{color:var(--muted); font-weight:600}
   .lline-phone{font-size:12.5px; font-weight:700; color:var(--ink); text-decoration:none; direction:ltr; unicode-bidi:embed;
@@ -1708,7 +1718,7 @@ function renderFloors(){
             c.title = 'הצגת המתעניינים בדירה זו';
             c.addEventListener('click', ev=>{
               ev.stopPropagation();
-              leadFilter = { status:'', apt:a.id, q:'' };
+              leadFilter = { status:'', apt:a.id, q:'', aptStatus:'' };
               const s = $('#leads-search'); if (s) s.value = '';
               renderLeads();
               $('#leads-sec').scrollIntoView({behavior:'smooth', block:'start'});
@@ -1780,7 +1790,7 @@ function setupReveals(){
   revealFailsafe = setTimeout(()=>document.querySelectorAll('.reveal:not(.in)').forEach(e=>e.classList.add('in')), 1500);
 }
 /* ================= מערכת ניהול מתעניינים (לידים) — צוות בלבד ================= */
-let leadFilter = { status:'', apt:'', q:'' };
+let leadFilter = { status:'', apt:'', q:'', aptStatus:'' };
 let leadView = 'cards';   // 'cards' — כרטיסים מלאים · 'list' — רשימה קומפקטית
 try{ leadView = localStorage.getItem('zrubavel15-leadview') === 'list' ? 'list' : 'cards'; }catch(e){}
 let leadOpen = null;      // הליד הפתוח לעריכה בתצוגת הרשימה
@@ -1921,10 +1931,67 @@ function leadRow(ld, inList){
   return row;
 }
 
-/* שורת הכותרות של טבלת הרשימה */
+/* תפריט סינון קטן שנפתח מכותרת עמודה */
+function headFilterMenu(anchor, options, current, onPick){
+  closeMenu();
+  const m = el('div','smenu');
+  for (const o of options){
+    const it = el('button','smenu-opt'+(current===o.value?' act':''));
+    if (o.dot) it.appendChild(Object.assign(el('span','dot'),{style:`background:${o.dot}`}));
+    it.appendChild(document.createTextNode(`${o.label} · ${o.count}`));
+    it.addEventListener('click', ()=>{ closeMenu(); onPick(o.value); });
+    m.appendChild(it);
+  }
+  document.body.appendChild(m);
+  const W = 250, r = anchor.getBoundingClientRect();
+  m.style.top = (r.bottom + window.scrollY + 6)+'px';
+  let x = r.left + window.scrollX; if (x + W > document.documentElement.clientWidth) x = r.right + window.scrollX - W;
+  m.style.left = Math.max(8,x)+'px';
+  openMenu = m;
+}
+
+/* שורת הכותרות של טבלת הרשימה — "שלב בתהליך" ו"דירה מבוקשת" מסננות */
 function leadHeader(){
   const h = el('div','lead-line thead');
-  for (const t of ['שלב בתהליך','שם המתעניין','טלפון','דירה מבוקשת','הערות','']) h.appendChild(el('span','lh', t));
+  const leads = state.leads || [];
+  const aptOf = id => state.floors.flatMap(f=>f.apts).find(x=>x.id===id);
+
+  // שלב בתהליך ▾
+  const st = el('button','lh lh-btn'+(leadFilter.status?' act':''),
+    esc(leadFilter.status ? 'שלב: '+LEAD_STATUSES[leadFilter.status].label : 'שלב בתהליך')+' ▾');
+  st.title = 'סינון לפי שלב בתהליך';
+  st.addEventListener('click', e=>{
+    e.stopPropagation();
+    const opts = [{value:'', label:'הכל', count:leads.length}];
+    for (const [k,v] of Object.entries(LEAD_STATUSES))
+      opts.push({value:k, label:v.label, dot:v.color, count:leads.filter(l=>l.status===k).length});
+    headFilterMenu(st, opts, leadFilter.status, v=>{ leadFilter.status = v; renderLeads(); });
+  });
+  h.appendChild(st);
+
+  h.appendChild(el('span','lh','שם המתעניין'));
+  h.appendChild(el('span','lh','טלפון'));
+
+  // דירה מבוקשת ▾ — סינון לפי מצב הדירה שנבחרה (שמור / נמכר / בשיווק…)
+  const ap = el('button','lh lh-btn'+(leadFilter.aptStatus?' act':''),
+    esc(leadFilter.aptStatus ? 'דירה: '+(leadFilter.aptStatus==='none' ? 'ללא שיוך' : STATUSES[leadFilter.aptStatus].label)
+                             : 'דירה מבוקשת')+' ▾');
+  ap.title = 'סינון לפי מצב הדירה המבוקשת';
+  ap.addEventListener('click', e=>{
+    e.stopPropagation();
+    const cnt = f => leads.filter(f).length;
+    const opts = [{value:'', label:'הכל', count:leads.length}];
+    const APT_F = {marketing:'דירה בשיווק', negotiation:'דירה במשא ומתן', reserved:'דירה שמורה', sold:'דירה נמכרה'};
+    for (const [k,v] of Object.entries(STATUSES))
+      opts.push({value:k, label:APT_F[k]||v.label, dot:v.color,
+                 count:cnt(l=>leadApts(l).some(id=>{const a=aptOf(id); return a && a.status===k;}))});
+    opts.push({value:'none', label:'ללא שיוך לדירה', count:cnt(l=>!leadApts(l).length)});
+    headFilterMenu(ap, opts, leadFilter.aptStatus, v=>{ leadFilter.aptStatus = v; renderLeads(); });
+  });
+  h.appendChild(ap);
+
+  h.appendChild(el('span','lh','הערות'));
+  h.appendChild(el('span','lh',''));
   return h;
 }
 
@@ -2012,6 +2079,16 @@ function renderLeads(){
   let rows = leads.slice().sort((a,b)=> ((a.status==='dropped')-(b.status==='dropped')) || (b.updated||0)-(a.updated||0));
   if (leadFilter.status) rows = rows.filter(l=>l.status===leadFilter.status);
   if (leadFilter.apt)    rows = rows.filter(l=>leadApts(l).includes(leadFilter.apt));
+  if (leadFilter.aptStatus){   // סינון לפי מצב הדירה: מי כבר עם דירה שמורה / נמכרה וכו'
+    rows = rows.filter(l=>{
+      const ids = leadApts(l);
+      if (leadFilter.aptStatus === 'none') return !ids.length;
+      return ids.some(id=>{
+        const a = state.floors.flatMap(f=>f.apts).find(x=>x.id===id);
+        return a && a.status === leadFilter.aptStatus;
+      });
+    });
+  }
   const q = (leadFilter.q||'').trim().toLowerCase();
   if (q) rows = rows.filter(l=>`${l.name} ${l.phone} ${l.email}`.toLowerCase().includes(q));
   if (!rows.length){
@@ -2061,7 +2138,7 @@ $('#lead-add').addEventListener('click', ()=>{
   const nl = newLead();
   state.leads.unshift(nl);
   leadOpen = nl.id;   // בתצוגת רשימה — המתעניין החדש נפתח מיד לעריכה
-  leadFilter = { status:'', apt:'', q:'' };
+  leadFilter = { status:'', apt:'', q:'', aptStatus:'' };
   const s = $('#leads-search'); if (s) s.value = '';
   saveState(true);
   const first = $('#leads-list .lead-name'); if (first) first.focus();
