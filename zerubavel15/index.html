@@ -498,9 +498,35 @@
     transition:border-color .15s, background .15s}
   .lfilter .dot{width:8px; height:8px; border-radius:50%}
   .lfilter.act{background:var(--navy); border-color:var(--navy); color:#fff}
+  .leads-tools-side{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .leads-view{display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#fff}
+  .leads-view button{border:none; background:transparent; padding:8px 13px; font:inherit; font-size:12.5px;
+    font-weight:800; color:var(--muted); cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:background .15s,color .15s}
+  .leads-view button.act{background:var(--navy); color:#fff}
   .leads-search{border:1px solid var(--line); border-radius:11px; padding:9px 13px; font:inherit; font-size:13px;
     color:var(--ink); background:#fff; min-width:min(260px,100%)}
   .leads-search:focus{outline:none; border-color:var(--tan-deep)}
+  /* תצוגת רשימה קומפקטית — שורה לכל מתעניין, הסטטוס לידו */
+  .lead-line{display:grid; grid-template-columns:auto 1.15fr .9fr 1.05fr 1.5fr auto; align-items:center; gap:12px;
+    padding:10px 14px; border:1px solid var(--line); border-radius:12px; background:#fff; cursor:pointer;
+    transition:border-color .15s, box-shadow .15s}
+  .lead-line:hover{border-color:var(--tan); box-shadow:0 4px 14px rgba(16,21,62,.06)}
+  .lead-line.dropped{opacity:.62}
+  .lead-line .pill{justify-self:start; white-space:nowrap}
+  .lline-name{font-weight:800; color:var(--navy); font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
+  .lline-name.empty{color:var(--muted); font-weight:600}
+  .lline-phone{font-size:12.5px; font-weight:700; color:var(--ink); text-decoration:none; direction:ltr; unicode-bidi:embed;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
+  a.lline-phone:hover{color:var(--tan-deep)}
+  .lline-apt{font-size:12px; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:6px;
+    white-space:nowrap; overflow:hidden; min-width:0}
+  .lline-apt .pill{font-size:10px; padding:2px 8px; flex:none}
+  .lline-notes{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
+  .lline-chev{border:none; background:none; cursor:pointer; font-size:13px; color:var(--muted); padding:4px 6px;
+    border-radius:8px; transition:transform .18s}
+  .lead-line.open{border-color:var(--tan)}
+  .lead-line.open .lline-chev{transform:rotate(180deg)}
+  .lead-row.expanded{border-color:var(--tan); box-shadow:0 10px 26px rgba(16,21,62,.08); margin-top:-6px}
   .leads-list{display:flex; flex-direction:column; gap:12px}
   .leads-empty{text-align:center; color:var(--muted); font-weight:600; font-size:14px; padding:26px 0 18px}
   .lead-row{border:1px solid var(--line); border-radius:var(--r-md); background:#fff; padding:14px 16px;
@@ -538,7 +564,16 @@
     .lead-grid{grid-template-columns:1fr}
     .leads-card{padding:16px 14px 14px}
     .leads-tools{flex-direction:column; align-items:stretch}
-    .leads-search{min-width:0}
+    .leads-tools-side{justify-content:space-between}
+    .leads-search{min-width:0; flex:1}
+    /* רשימה קומפקטית במובייל: סטטוס+שם+חץ בשורה, טלפון ודירה מתחת */
+    .lead-line{grid-template-columns:auto 1fr auto; row-gap:5px}
+    .lead-line .pill{grid-row:1; grid-column:1}
+    .lline-name{grid-row:1; grid-column:2}
+    .lline-chev{grid-row:1; grid-column:3}
+    .lline-phone{grid-row:2; grid-column:1 / -1; text-align:right}
+    .lline-apt{grid-row:3; grid-column:1 / -1}
+    .lline-notes{display:none}
   }
 
   /* ================= FLOOR CARDS ================= */
@@ -842,7 +877,10 @@
     </div>
     <div class="leads-tools">
       <div class="leads-filters" id="leads-filters"></div>
-      <input class="leads-search" id="leads-search" type="search" placeholder="חיפוש לפי שם / טלפון / אימייל…">
+      <div class="leads-tools-side">
+        <div class="leads-view" id="leads-view" role="group" aria-label="אופן התצוגה"></div>
+        <input class="leads-search" id="leads-search" type="search" placeholder="חיפוש לפי שם / טלפון / אימייל…">
+      </div>
     </div>
     <div class="leads-list" id="leads-list"></div>
   </div>
@@ -1701,6 +1739,9 @@ function setupReveals(){
 }
 /* ================= מערכת ניהול מתעניינים (לידים) — צוות בלבד ================= */
 let leadFilter = { status:'', apt:'', q:'' };
+let leadView = 'cards';   // 'cards' — כרטיסים מלאים · 'list' — רשימה קומפקטית
+try{ leadView = localStorage.getItem('zrubavel15-leadview') === 'list' ? 'list' : 'cards'; }catch(e){}
+let leadOpen = null;      // הליד הפתוח לעריכה בתצוגת הרשימה
 
 function leadPillEl(k, interactive){
   const s = LEAD_STATUSES[k] || LEAD_STATUSES.meeting;
@@ -1809,10 +1850,44 @@ function leadRow(ld){
   return row;
 }
 
+/* שורה קומפקטית בתצוגת הרשימה — הסטטוס ליד השם, לחיצה פותחת לעריכה */
+function leadLine(ld){
+  const row = el('div','lead-line'+(ld.status==='dropped'?' dropped':'')+(leadOpen===ld.id?' open':''));
+  row.appendChild(makeLeadStatusPill(ld));   // לחיץ — מחליף שלב בלי לפתוח את השורה
+  row.appendChild(el('span','lline-name'+(ld.name?'':' empty'), esc(ld.name||'ללא שם — לחצו למילוי')));
+  if (ld.phone){
+    const ph = el('a','lline-phone', esc(ld.phone));
+    ph.href = 'tel:'+ld.phone.replace(/[^+\d]/g,'');
+    ph.addEventListener('click', e=>e.stopPropagation());
+    row.appendChild(ph);
+  } else row.appendChild(el('span','lline-phone','—'));
+  const aptEl = el('span','lline-apt');
+  const a = state.floors.flatMap(f=>f.apts).find(x=>x.id===ld.apt);
+  if (a){ aptEl.appendChild(document.createTextNode(a.name+' ')); aptEl.appendChild(makePillEl(a.status,false)); }
+  else aptEl.textContent = 'ללא שיוך לדירה';
+  row.appendChild(aptEl);
+  row.appendChild(el('span','lline-notes', esc(ld.notes||'')));
+  const chev = el('button','lline-chev','▾');
+  chev.title = 'פתיחה לעריכה'; chev.setAttribute('aria-label','פתיחת פרטי המתעניין לעריכה');
+  row.appendChild(chev);
+  row.addEventListener('click', ()=>{ leadOpen = (leadOpen===ld.id ? null : ld.id); renderLeads(); });
+  return row;
+}
+
 function renderLeads(){
   const sec = $('#leads-sec'); if (!sec) return;
   sec.hidden = !teamMode;                      // ללקוחות המקטע לא קיים בכלל
   if (!teamMode) return;
+  // מתג תצוגה: כרטיסים / רשימה
+  const vw = $('#leads-view'); vw.innerHTML = '';
+  for (const [key,icon,label] of [['cards','🗂','כרטיסים'],['list','☰','רשימה']]){
+    const btn = el('button', leadView===key?'act':'', `${icon} ${label}`);
+    btn.addEventListener('click', ()=>{
+      leadView = key; try{ localStorage.setItem('zrubavel15-leadview', key); }catch(e){}
+      renderLeads();
+    });
+    vw.appendChild(btn);
+  }
   const leads = state.leads || (state.leads = []);
   const counts = { '':leads.length };
   for (const k of Object.keys(LEAD_STATUSES)) counts[k] = leads.filter(l=>l.status===k).length;
@@ -1850,7 +1925,16 @@ function renderLeads(){
       : 'עוד אין מתעניינים — לחצו "+ מתעניין חדש" כדי להוסיף את הראשון'));
     return;
   }
-  for (const ld of rows) list.appendChild(leadRow(ld));
+  for (const ld of rows){
+    if (leadView === 'list'){
+      list.appendChild(leadLine(ld));
+      if (leadOpen === ld.id){   // השורה הפתוחה — עורך מלא מתחתיה
+        const ed = leadRow(ld); ed.classList.add('expanded'); list.appendChild(ed);
+      }
+    } else {
+      list.appendChild(leadRow(ld));
+    }
+  }
 }
 
 /* יצוא הרשימה לקובץ CSV (נפתח באקסל, כולל עברית) */
@@ -1866,7 +1950,9 @@ function leadsCsv(){
 }
 $('#lead-add').addEventListener('click', ()=>{
   state.leads = state.leads || [];
-  state.leads.unshift(newLead());
+  const nl = newLead();
+  state.leads.unshift(nl);
+  leadOpen = nl.id;   // בתצוגת רשימה — המתעניין החדש נפתח מיד לעריכה
   leadFilter = { status:'', apt:'', q:'' };
   const s = $('#leads-search'); if (s) s.value = '';
   saveState(true);
