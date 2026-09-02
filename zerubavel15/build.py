@@ -3,6 +3,7 @@ import base64, os
 
 SCR = '/tmp/claude-0/-home-user-Shvil-Hatapuzim/4cf78e87-46e3-5829-9868-5a4102b17f5b/scratchpad'
 ASSET = '/home/user/Shvil-Hatapuzim/zerubavel15/assets'
+BRAND = '/home/user/Shvil-Hatapuzim/zerubavel15/brand'
 OUT = '/home/user/Shvil-Hatapuzim/zerubavel15/index.html'
 
 def durl(path, mime):
@@ -33,6 +34,9 @@ repl = {
     '__PLAN_T__':  img(f'{ASSET}/pl_typical.jpg'),
     '__PLAN_F5__': img(f'{ASSET}/pl_floor6.jpg'),
     '__PLAN_R__':  img(f'{ASSET}/pl_roof.jpg'),
+    '__ICON32__':  img(f'{BRAND}/favicon-32.png'),
+    '__ICON192__': img(f'{BRAND}/favicon-192.png'),
+    '__ICON180__': img(f'{BRAND}/favicon-180.png'),
 }
 
 with open(f'{SCR}/template.html', encoding='utf-8') as f:
