@@ -563,6 +563,7 @@
   /* שורת הסינון הפעיל — מה מסונן כרגע, עם הסרה מהירה */
   .leads-active{display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin-bottom:12px;
     padding:9px 12px; background:var(--tan-soft); border:1px dashed var(--tan); border-radius:12px}
+  .leads-active[hidden]{display:none}   /* display:flex גובר על תכונת hidden — בלי זה נראה פס ריק */
   .leads-active .la-lbl{font-size:11.5px; font-weight:800; color:var(--tan-deep); margin-inline-end:2px}
   .la-chip{display:inline-flex; align-items:center; gap:7px; background:#fff; border:1px solid var(--line);
     border-radius:999px; padding:5px 11px; font-size:12px; font-weight:700; color:var(--navy)}
@@ -1013,10 +1014,12 @@ const DEFAULT_STATE = {
 
 /* סטטוסי תהליך ההחתמה של מתעניין */
 const LEAD_STATUSES = {
-  meeting: {label:'מתעניין בפגישה',        color:'#2563C9'},
-  draft:   {label:'נשלחה טיוטה להחתמה',   color:'#E08A12'},
-  signed:  {label:'נחתם טופס החתמה',      color:'#159B4E'},
-  dropped: {label:'לא רלוונטי / ירד מהפרק', color:'#7A7E92'},
+  meeting:  {label:'מתעניין בפגישה',        color:'#2563C9'},
+  talks:    {label:'במשא ומתן',             color:'#8E44AD'},
+  noanswer: {label:'לא ענה / לא חזר אליי',  color:'#C2410C'},
+  draft:    {label:'נשלחה טיוטה להחתמה',   color:'#E08A12'},
+  signed:   {label:'נחתם טופס החתמה',      color:'#159B4E'},
+  dropped:  {label:'לא רלוונטי / ירד מהפרק', color:'#7A7E92'},
 };
 const newLead = ()=>({ id:'L'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
   name:'', phone:'', email:'', apt:'', apts:[], status:'meeting', notes:'',
