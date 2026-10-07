@@ -236,7 +236,8 @@
   .photo-legend span{display:inline-flex; align-items:center; gap:5px}
   .photo-legend i{width:9px; height:9px; border-radius:3px; display:inline-block; border:1px solid rgba(255,255,255,.5)}
   .photo-legend .lg-sold{background:#C79A73}
-  .photo-legend .lg-nego{background:#D62F2F}
+  .photo-legend .lg-nego{background:#1F9D55}
+  .photo-legend .lg-resv{background:#D62F2F}
   .photo-legend .lg-avail{background:rgba(27,36,103,.9)}
 
   .gallery{display:none; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:10px}
@@ -921,7 +922,7 @@
       <div class="photo-wrap" id="photo">
         <img src="__PH1__" alt="הדמיית הבניין — זרובבל 15" id="mainphoto">
         <div class="photo-cap" id="photo-cap"></div>
-        <div class="photo-legend" id="photo-legend"><span><i class="lg-sold"></i>נמכר</span><span><i class="lg-nego"></i>במשא ומתן</span><span><i class="lg-avail"></i>זמינה</span></div>
+        <div class="photo-legend" id="photo-legend"><span><i class="lg-sold"></i>נמכר</span><span><i class="lg-resv"></i>שמור</span><span><i class="lg-nego"></i>במשא ומתן</span><span><i class="lg-avail"></i>בשיווק</span></div>
         <div id="pbadges"></div>
       </div>
       <div class="gallery" id="gallery" role="group" aria-label="בחירת תמונה"></div>
@@ -1728,8 +1729,9 @@ function renderBld(){
   // זהב (מהפאלטה) = נמכרה · כחול = זמינה. קומה עם דירה אחת — הריבוע כולו.
   const SOLD_C  = '#CFA478';            // זהב הפאלטה — נמכר
   const AVAIL_C = 'rgba(16,21,62,.6)';  // כחול זכוכיתי — זמין
-  const NEGO_C  = '#D62F2F';            // אדום — דירה במשא ומתן
-  const stC = st => st==='sold' ? SOLD_C : st==='negotiation' ? NEGO_C : AVAIL_C;
+  const RESV_C  = '#D62F2F';            // אדום — שמור
+  const NEGO_C  = '#1F9D55';            // ירוק — במשא ומתן
+  const stC = st => st==='sold' ? SOLD_C : st==='reserved' ? RESV_C : st==='negotiation' ? NEGO_C : AVAIL_C;
   const pb = $('#pbadges'); pb.innerHTML='';
   const n = floors.length;
   // מיקומי הקומות מכוילים לחזית שבתמונה (7 קומות) — מסודר וטבעי לעין
