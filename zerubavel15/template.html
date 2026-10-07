@@ -236,6 +236,7 @@
   .photo-legend span{display:inline-flex; align-items:center; gap:5px}
   .photo-legend i{width:9px; height:9px; border-radius:3px; display:inline-block; border:1px solid rgba(255,255,255,.5)}
   .photo-legend .lg-sold{background:#C79A73}
+  .photo-legend .lg-nego{background:#D62F2F}
   .photo-legend .lg-avail{background:rgba(27,36,103,.9)}
 
   .gallery{display:none; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:10px}
@@ -920,7 +921,7 @@
       <div class="photo-wrap" id="photo">
         <img src="__PH1__" alt="הדמיית הבניין — זרובבל 15" id="mainphoto">
         <div class="photo-cap" id="photo-cap"></div>
-        <div class="photo-legend" id="photo-legend"><span><i class="lg-sold"></i>נמכר</span><span><i class="lg-avail"></i>זמינה</span></div>
+        <div class="photo-legend" id="photo-legend"><span><i class="lg-sold"></i>נמכר</span><span><i class="lg-nego"></i>במשא ומתן</span><span><i class="lg-avail"></i>זמינה</span></div>
         <div id="pbadges"></div>
       </div>
       <div class="gallery" id="gallery" role="group" aria-label="בחירת תמונה"></div>
@@ -1727,6 +1728,8 @@ function renderBld(){
   // זהב (מהפאלטה) = נמכרה · כחול = זמינה. קומה עם דירה אחת — הריבוע כולו.
   const SOLD_C  = '#CFA478';            // זהב הפאלטה — נמכר
   const AVAIL_C = 'rgba(16,21,62,.6)';  // כחול זכוכיתי — זמין
+  const NEGO_C  = '#D62F2F';            // אדום — דירה במשא ומתן
+  const stC = st => st==='sold' ? SOLD_C : st==='negotiation' ? NEGO_C : AVAIL_C;
   const pb = $('#pbadges'); pb.innerHTML='';
   const n = floors.length;
   // מיקומי הקומות מכוילים לחזית שבתמונה (7 קומות) — מסודר וטבעי לעין
@@ -1740,11 +1743,11 @@ function renderBld(){
     const GLOSS = 'linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,0) 55%)';
     if (apts.length >= 2){
       // חיתוך אלכסוני: משולש עליון-ימני = חזית זרובבל · תחתון-שמאלי = עורף אהרונסון
-      const fc = apts[0].status==='sold' ? SOLD_C : AVAIL_C;
-      const bc = apts[1].status==='sold' ? SOLD_C : AVAIL_C;
+      const fc = stC(apts[0].status);
+      const bc = stC(apts[1].status);
       b.style.background = `${GLOSS}, linear-gradient(to bottom left, ${fc} 0 50%, ${bc} 50% 100%)`;
     } else if (apts.length === 1){
-      b.style.background = `${GLOSS}, linear-gradient(0deg, ${apts[0].status==='sold' ? SOLD_C : AVAIL_C} 0 100%)`;
+      b.style.background = `${GLOSS}, linear-gradient(0deg, ${stC(apts[0].status)} 0 100%)`;
     }
     const line = a=>`${a.name} — ${(STATUSES[a.status]||STATUSES.marketing).label}`;
     b.title = f.label + (apts.length ? ': ' + apts.map(line).join(' · ') : '');
