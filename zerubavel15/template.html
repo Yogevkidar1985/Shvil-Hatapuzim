@@ -501,6 +501,25 @@
   }
   .smenu-save:hover{background:var(--navy-soft)}
 
+  /* ================= סיכום תחתון (צוות בלבד) ================= */
+  .sum-sec{max-width:1320px; margin:0 auto 46px; padding:0 26px}
+  .sum-sec[hidden]{display:none}
+  .sum-card{background:var(--paper); border:1px solid var(--line); border-radius:var(--r-lg); padding:22px;
+    box-shadow:0 14px 40px rgba(16,21,62,.08)}
+  .sum-title{margin:0 0 16px; font-size:20px; color:var(--navy); font-weight:800; display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .sum-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; margin-bottom:16px}
+  .sum-box{border:1px solid var(--line); border-radius:14px; padding:14px 16px; background:#fff}
+  .sum-box h3{margin:0 0 10px; font-size:13px; color:var(--tan-deep); font-weight:800}
+  .sum-big{font-size:30px; font-weight:800; color:var(--navy); line-height:1}
+  .sum-row{display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:13px; font-weight:700; color:var(--ink); padding:4px 0}
+  .sum-row .dot{width:9px; height:9px; border-radius:50%; display:inline-block; margin-inline-end:7px}
+  .sum-row b{color:var(--navy)}
+  .sum-ins{border:1px solid var(--line); border-radius:14px; padding:16px 18px; background:#FDFBF7}
+  .sum-ins h3{margin:0 0 10px; font-size:14px; color:var(--navy); font-weight:800}
+  .sum-ins ul{margin:0; padding-inline-start:20px; display:flex; flex-direction:column; gap:7px; font-size:13.5px; line-height:1.55; color:var(--ink)}
+  .sum-ins li.warn{color:#9A3412; font-weight:700}
+  .sum-ins li.good{color:#166534; font-weight:700}
+
   /* ================= LEADS — מערכת ניהול מתעניינים (צוות בלבד) ================= */
   .leads-sec{max-width:1320px; margin:0 auto 46px; padding:0 26px}
   .leads-card{background:var(--paper); border:1px solid var(--line); border-radius:var(--r-lg);
@@ -977,6 +996,13 @@
   </div>
 </section>
 
+<section class="sum-sec" id="sum-sec" hidden>
+  <div class="sum-card">
+    <h2 class="sum-title">סיכום ומצב הפרויקט <span class="leads-lock">🔒 לצוות בלבד</span></h2>
+    <div id="sum-body"></div>
+  </div>
+</section>
+
 <footer class="site">
   <img class="foot-logo" src="__LOGO__" alt="זרובבל 15">
   <p class="foot-lead" id="m-foot1">הזדמנות אחרונה להצטרף לנבחרת מנצחת</p>
@@ -1271,6 +1297,7 @@ function fbParse(doc){
 function fbRemoteTs(doc){ try{ return +doc.fields.updatedAt.integerValue || 0; }catch(e){ return 0; } }
 async function cloudSave(){
   if (!cloudEnabled()){ setSync('local'); return; }
+  if (!teamMode) return;   // מבקרים לעולם לא כותבים לענן — הענן הוא מקור האמת
   try{
     setSync('saving');
     // המסמך הציבורי — דירות וטקסטים בלבד, לעולם בלי לידים ובלי הערות צוות
@@ -1326,7 +1353,8 @@ async function cloudInit(){
     if(!r.ok) throw 0;
     const doc = await r.json();
     cloudOK = true;
-    if (fbRemoteTs(doc) > (state.meta.updatedAt || 0)){
+    // מבקר: תמיד מאמץ את הענן (גם אם בזיכרון/בקישור יש תמונת מצב ישנה); צוות: רק אם הענן חדש יותר
+    if (!teamMode || fbRemoteTs(doc) > (state.meta.updatedAt || 0)){
       const h = fbParse(doc);
       if (h){   // מאמצים את הציבורי; הפרטי של הצוות נשמר, אצל לקוח — מנוקה
         const keep = teamMode ? splitPrivate() : null;
@@ -1336,20 +1364,20 @@ async function cloudInit(){
         renderAll();
       }
     } else {
-      cloudSave();   // המכשיר עדכני יותר — דוחפים לענן
+      cloudSave();   // מכשיר צוות עדכני יותר — דוחפים לענן
     }
     cloudFetchPrivate();   // צוות בלבד — מושך את המסמך המוצפן
     setSync('cloud');
   }catch(e){ cloudOK = false; setSync('local'); }
 }
 /* משיכת עדכונים מהענן ברקע — צופה בדף רואה כל שינוי בלי לרענן */
-setInterval(async ()=>{
+async function cloudPoll(){
   if (!cloudEnabled() || editMode) return;   // לא דורסים עריכה פעילה
   try{
     const r = await fetchT(FB_DOC(), {cache:'no-store'});
     if (!r.ok) return;
     const doc = await r.json();
-    if (fbRemoteTs(doc) > (state.meta.updatedAt || 0)){
+    if (fbRemoteTs(doc) > (state.meta.updatedAt || 0) || (!teamMode && fbRemoteTs(doc) !== (state.meta.updatedAt || 0))){
       const h = fbParse(doc);
       if (h){
         const keep = teamMode ? splitPrivate() : null;
@@ -1361,7 +1389,11 @@ setInterval(async ()=>{
     }
     cloudFetchPrivate();   // עדכוני לידים חיים בין מכשירי הצוות
   }catch(e){}
-}, 30000);
+}
+/* עדכון חי: כל 15 שניות, וגם ברגע שחוזרים לטאב / לאפליקציה */
+setInterval(cloudPoll, 15000);
+document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) cloudPoll(); });
+window.addEventListener('focus', cloudPoll);
 
 /* ---------- helpers ---------- */
 const $ = s=>document.querySelector(s);
@@ -1966,6 +1998,29 @@ let leadView = 'cards';   // 'cards' — כרטיסים מלאים · 'list' —
 try{ leadView = localStorage.getItem('zrubavel15-leadview') === 'list' ? 'list' : 'cards'; }catch(e){}
 let leadOpen = null;      // הליד הפתוח לעריכה בתצוגת הרשימה
 
+/* תגית סטטוס של דירה בתוך רשימת המתעניינים — לצוות לחיצה משנה את סטטוס הדירה בלוח עצמו */
+function aptStatusPillInLead(a){
+  if (!teamMode) return makePillEl(a.status, false);
+  const b = makePillEl(a.status, true);
+  b.title = 'שינוי סטטוס הדירה';
+  b.addEventListener('click', ev=>{
+    ev.stopPropagation(); closeMenu();
+    const m = el('div','smenu');
+    for (const k of Object.keys(STATUSES)){
+      const o = makePillEl(k, true);
+      if (k===a.status) o.innerHTML += ' ✓';
+      o.addEventListener('click', e2=>{ e2.stopPropagation(); closeMenu(); a.status = k; saveState(true); toast(`${a.name}: ${STATUSES[k].label}`); });
+      m.appendChild(o);
+    }
+    document.body.appendChild(m);
+    const r = b.getBoundingClientRect();
+    m.style.top = (r.bottom + window.scrollY + 8)+'px';
+    let x = r.left + window.scrollX; if (x + 250 > document.documentElement.clientWidth) x = r.right + window.scrollX - 250;
+    m.style.left = Math.max(8,x)+'px';
+    openMenu = m;
+  });
+  return b;
+}
 function leadPillEl(k, interactive){
   const s = LEAD_STATUSES[k] || LEAD_STATUSES.meeting;
   const b = el(interactive?'button':'span','pill lpill'+(interactive?'':' static'), esc(s.label));
@@ -2050,7 +2105,7 @@ function leadAptField(ld){
       const a = state.floors.flatMap(f=>f.apts).find(x=>x.id===id);
       const chip = el('span','lead-aptchip');
       chip.appendChild(document.createTextNode((a ? a.name : 'דירה שנמחקה')+' '));
-      if (a) chip.appendChild(makePillEl(a.status, false));
+      if (a) chip.appendChild(aptStatusPillInLead(a));
       const x = el('button','aptchip-x','✕');
       x.title = 'הסרת הדירה מהמתעניין';
       x.addEventListener('click', ()=>{
@@ -2184,7 +2239,7 @@ function leadLine(ld){
       const a = state.floors.flatMap(f=>f.apts).find(x=>x.id===id);
       if (i) aptEl.appendChild(document.createTextNode(' · '));
       aptEl.appendChild(document.createTextNode((a ? a.name : '?')+' '));
-      if (a) aptEl.appendChild(makePillEl(a.status,false));
+      if (a) aptEl.appendChild(aptStatusPillInLead(a));
     });
   } else aptEl.textContent = '—';
   row.appendChild(aptEl);
@@ -2367,7 +2422,58 @@ $('#lead-export').addEventListener('click', ()=>{
   toast('הקובץ ירד ✓');
 });
 
-function renderAll(){ hidePop(); renderMeta(); renderKpis(); renderBld(); renderFloors(); renderLeads(); setupReveals(); }
+function renderSummary(){
+  const sec = $('#sum-sec'); if (!sec) return;
+  sec.hidden = !teamMode; if (!teamMode) return;
+  const A = state.floors.flatMap(f=>f.apts.map(a=>({...a, floor:f.label})));
+  const byId = Object.fromEntries(A.map(a=>[a.id,a]));
+  const L = state.leads||[];
+  const active = L.filter(l=>l.status!=='dropped');
+  const cnt = k => A.filter(a=>a.status===k).length;
+  const lc = k => L.filter(l=>l.status===k).length;
+  const nm = l => l.name||'ללא שם';
+  const closed = cnt('sold')+cnt('reserved');
+  // מי מתעניין בכל דירה (מתעניינים פעילים בלבד)
+  const interest = {}; for (const l of active) for (const id of leadApts(l)) (interest[id]=interest[id]||[]).push(l);
+  const competing = A.filter(a=>(interest[a.id]||[]).length>=2 && a.status!=='sold');
+  const multi = active.filter(l=>leadApts(l).length>=2);
+  const onSold = active.filter(l=>l.status!=='signed' && leadApts(l).some(id=>byId[id] && byId[id].status==='sold'));
+  const signedNoRes = L.filter(l=>l.status==='signed' && leadApts(l).some(id=>byId[id] && (byId[id].status==='marketing' || byId[id].status==='negotiation')));
+  const noInterest = A.filter(a=>a.status==='marketing' && !(interest[a.id]||[]).length);
+  const noAns = L.filter(l=>l.status==='noanswer');
+  const unassigned = active.filter(l=>!leadApts(l).length);
+  const rows = (items)=>items.map(([c,lbl,n])=>`<div class="sum-row"><span><i class="dot" style="background:${c}"></i>${esc(lbl)}</span><b>${n}</b></div>`).join('');
+
+  const boxApts = `<div class="sum-box"><h3>הדירות</h3><div class="sum-big">${A.length}</div>`+
+    rows(Object.entries(STATUSES).map(([k,v])=>[v.color,v.label,cnt(k)]))+
+    `<div class="sum-row"><span>נסגרו / שמורות</span><b>${closed} מתוך ${A.length}</b></div></div>`;
+  const boxLeads = `<div class="sum-box"><h3>המתעניינים</h3><div class="sum-big">${L.length}</div>`+
+    rows(Object.entries(LEAD_STATUSES).map(([k,v])=>[v.color,v.label,lc(k)]))+`</div>`;
+  const boxOverlap = `<div class="sum-box"><h3>חפיפות ביקוש</h3>
+    <div class="sum-row"><span>דירות עם 2+ מתעניינים</span><b>${competing.length}</b></div>
+    <div class="sum-row"><span>מתעניינים ב-2+ דירות</span><b>${multi.length}</b></div>
+    <div class="sum-row"><span>בלי דירה מסומנת</span><b>${unassigned.length}</b></div>
+    <div class="sum-row"><span>דירות בשיווק ללא מתעניין</span><b>${noInterest.length}</b></div></div>`;
+
+  const ins = [];
+  if (!L.length) ins.push(['','עוד אין מתעניינים ברשימה — אין עדיין נתונים להערכת ביקוש.']);
+  else {
+    ins.push(['good',`${closed} מתוך ${A.length} דירות כבר שמורות או נמכרו (${Math.round(closed/A.length*100)}%). נותרו ${cnt('marketing')+cnt('negotiation')} דירות פתוחות.`]);
+    if (competing.length) ins.push(['good','ביקוש מתחרה — כדאי ליצור דחיפות: '+competing.map(a=>`${a.name} (${interest[a.id].map(nm).join(', ')})`).join(' · ')]);
+    if (multi.length) ins.push(['',`מתעניינים בכמה דירות: ${multi.map(l=>`${nm(l)} — ${leadApts(l).map(id=>byId[id]?byId[id].name:'?').join(' + ')}`).join(' · ')}. עדיף לברר איזו דירה באמת מבוקשת, כדי לא לחסום אחרות.`]);
+    if (onSold.length) ins.push(['warn',`מתעניינים בדירה שכבר נמכרה — צריך להציע חלופה: ${onSold.map(nm).join(', ')}.`]);
+    if (signedNoRes.length) ins.push(['warn',`חתמו על טופס אבל הדירה עדיין לא שמורה בלוח: ${signedNoRes.map(nm).join(', ')} — כדאי לעדכן סטטוס.`]);
+    if (noAns.length) ins.push(['warn',`${noAns.length} מתעניינים שלא ענו — שווה סבב חזרה: ${noAns.map(nm).join(', ')}.`]);
+    if (unassigned.length) ins.push(['',`${unassigned.length} מתעניינים פעילים עדיין בלי דירה מסומנת — סימון דירה ישפר את תמונת הביקוש.`]);
+    if (noInterest.length) ins.push(['warn',`דירות בשיווק בלי אף מתעניין: ${noInterest.map(a=>a.name).join(', ')}.`]);
+    const pipeline = lc('talks')+lc('draft');
+    ins.push(['',`צנרת קרובה לסגירה: ${lc('talks')} במשא ומתן ו-${lc('draft')} עם טיוטה שנשלחה; ${lc('signed')} כבר חתמו. מתוך ${active.length} מתעניינים פעילים, ${Math.round(pipeline/Math.max(1,active.length)*100)}% בשלב מתקדם.`]);
+  }
+  $('#sum-body').innerHTML = `<div class="sum-grid">${boxApts}${boxLeads}${boxOverlap}</div>`+
+    `<div class="sum-ins"><h3>חוות דעת</h3><ul>${ins.map(([c,t])=>`<li class="${c}">${esc(t)}</li>`).join('')}</ul></div>`;
+}
+
+function renderAll(){ hidePop(); renderMeta(); renderKpis(); renderBld(); renderFloors(); renderLeads(); renderSummary(); setupReveals(); }
 
 /* ---------- header actions ---------- */
 $('#btn-edit').addEventListener('click', async ()=>{
@@ -2386,7 +2492,7 @@ $('#btn-share').addEventListener('click',async ()=>{
   saveState(true);   // כותב את המצב לתוך הקישור (#d=) — הקישור נושא תמיד את הסטטוסים הנוכחיים
   // מנסים לקבע דלי ענן, אך לא ממתינים יותר מ-2.5 שניות כדי שהכפתור לא ייתקע כשהענן לא זמין
   try{ await Promise.race([cloudSave(), new Promise(r=>setTimeout(r,2500))]); }catch(e){}
-  const url = location.href;
+  const url = /^https?:$/.test(location.protocol) ? location.origin + location.pathname : location.href;   // קישור נקי וחי — בלי תמונת מצב בכתובת
   const live = cloudOK;   // האם הצלחנו לסנכרן בענן
   const shareData = {
     title: state.meta.title || 'זרובבל 15',
