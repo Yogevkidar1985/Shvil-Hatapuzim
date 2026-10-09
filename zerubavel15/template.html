@@ -36,7 +36,7 @@
     --navy:#1B2467; --navy-deep:#10153E; --navy-soft:#2A357E; --ink:#20244A;
     --cream:#F6EDE2; --paper:#FFFDF9; --tan:#D0A88C; --tan-deep:#B98D6E; --tan-soft:rgba(208,168,140,.16);
     --line:#EADDCE; --muted:#787490;
-    --st-marketing:#2E7D4E; --st-negotiation:#3D4A9E; --st-reserved:#7A7264; --st-sold:#B23F38;
+    --st-marketing:#2563C9; --st-negotiation:#1F9D55; --st-reserved:#D62F2F; --st-sold:#B9831F;
     --r-lg:20px; --r-md:14px; --r-sm:10px;
     --shadow-1:none;
     --shadow-2:0 8px 30px rgba(27,36,103,.09);
@@ -235,10 +235,6 @@
   }
   .photo-legend span{display:inline-flex; align-items:center; gap:5px}
   .photo-legend i{width:9px; height:9px; border-radius:3px; display:inline-block; border:1px solid rgba(255,255,255,.5)}
-  .photo-legend .lg-sold{background:#C79A73}
-  .photo-legend .lg-nego{background:#1F9D55}
-  .photo-legend .lg-resv{background:#D62F2F}
-  .photo-legend .lg-avail{background:rgba(27,36,103,.9)}
 
   .gallery{display:none; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:10px}
   .gallery button{
@@ -507,14 +503,16 @@
   .sum-card{background:var(--paper); border:1px solid var(--line); border-radius:var(--r-lg); padding:22px;
     box-shadow:0 14px 40px rgba(16,21,62,.08)}
   .sum-title{margin:0 0 16px; font-size:20px; color:var(--navy); font-weight:800; display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .sum-bar{display:flex; height:10px; border-radius:999px; overflow:hidden; margin:12px 0 12px; background:#EEE8DF}
+  .sum-bar span{display:block; height:100%}
   .sum-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; margin-bottom:16px}
-  .sum-box{border:1px solid var(--line); border-radius:14px; padding:14px 16px; background:#fff}
+  .sum-box{border:none; border-radius:16px; padding:16px 18px; background:#FBF7F0}
   .sum-box h3{margin:0 0 10px; font-size:13px; color:var(--tan-deep); font-weight:800}
   .sum-big{font-size:30px; font-weight:800; color:var(--navy); line-height:1}
   .sum-row{display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:13px; font-weight:700; color:var(--ink); padding:4px 0}
   .sum-row .dot{width:9px; height:9px; border-radius:50%; display:inline-block; margin-inline-end:7px}
   .sum-row b{color:var(--navy)}
-  .sum-ins{border:1px solid var(--line); border-radius:14px; padding:16px 18px; background:#FDFBF7}
+  .sum-ins{border:none; border-radius:16px; padding:16px 20px; background:#FBF7F0}
   .sum-ins h3{margin:0 0 10px; font-size:14px; color:var(--navy); font-weight:800}
   .sum-ins ul{margin:0; padding-inline-start:20px; display:flex; flex-direction:column; gap:7px; font-size:13.5px; line-height:1.55; color:var(--ink)}
   .sum-ins li.warn{color:#9A3412; font-weight:700}
@@ -551,30 +549,21 @@
     color:var(--ink); background:#fff; min-width:min(260px,100%)}
   .leads-search:focus{outline:none; border-color:var(--tan-deep)}
   /* תצוגת רשימה — טבלה מסודרת: עמודות קבועות שמיושרות בדיוק בכל השורות */
-  .lead-table{border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#fff}
-  .lead-line{display:grid; grid-template-columns:158px 1fr 118px 1.05fr 1.5fr 72px; align-items:center; gap:12px;
-    padding:11px 16px; background:#fff; cursor:pointer; border-top:1px solid var(--line); transition:background .15s}
-  .lead-table > :first-child{border-top:none}
-  .lead-line:hover{background:#FBF7F0}
+  .lead-table{display:flex; flex-direction:column; gap:8px}
+  .lead-line{display:grid; grid-template-columns:1.35fr 190px 1.5fr 1.3fr 76px; align-items:center; gap:14px;
+    padding:12px 18px; background:#fff; cursor:pointer; border:1px solid var(--line); border-radius:14px; transition:background .15s, box-shadow .15s, border-color .15s}
+  .lead-line:hover{border-color:var(--tan); box-shadow:0 4px 14px rgba(16,21,62,.06)}
   .lead-line.dropped > *{opacity:.55}
-  .lead-line.open{background:var(--tan-soft)}
+  .lead-line.open{background:var(--tan-soft); border-color:var(--tan)}
   .lead-line .pill{justify-self:start; white-space:nowrap; font-size:11px; padding:4px 11px}
-  /* תגית הסטטוס של הליד — צבע מלא, רוחב אחיד וממורכז: ברור במבט אחד */
-  .lead-line > .lpill{
-    background:var(--st) !important; color:#fff !important;
-    width:100%; max-width:150px; justify-content:center; text-align:center;
-    font-size:11.5px; font-weight:800; padding:7px 10px; letter-spacing:.01em;
-    box-shadow:inset 0 -1.5px 0 rgba(0,0,0,.18);
-  }
-  .lead-top > .lpill{
-    background:var(--st) !important; color:#fff !important;
-    font-size:11.5px; font-weight:800; padding:7px 14px;
-    box-shadow:inset 0 -1.5px 0 rgba(0,0,0,.18);
-  }
+  /* תגית שלב קלילה: רקע בהיר, טקסט בצבע השלב ונקודה */
+  .lpill{display:inline-flex; align-items:center; gap:7px; font-weight:800; font-size:12px; padding:6px 12px; border-radius:999px; white-space:nowrap}
+  .lpill::before{content:""; width:7px; height:7px; border-radius:50%; background:currentColor; flex:none}
+  .lead-line > .lpill{justify-self:start}
   /* שורת הכותרות של הטבלה */
-  .lead-line.thead{cursor:default; background:#F7F1E8; padding:9px 16px; border-top:none}
-  .lead-line.thead:hover{background:#F7F1E8}
-  .lh{font-size:11px; font-weight:800; color:var(--tan-deep); letter-spacing:.02em}
+  .lead-line.thead{cursor:default; background:transparent; border:none; padding:2px 18px 0}
+  .lead-line.thead:hover{background:transparent; box-shadow:none}
+  .lh{font-size:11.5px; font-weight:700; color:var(--muted)}
   .lh-btn{border:none; background:none; cursor:pointer; font:inherit; padding:3px 6px; margin:-3px -6px;
     border-radius:7px; justify-self:start; text-align:right; transition:background .15s, color .15s}
   .lh-btn:hover{background:rgba(185,141,110,.16)}
@@ -585,25 +574,29 @@
   .smenu-opt:hover{background:var(--tan-soft)}
   .smenu-opt.act{background:rgba(27,36,103,.08); color:var(--navy)}
   .smenu-opt .dot{width:8px; height:8px; border-radius:50%; flex:none}
-  .lline-name{font-weight:800; color:var(--navy); font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
+  .lline-who{display:flex; flex-direction:column; gap:2px; min-width:0}
+  .lline-name{font-weight:800; color:var(--navy); font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
   .lline-name.empty{color:var(--muted); font-weight:600}
-  .lline-phone{font-size:12.5px; font-weight:700; color:var(--ink); text-decoration:none; direction:ltr; unicode-bidi:embed;
-    text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
+  .lline-phone{font-size:12px; font-weight:600; color:var(--muted); text-decoration:none; direction:ltr; unicode-bidi:embed;
+    text-align:right; white-space:nowrap; align-self:flex-start; min-width:0}
   a.lline-phone:hover{color:var(--tan-deep); text-decoration:underline}
-  .lline-apt{font-size:12px; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:6px;
-    white-space:nowrap; overflow:hidden; min-width:0}
+  .lline-apt{font-size:12px; font-weight:600; color:var(--muted); display:flex; align-items:center; flex-wrap:wrap; gap:6px; min-width:0}
+  .aptc{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:#fff; border-radius:999px; padding:4px 11px; font:inherit; font-size:12px; font-weight:700; color:var(--ink); cursor:pointer}
+  .aptc i{width:8px; height:8px; border-radius:50%; flex:none}
+  .aptc em{font-style:normal; font-weight:800}
+  span.aptc{cursor:default}
+  .aptc:hover{border-color:var(--tan)}
   .lline-apt .pill{font-size:10px; padding:2px 8px; flex:none}
   .lline-notes{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
   .lline-acts{display:inline-flex; align-items:center; gap:4px; justify-self:end}
-  .lline-del{border:1px solid var(--line); background:#fff; cursor:pointer; font-size:13px; line-height:1;
-    color:#C62828; padding:6px 8px; border-radius:9px; transition:background .15s, border-color .15s}
-  .lline-del:hover{background:#FBE9E7; border-color:#E4B7B2}
+  .lline-del{border:none; background:transparent; cursor:pointer; font-size:14px; line-height:1; opacity:.45;
+    padding:7px 8px; border-radius:9px; transition:background .15s, opacity .15s}
+  .lline-del:hover{background:#FBE9E7; opacity:1}
   .lline-chev{border:none; background:none; cursor:pointer; font-size:13px; color:var(--muted); padding:4px 6px;
     border-radius:8px; transition:transform .18s}
   .lead-line.open .lline-chev{transform:rotate(180deg)}
   /* העורך הפתוח — משתלב בתוך הטבלה */
-  .lead-table .lead-row.expanded{border:none; border-top:1px solid var(--tan); border-radius:0;
-    background:#FDFAF5; box-shadow:inset 0 6px 14px -10px rgba(16,21,62,.18); margin:0}
+  .lead-table .lead-row.expanded{border:1px solid var(--tan); border-radius:14px; background:#FDFAF5; margin:0}
   /* שורת הסינון הפעיל — מה מסונן כרגע, עם הסרה מהירה */
   .leads-active{display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin-bottom:12px;
     padding:9px 12px; background:var(--tan-soft); border:1px dashed var(--tan); border-radius:12px}
@@ -673,14 +666,13 @@
     .leads-tools{flex-direction:column; align-items:stretch}
     .leads-tools-side{justify-content:space-between}
     .leads-search{min-width:0; flex:1}
-    /* רשימה קומפקטית במובייל: שם+פעולות בשורה, סטטוס וטלפון ודירה מתחת */
-    .lead-line{grid-template-columns:1fr auto; row-gap:6px}
+    /* רשימה במובייל: שם+פעולות, שלב, דירות */
+    .lead-line{grid-template-columns:1fr auto; row-gap:8px; padding:12px 14px}
     .lead-line.thead{display:none}
-    .lline-name{grid-row:1; grid-column:1}
+    .lline-who{grid-row:1; grid-column:1}
     .lline-acts{grid-row:1; grid-column:2}
-    .lead-line .pill{grid-row:2; grid-column:1 / -1}
-    .lline-phone{grid-row:3; grid-column:1 / -1; text-align:right}
-    .lline-apt{grid-row:4; grid-column:1 / -1}
+    .lead-line > .lpill{grid-row:2; grid-column:1 / -1}
+    .lline-apt{grid-row:3; grid-column:1 / -1}
     .lline-notes{display:none}
   }
 
@@ -1016,10 +1008,11 @@
 /* ---------- config ---------- */
 const STATUSES = {
   // צבעים חיים ובולטים, מבחינים היטב זה מזה — במיוחד "שמור" (סגול חי במקום אפור דהוי)
-  marketing:   {label:'בשיווק',     color:'#159B4E'},
-  negotiation: {label:'במשא ומתן', color:'#E08A12'},
-  reserved:    {label:'שמור',       color:'#6A45D9'},
-  sold:        {label:'נמכר',       color:'#DA342B'},
+  // מקור אחד לצבעי הדירות — פילים, KPI, החתך, קוביות התמונה והמקרא כולם נגזרים מכאן
+  marketing:   {label:'בשיווק',     color:'#2563C9'},   // כחול
+  negotiation: {label:'במשא ומתן', color:'#1F9D55'},   // ירוק
+  reserved:    {label:'שמור',       color:'#D62F2F'},   // אדום
+  sold:        {label:'נמכר',       color:'#B9831F'},   // זהב
 };
 const LS_KEY = 'zrubavel15-status-v11';   // הקפצת גרסה — מצב ישן שנשמר בדפדפן לא ידרוס עוד את העדכונים
 
@@ -1065,12 +1058,12 @@ const DEFAULT_STATE = {
 
 /* סטטוסי תהליך ההחתמה של מתעניין */
 const LEAD_STATUSES = {
-  meeting:  {label:'מתעניין בפגישה',        color:'#2563C9'},
+  meeting:  {label:'מתעניין בפגישה',        color:'#5B6FA8'},
   talks:    {label:'במשא ומתן',             color:'#8E44AD'},
-  noanswer: {label:'לא ענה / לא חזר אליי',  color:'#C2410C'},
-  draft:    {label:'נשלחה טיוטה להחתמה',   color:'#E08A12'},
-  signed:   {label:'נחתם טופס החתמה',      color:'#159B4E'},
-  dropped:  {label:'לא רלוונטי / ירד מהפרק', color:'#7A7E92'},
+  noanswer: {label:'לא ענה / לא חזר אליי',  color:'#C2570C'},
+  draft:    {label:'נשלחה טיוטה להחתמה',   color:'#0E7C86'},
+  signed:   {label:'נחתם טופס החתמה',      color:'#2F8F5B'},
+  dropped:  {label:'לא רלוונטי / ירד מהפרק', color:'#8A8DA0'},
 };
 const newLead = ()=>({ id:'L'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
   name:'', phone:'', email:'', apt:'', apts:[], status:'meeting', notes:'',
@@ -1759,11 +1752,7 @@ function renderBld(){
   // photo badges — מפת מכירות חיה על גבי תמונת הבניין:
   // כל ריבוע = קומה. חצי ימני = חזית זרובבל, חצי שמאלי = עורף אהרונסון.
   // זהב (מהפאלטה) = נמכרה · כחול = זמינה. קומה עם דירה אחת — הריבוע כולו.
-  const SOLD_C  = '#CFA478';            // זהב הפאלטה — נמכר
-  const AVAIL_C = 'rgba(16,21,62,.6)';  // כחול זכוכיתי — זמין
-  const RESV_C  = '#D62F2F';            // אדום — שמור
-  const NEGO_C  = '#1F9D55';            // ירוק — במשא ומתן
-  const stC = st => st==='sold' ? SOLD_C : st==='reserved' ? RESV_C : st==='negotiation' ? NEGO_C : AVAIL_C;
+  const stC = st => (STATUSES[st]||STATUSES.marketing).color;   // אותו צבע בדיוק כמו בחתך
   const pb = $('#pbadges'); pb.innerHTML='';
   const n = floors.length;
   // מיקומי הקומות מכוילים לחזית שבתמונה (7 קומות) — מסודר וטבעי לעין
@@ -1789,6 +1778,8 @@ function renderBld(){
     b.addEventListener('click',()=>focusFloor(f.id));
     pb.appendChild(b);
   });
+  const lg = $('#photo-legend');
+  if (lg) lg.innerHTML = ['sold','reserved','negotiation','marketing'].map(k=>`<span><i style="background:${STATUSES[k].color}"></i>${STATUSES[k].label}</span>`).join('');
   positionBadges();
 }
 
@@ -1999,9 +1990,14 @@ try{ leadView = localStorage.getItem('zrubavel15-leadview') === 'list' ? 'list' 
 let leadOpen = null;      // הליד הפתוח לעריכה בתצוגת הרשימה
 
 /* תגית סטטוס של דירה בתוך רשימת המתעניינים — לצוות לחיצה משנה את סטטוס הדירה בלוח עצמו */
-function aptStatusPillInLead(a){
-  if (!teamMode) return makePillEl(a.status, false);
-  const b = makePillEl(a.status, true);
+function aptStatusPillInLead(a, withName){
+  const col = (STATUSES[a.status]||STATUSES.marketing).color;
+  const lbl = (STATUSES[a.status]||STATUSES.marketing).label;
+  let b;
+  if (withName){
+    b = el(teamMode?'button':'span','aptc', `<i style="background:${col}"></i>${esc(a.name)} · <em style="color:${col}">${esc(lbl)}</em>`);
+  } else b = makePillEl(a.status, teamMode);
+  if (!teamMode) return b;
   b.title = 'שינוי סטטוס הדירה';
   b.addEventListener('click', ev=>{
     ev.stopPropagation(); closeMenu();
@@ -2026,9 +2022,6 @@ function leadPillEl(k, interactive){
   const b = el(interactive?'button':'span','pill lpill'+(interactive?'':' static'), esc(s.label));
   b.style.color = s.color;
   b.style.background = tint(s.color,.16);
-  // גוון מעט כהה יותר לתגית המלאה — ניגודיות טובה לטקסט לבן
-  const n=parseInt(s.color.slice(1),16), shade=k2=>Math.round(k2*.88);
-  b.style.setProperty('--st', `rgb(${shade(n>>16)},${shade((n>>8)&255)},${shade(n&255)})`);
   return b;
 }
 
@@ -2182,6 +2175,7 @@ function leadHeader(){
   const leads = state.leads || [];
   const aptOf = id => state.floors.flatMap(f=>f.apts).find(x=>x.id===id);
 
+  h.appendChild(el('span','lh','מתעניין'));
   // שלב בתהליך ▾
   const st = el('button','lh lh-btn'+(leadFilter.status?' act':''),
     esc(leadFilter.status ? 'שלב: '+LEAD_STATUSES[leadFilter.status].label : 'שלב בתהליך')+' ▾');
@@ -2195,8 +2189,6 @@ function leadHeader(){
   });
   h.appendChild(st);
 
-  h.appendChild(el('span','lh','שם המתעניין'));
-  h.appendChild(el('span','lh','טלפון'));
 
   // דירה מבוקשת ▾ — סינון לפי מצב הדירה שנבחרה (שמור / נמכר / בשיווק…)
   const ap = el('button','lh lh-btn'+(leadFilter.aptStatus?' act':''),
@@ -2224,23 +2216,23 @@ function leadHeader(){
 /* שורה בתצוגת הרשימה — עמודות מיושרות, לחיצה פותחת לעריכה */
 function leadLine(ld){
   const row = el('div','lead-line'+(ld.status==='dropped'?' dropped':'')+(leadOpen===ld.id?' open':''));
-  row.appendChild(makeLeadStatusPill(ld));   // לחיץ — מחליף שלב בלי לפתוח את השורה
-  row.appendChild(el('span','lline-name'+(ld.name?'':' empty'), esc(ld.name||'ללא שם — לחצו למילוי')));
+  const who = el('div','lline-who');
+  who.appendChild(el('span','lline-name'+(ld.name?'':' empty'), esc(ld.name||'ללא שם — לחצו למילוי')));
   if (ld.phone){
     const ph = el('a','lline-phone', esc(ld.phone));
     ph.href = 'tel:'+ld.phone.replace(/[^+\d]/g,'');
     ph.addEventListener('click', e=>e.stopPropagation());
-    row.appendChild(ph);
-  } else row.appendChild(el('span','lline-phone','—'));
+    who.appendChild(ph);
+  }
+  row.appendChild(who);
+  row.appendChild(makeLeadStatusPill(ld));   // לחיץ — מחליף שלב בלי לפתוח את השורה
   const aptEl = el('span','lline-apt');
   const ids = leadApts(ld);
   if (ids.length){
-    ids.forEach((id,i)=>{
+    for (const id of ids){
       const a = state.floors.flatMap(f=>f.apts).find(x=>x.id===id);
-      if (i) aptEl.appendChild(document.createTextNode(' · '));
-      aptEl.appendChild(document.createTextNode((a ? a.name : '?')+' '));
-      if (a) aptEl.appendChild(aptStatusPillInLead(a));
-    });
+      if (a) aptEl.appendChild(aptStatusPillInLead(a, true));
+    }
   } else aptEl.textContent = '—';
   row.appendChild(aptEl);
   row.appendChild(el('span','lline-notes', esc(ld.notes||'')));
@@ -2444,7 +2436,7 @@ function renderSummary(){
   const unassigned = active.filter(l=>!leadApts(l).length);
   const rows = (items)=>items.map(([c,lbl,n])=>`<div class="sum-row"><span><i class="dot" style="background:${c}"></i>${esc(lbl)}</span><b>${n}</b></div>`).join('');
 
-  const boxApts = `<div class="sum-box"><h3>הדירות</h3><div class="sum-big">${A.length}</div>`+
+  const boxApts = `<div class="sum-box"><h3>הדירות</h3><div class="sum-big">${A.length}</div><div class="sum-bar">${Object.entries(STATUSES).map(([k,v])=>`<span title="${esc(v.label)}" style="width:${cnt(k)/Math.max(1,A.length)*100}%;background:${v.color}"></span>`).join('')}</div>`+
     rows(Object.entries(STATUSES).map(([k,v])=>[v.color,v.label,cnt(k)]))+
     `<div class="sum-row"><span>נסגרו / שמורות</span><b>${closed} מתוך ${A.length}</b></div></div>`;
   const boxLeads = `<div class="sum-box"><h3>המתעניינים</h3><div class="sum-big">${L.length}</div>`+
